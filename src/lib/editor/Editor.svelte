@@ -153,7 +153,7 @@
 
   function scheduleAutoSave() {
     if (debounceTimer) clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(() => { save(); }, 1000);
+    debounceTimer = setTimeout(() => { save(); }, 400);
   }
 
   export function reload(newContent: string) {
@@ -166,16 +166,31 @@
   const MENU_HEIGHT = 380;
   const MENU_WIDTH = 280;
 
+  function getCursorViewportPosition(): { top: number; left: number; bottom: number } | null {
+    if (!editor) return null;
+    const { from } = editor.state.selection;
+    try {
+      const coords = editor.view.coordsAtPos(from);
+      return { top: coords.top, left: coords.left, bottom: coords.bottom };
+    } catch {
+      return null;
+    }
+  }
+
   function calcMenuPosition(props: any) {
+    // Prefer coordsAtPos — always returns correct viewport coordinates
+    // clientRect from suggestion can be unreliable after scrolling
+    const cursor = getCursorViewportPosition();
     const rectFn = props.clientRect;
-    if (!rectFn) return null;
-    const rect = rectFn();
+    const suggestionRect = rectFn?.();
+
+    const rect = cursor ?? suggestionRect;
     if (!rect) return null;
 
-    // rect is in viewport coordinates (for position:fixed)
-    const spaceBelow = window.innerHeight - rect.bottom;
+    const bottom = rect.bottom ?? rect.top + 20;
+    const spaceBelow = window.innerHeight - bottom;
     const top = spaceBelow >= MENU_HEIGHT + 8
-      ? rect.bottom + 4
+      ? bottom + 4
       : rect.top - MENU_HEIGHT - 4;
 
     const left = Math.min(rect.left, window.innerWidth - MENU_WIDTH - 8);
