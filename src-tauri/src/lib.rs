@@ -57,6 +57,8 @@ pub fn run() {
             commands::log_write,
             commands::log_export,
             commands::log_clear,
+            // Media commands
+            commands::media_copy,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

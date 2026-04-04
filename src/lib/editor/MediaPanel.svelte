@@ -10,38 +10,17 @@
     visible: boolean;
     position: { top: number; left: number };
     mediaType: string;
-    onupload: (files: FileList) => void;
+    onupload: () => void;
     onlinksubmit: (url: string) => void;
     onclose: () => void;
   } = $props();
 
   let activeTab = $state<'upload' | 'link'>('upload');
   let linkUrl = $state('');
-  let dropActive = $state(false);
-  let fileInput: HTMLInputElement | undefined = $state();
-
-  const acceptMap: Record<string, string> = {
-    image: 'image/png,image/jpeg,image/gif,image/webp,image/svg+xml',
-    video: 'video/mp4,video/webm,video/quicktime',
-    audio: 'audio/mpeg,audio/wav,audio/ogg,audio/mp4',
-  };
 
   const iconMap: Record<string, string> = {
-    image: '▣',
-    video: '▶',
-    audio: '♫',
+    image: '▣', video: '▶', audio: '♫',
   };
-
-  function handleDrop(e: DragEvent) {
-    e.preventDefault();
-    dropActive = false;
-    if (e.dataTransfer?.files?.length) onupload(e.dataTransfer.files);
-  }
-
-  function handleFileSelect(e: Event) {
-    const input = e.target as HTMLInputElement;
-    if (input.files?.length) onupload(input.files);
-  }
 
   function handleLinkSubmit() {
     if (!linkUrl.trim()) return;
@@ -54,13 +33,8 @@
     if (e.key === 'Enter' && activeTab === 'link') { e.preventDefault(); handleLinkSubmit(); }
   }
 
-  // Reset state when panel opens
   $effect(() => {
-    if (visible) {
-      activeTab = 'upload';
-      linkUrl = '';
-      dropActive = false;
-    }
+    if (visible) { activeTab = 'upload'; linkUrl = ''; }
   });
 </script>
 
@@ -83,32 +57,12 @@
     </div>
 
     {#if activeTab === 'upload'}
-      <!-- svelte-ignore a11y_no_static_element_interactions -->
-      <div
-        class="mp__drop"
-        class:mp__drop--active={dropActive}
-        ondragover={(e) => { e.preventDefault(); dropActive = true; }}
-        ondragleave={() => dropActive = false}
-        ondrop={handleDrop}
-        onclick={() => fileInput?.click()}
-      >
-        <span class="mp__drop-icon">{iconMap[mediaType] ?? '▣'}</span>
-        <span class="mp__drop-label">
-          {#if dropActive}
-            Drop to upload
-          {:else}
-            Click to choose {mediaType}
-          {/if}
-        </span>
-        <span class="mp__drop-hint">or drag and drop</span>
+      <div class="mp__upload">
+        <button class="mp__upload-btn" onclick={onupload}>
+          <span class="mp__upload-icon">{iconMap[mediaType] ?? '▣'}</span>
+          <span class="mp__upload-label">Choose {mediaType} file</span>
+        </button>
       </div>
-      <input
-        bind:this={fileInput}
-        type="file"
-        accept={acceptMap[mediaType] ?? '*/*'}
-        onchange={handleFileSelect}
-        style="display: none;"
-      />
     {:else}
       <div class="mp__link">
         <input
@@ -152,7 +106,6 @@
     to { opacity: 1; transform: translateY(0) scale(1); }
   }
 
-  /* Tabs */
   .mp__tabs {
     display: flex;
     border-bottom: 1px solid rgba(255, 255, 255, 0.06);
@@ -180,52 +133,42 @@
     border-bottom-color: var(--color-accent);
   }
 
-  /* Upload drop zone */
-  .mp__drop {
+  .mp__upload {
+    padding: var(--space-3);
+  }
+
+  .mp__upload-btn {
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 4px;
-    margin: var(--space-3);
-    padding: var(--space-5) var(--space-3);
-    border: 1.5px dashed rgba(255, 255, 255, 0.1);
+    gap: var(--space-2);
+    width: 100%;
+    padding: var(--space-3) var(--space-4);
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 8px;
     cursor: pointer;
     transition:
-      border-color var(--duration-fast) var(--ease-out),
-      background var(--duration-fast) var(--ease-out);
+      background var(--duration-fast) var(--ease-out),
+      border-color var(--duration-fast) var(--ease-out);
   }
 
-  .mp__drop:hover {
-    border-color: rgba(255, 255, 255, 0.2);
-    background: rgba(255, 255, 255, 0.02);
+  .mp__upload-btn:hover {
+    background: rgba(255, 255, 255, 0.07);
+    border-color: rgba(255, 255, 255, 0.14);
   }
 
-  .mp__drop--active {
-    border-color: var(--color-accent);
-    background: rgba(122, 141, 255, 0.06);
+  .mp__upload-icon {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.4);
   }
 
-  .mp__drop-icon {
-    font-size: 18px;
-    color: rgba(255, 255, 255, 0.3);
-    margin-bottom: 2px;
-  }
-
-  .mp__drop-label {
+  .mp__upload-label {
     font-family: var(--font-sans);
     font-size: var(--text-sm);
     color: rgba(255, 255, 255, 0.64);
   }
 
-  .mp__drop-hint {
-    font-family: var(--font-mono);
-    font-size: 10px;
-    color: rgba(255, 255, 255, 0.22);
-  }
-
-  /* Link form */
   .mp__link {
     display: flex;
     gap: var(--space-2);
@@ -246,13 +189,8 @@
     transition: border-color var(--duration-fast) var(--ease-out);
   }
 
-  .mp__link-input:focus {
-    border-color: var(--color-accent);
-  }
-
-  .mp__link-input::placeholder {
-    color: rgba(255, 255, 255, 0.22);
-  }
+  .mp__link-input:focus { border-color: var(--color-accent); }
+  .mp__link-input::placeholder { color: rgba(255, 255, 255, 0.22); }
 
   .mp__link-btn {
     padding: 6px 12px;
@@ -268,14 +206,8 @@
     transition: opacity var(--duration-fast) var(--ease-out);
   }
 
-  .mp__link-btn:disabled {
-    opacity: 0.3;
-    cursor: not-allowed;
-  }
-
-  .mp__link-btn:not(:disabled):hover {
-    opacity: 0.85;
-  }
+  .mp__link-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  .mp__link-btn:not(:disabled):hover { opacity: 0.85; }
 
   @media (prefers-reduced-motion: reduce) {
     .mp { animation: none; }

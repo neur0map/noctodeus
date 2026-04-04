@@ -403,3 +403,52 @@ fn make_name(stem: &str, suffix: &str, ext: Option<&str>) -> String {
         None => format!("{stem}{suffix}"),
     }
 }
+
+// ---------------------------------------------------------------------------
+// Media commands
+// ---------------------------------------------------------------------------
+
+/// Copy a file from an absolute source path into the core's `media/` directory.
+/// Returns the relative path (e.g. `media/abc123.png`).
+#[tauri::command]
+pub async fn media_copy(
+    source_path: String,
+    state: tauri::State<'_, AppState>,
+) -> Result<String, NoctoError> {
+    let core = state.active_core.read().await;
+    let active = core.as_ref().ok_or_else(|| NoctoError::CoreNotFound {
+        path: String::new(),
+    })?;
+    let core_root = &active.core_path;
+
+    let src = Path::new(&source_path);
+    if !src.exists() {
+        return Err(NoctoError::FileNotFound {
+            path: source_path.clone(),
+        });
+    }
+
+    // Ensure media/ directory exists
+    let media_dir = core_root.join("media");
+    if !media_dir.exists() {
+        std::fs::create_dir_all(&media_dir)?;
+    }
+
+    // Generate unique filename: <timestamp_hex>-<short_hash>.<ext>
+    let ext = src
+        .extension()
+        .map(|e| e.to_string_lossy().to_string())
+        .unwrap_or_else(|| "bin".to_string());
+
+    let ts = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_millis();
+
+    let filename = format!("{ts:x}.{ext}");
+    let dest = media_dir.join(&filename);
+
+    std::fs::copy(src, &dest)?;
+
+    Ok(format!("media/{filename}"))
+}

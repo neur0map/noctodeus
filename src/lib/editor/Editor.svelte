@@ -12,6 +12,7 @@
   import MediaPanel from "./MediaPanel.svelte";
   import type { SlashCommandItem } from "./extensions/slash-command";
   import { detectEmbed } from "./extensions/embed-block";
+  import { open as openFileDialog } from "@tauri-apps/plugin-dialog";
   import "./styles/editor.css";
   import "./styles/media.css";
 
@@ -33,30 +34,7 @@
   let editor: Editor | undefined = $state();
   let debounceTimer: ReturnType<typeof setTimeout> | undefined;
 
-  // --- Media upload ---
-  async function uploadMedia(file: File): Promise<string | null> {
-    const corePath = coreState.activeCore?.path;
-    if (!corePath) return null;
-
-    try {
-      const { mkdir, exists, writeFile: tauriWriteFile } = await import('@tauri-apps/plugin-fs');
-      const mediaDir = `${corePath}/media`;
-      if (!(await exists(mediaDir))) {
-        await mkdir(mediaDir, { recursive: true });
-      }
-      const ext = file.name.split('.').pop() ?? 'bin';
-      const hash = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
-      const filename = `${hash}.${ext}`;
-      const destPath = `${mediaDir}/${filename}`;
-      const buffer = await file.arrayBuffer();
-      await tauriWriteFile(destPath, new Uint8Array(buffer));
-      return `media/${filename}`;
-    } catch (err) {
-      logger.error(`Media upload failed: ${err}`);
-      return null;
-    }
-  }
-
+  // --- Media ---
   function insertMediaByType(type: string, mediaPath: string) {
     if (!editor) return;
     if (type === 'image') {
@@ -68,14 +46,13 @@
     }
   }
 
-  // --- Media panel state ---
+  // Media panel state
   let mediaPanelVisible = $state(false);
   let mediaPanelPosition = $state({ top: 0, left: 0 });
   let mediaPanelType = $state('image');
 
   function showMediaPanel(type: string) {
     mediaPanelType = type;
-    // Position at cursor
     if (editor) {
       const { from } = editor.state.selection;
       const coords = editor.view.coordsAtPos(from);
@@ -83,19 +60,34 @@
       const panelHeight = 200;
       mediaPanelPosition = {
         top: spaceBelow >= panelHeight + 8 ? coords.bottom + 4 : coords.top - panelHeight - 4,
-        left: Math.min(coords.left, window.innerWidth - 340),
+        left: Math.min(coords.left, window.innerWidth - 280),
       };
     }
     mediaPanelVisible = true;
   }
 
-  async function handleMediaPanelUpload(files: FileList) {
-    const file = files[0];
-    if (!file) return;
-    const mediaPath = await uploadMedia(file);
-    if (mediaPath) {
-      insertMediaByType(mediaPanelType, mediaPath);
+  async function handleMediaPanelUpload() {
+    const filters: Record<string, { name: string; extensions: string[] }[]> = {
+      image: [{ name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'] }],
+      video: [{ name: 'Videos', extensions: ['mp4', 'webm', 'mov'] }],
+      audio: [{ name: 'Audio', extensions: ['mp3', 'wav', 'ogg', 'm4a'] }],
+    };
+
+    try {
+      const selected = await openFileDialog({
+        multiple: false,
+        filters: filters[mediaPanelType] ?? [],
+        title: `Choose ${mediaPanelType}`,
+      });
+
+      if (!selected) return;
+      // Reference the file by its absolute path — no copying, no duplication
+      const filePath = typeof selected === 'string' ? selected : String(selected);
+      insertMediaByType(mediaPanelType, filePath);
+    } catch (err) {
+      logger.error(`Media select failed: ${err}`);
     }
+
     mediaPanelVisible = false;
     editor?.chain().focus().run();
   }
@@ -238,7 +230,7 @@
 
     editor = new Editor({
       element: editorElement,
-      extensions: createEditorExtensions({ slashPopup: createSlashPopup, mediaUploader: uploadMedia }),
+      extensions: createEditorExtensions({ slashPopup: createSlashPopup }),
       content: html,
       onUpdate: () => {
         if (!mounted) return;
@@ -284,7 +276,7 @@
   visible={mediaPanelVisible}
   position={mediaPanelPosition}
   mediaType={mediaPanelType}
-  onupload={handleMediaPanelUpload}
+  onupload={() => handleMediaPanelUpload()}
   onlinksubmit={handleMediaPanelLink}
   onclose={() => { mediaPanelVisible = false; editor?.chain().focus().run(); }}
 />
