@@ -37,8 +37,8 @@ function buildTree(files: Map<string, FileNode>, expanded: Set<string>): TreeNod
     return node;
   }
 
-  // Root level entries (empty parent_dir or "/" or the core root)
-  const roots = childMap.get('') || childMap.get('/') || [];
+  // Root level entries (scanner uses "." for root, also check "" and "/")
+  const roots = childMap.get('.') || childMap.get('') || childMap.get('/') || [];
   roots.sort(sortNodes);
   return roots.map(attachChildren);
 }

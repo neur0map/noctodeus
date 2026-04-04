@@ -68,12 +68,14 @@ fn file_info_from_path(abs_path: &Path, core_root: &Path) -> Result<FileInfo, No
     let parent = abs_path
         .parent()
         .map(|p| {
-            p.strip_prefix(core_root)
+            let rel = p.strip_prefix(core_root)
                 .unwrap_or(p)
                 .to_string_lossy()
-                .to_string()
+                .to_string();
+            // Normalize: use "." for root level to match scanner convention
+            if rel.is_empty() { ".".to_string() } else { rel }
         })
-        .unwrap_or_default();
+        .unwrap_or_else(|| ".".to_string());
 
     let metadata = std::fs::metadata(abs_path).ok();
     let size = metadata.as_ref().map(|m| m.len() as i64);

@@ -13,7 +13,7 @@
   import { getCoreState } from '../lib/stores/core.svelte';
   import { getFilesState } from '../lib/stores/files.svelte';
   import { getEditorState } from '../lib/stores/editor.svelte';
-  import { readFile, searchRecent, searchPinned, createFile, openCore, createCore, scanCore } from '../lib/bridge/commands';
+  import { readFile, searchRecent, searchPinned, createFile, openCore, createCore, scanCore, listCores } from '../lib/bridge/commands';
   import { open as openDialog } from '@tauri-apps/plugin-dialog';
   import { toast } from '../lib/stores/toast.svelte';
   import { logger } from '../lib/logger';
@@ -164,7 +164,28 @@
     }
   }
 
+  async function autoOpenLastCore() {
+    try {
+      const cores = await listCores();
+      // Find the most recently opened Core that still exists (has last_opened)
+      const lastCore = cores
+        .filter((c) => c.last_opened)
+        .sort((a, b) => (b.last_opened ?? '').localeCompare(a.last_opened ?? ''))
+        [0];
+
+      if (lastCore) {
+        const info = await openCore(lastCore.path);
+        core.setCore(info);
+        const fileTree = await scanCore();
+        files.setFiles(fileTree);
+      }
+    } catch {
+      // No previous Core or failed to open — stay on home view
+    }
+  }
+
   onMount(() => {
+    autoOpenLastCore();
     loadRecents();
     loadPinned();
 
