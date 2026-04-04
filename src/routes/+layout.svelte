@@ -62,6 +62,7 @@
         logger.info("Core closed");
         core.reset();
         files.reset();
+        tabsState.reset();
       });
 
       const u3 = await onFileCreated((e) => {
@@ -74,6 +75,7 @@
 
       const u5 = await onFileDeleted((e) => {
         files.removeFile(e.path);
+        tabsState.removeFileTab(e.path);
         if (files.activeFilePath === e.path) {
           files.setActiveFile(null);
         }
@@ -81,6 +83,7 @@
 
       const u6 = await onFileRenamed((e) => {
         files.renameFile(e.old_path, e.new_path, e.metadata);
+        tabsState.updateFileTab(e.old_path, e.metadata);
         if (files.activeFilePath === e.old_path) {
           files.setActiveFile(e.new_path);
         }
