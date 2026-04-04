@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { onMount, untrack } from "svelte";
 
   import Dashboard from "../lib/components/dashboard/Dashboard.svelte";
   import QuickOpen from "../lib/components/quickopen/QuickOpen.svelte";
@@ -104,7 +104,12 @@
   }
 
   // --- File opening (imperative, not reactive) ---
+  let opening = false;
+
   async function openFile(path: string) {
+    if (opening) return;
+    opening = true;
+
     // Flush current editor if dirty
     if (editorRef && editorState.dirty) {
       try {
@@ -133,6 +138,8 @@
     } catch (err) {
       logger.error(`Failed to read file: ${errorMessage(err)}`);
       toast.error(`Failed to open: ${path}`);
+    } finally {
+      opening = false;
     }
   }
 
@@ -268,14 +275,13 @@
   let lastSeenPath = $state<string | null>(null);
   $effect(() => {
     const sidebarPath = files.activeFilePath;
-    if (
-      sidebarPath &&
-      sidebarPath !== lastSeenPath &&
-      sidebarPath !== currentFilePath
-    ) {
+    // untrack non-trigger deps to prevent effect loops
+    const current = untrack(() => currentFilePath);
+    const seen = untrack(() => lastSeenPath);
+    if (sidebarPath && sidebarPath !== seen && sidebarPath !== current) {
       lastSeenPath = sidebarPath;
       openFile(sidebarPath);
-    } else if (!sidebarPath && currentFilePath) {
+    } else if (!sidebarPath && current) {
       lastSeenPath = null;
       closeFile();
     }
@@ -284,8 +290,10 @@
   // Sync tab activation → file opening
   $effect(() => {
     const active = tabsState.activeTab;
+    // untrack currentFilePath — only react to tab changes, not file state
+    const current = untrack(() => currentFilePath);
     if (active.type === 'home') {
-      if (currentFilePath) {
+      if (current) {
         currentFilePath = null;
         currentContent = null;
         currentMetadata = null;
@@ -295,7 +303,7 @@
       }
     } else if (active.type === 'file' && active.fileNode) {
       const path = active.fileNode.path;
-      if (path !== currentFilePath) {
+      if (path !== current) {
         lastSeenPath = path;
         openFile(path);
       }
