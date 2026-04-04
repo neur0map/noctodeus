@@ -13,6 +13,7 @@
   import { getCoreState } from "../lib/stores/core.svelte";
   import { getFilesState } from "../lib/stores/files.svelte";
   import { getEditorState } from "../lib/stores/editor.svelte";
+  import { getTabsState } from "../lib/stores/tabs.svelte";
   import {
     readFile,
     searchRecent,
@@ -33,6 +34,7 @@
   const core = getCoreState();
   const files = getFilesState();
   const editorState = getEditorState();
+  const tabsState = getTabsState();
 
   // --- State ---
   let currentFilePath = $state<string | null>(null);
@@ -121,6 +123,10 @@
       currentMetadata = result.metadata;
       currentFilePath = path;
       files.setActiveFile(path);
+      const fileNode = files.fileMap.get(path);
+      if (fileNode) {
+        tabsState.openFile(fileNode);
+      }
       await refreshHomeLists();
     } catch (err) {
       logger.error(`Failed to read file: ${errorMessage(err)}`);
@@ -135,6 +141,7 @@
     editorRef = undefined;
     files.setActiveFile(null);
     editorState.reset();
+    tabsState.goHome();
   }
 
   // --- Core management ---
@@ -268,6 +275,27 @@
     } else if (!sidebarPath && currentFilePath) {
       lastSeenPath = null;
       closeFile();
+    }
+  });
+
+  // Sync tab activation → file opening
+  $effect(() => {
+    const active = tabsState.activeTab;
+    if (active.type === 'home') {
+      if (currentFilePath) {
+        currentFilePath = null;
+        currentContent = null;
+        currentMetadata = null;
+        editorRef = undefined;
+        files.setActiveFile(null);
+        editorState.reset();
+      }
+    } else if (active.type === 'file' && active.fileNode) {
+      const path = active.fileNode.path;
+      if (path !== currentFilePath) {
+        lastSeenPath = path;
+        openFile(path);
+      }
     }
   });
 

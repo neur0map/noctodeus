@@ -11,7 +11,7 @@
   import AppShell from "../lib/components/layout/AppShell.svelte";
   import Sidebar from "../lib/components/layout/Sidebar.svelte";
   import ContentArea from "../lib/components/layout/ContentArea.svelte";
-  import ContentHeader from "../lib/components/layout/ContentHeader.svelte";
+  import TabBar from "../lib/components/tabs/TabBar.svelte";
   import FileTree from "../lib/components/filetree/FileTree.svelte";
   import KeyboardManager from "../lib/components/common/KeyboardManager.svelte";
   import ToastContainer from "../lib/components/common/ToastContainer.svelte";
@@ -21,6 +21,7 @@
   import { getCoreState } from "../lib/stores/core.svelte";
   import { getFilesState } from "../lib/stores/files.svelte";
   import { getEditorState } from "../lib/stores/editor.svelte";
+  import { getTabsState } from "../lib/stores/tabs.svelte";
   import {
     onCoreReady,
     onCoreClosed,
@@ -39,6 +40,7 @@
   const core = getCoreState();
   const files = getFilesState();
   const editor = getEditorState();
+  const tabsState = getTabsState();
 
   let unlisteners: UnlistenFn[] = [];
   let overlayOpen = $derived(ui.quickOpenVisible || ui.commandPaletteVisible);
@@ -171,13 +173,19 @@
   {#snippet content()}
     <ContentArea>
       {#snippet header()}
-        <ContentHeader path={files.activeFilePath ?? ""}>
+        <TabBar
+          tabs={tabsState.tabs}
+          activeTabId={tabsState.activeTabId}
+          onactivate={(id) => tabsState.activateTab(id)}
+          onclose={(id) => tabsState.closeTab(id)}
+          onreorder={(from, to) => tabsState.reorderTabs(from, to)}
+        >
           {#snippet trailing()}
             {#if isMarkdownActive}
               <SaveIndicator status={editor.saveStatus} />
             {/if}
           {/snippet}
-        </ContentHeader>
+        </TabBar>
       {/snippet}
 
       {@render children()}
