@@ -272,14 +272,18 @@
     return path.split('.').pop()?.toLowerCase() ?? '';
   }
 
-  // Poll editor instance for toolbar binding
-  function handleEditorMount(e: EditorComponent) {
-    editorRef = e;
-    // Get editor instance after a tick
-    setTimeout(() => {
-      editorInstance = editorRef?.getEditor?.() ?? null;
-    }, 50);
-  }
+  // Update toolbar editor instance when editorRef changes
+  $effect(() => {
+    if (editorRef) {
+      // Wait a tick for the TipTap editor to initialize inside the component
+      const timer = setTimeout(() => {
+        editorInstance = editorRef?.getEditor?.() ?? null;
+      }, 50);
+      return () => clearTimeout(timer);
+    } else {
+      editorInstance = null;
+    }
+  });
 </script>
 
 {#if files.activeFilePath && fileContent}
@@ -292,16 +296,18 @@
       </div>
     {/if}
 
-    {#if editorInstance}
-      <EditorToolbar editor={editorInstance} />
-    {/if}
+    {#key files.activeFilePath}
+      {#if editorInstance}
+        <EditorToolbar editor={editorInstance} />
+      {/if}
 
-    <EditorComponent
-      path={files.activeFilePath}
-      initialContent={fileContent.content}
-      onnavigate={handleWikiLinkNavigate}
-      bind:this={editorRef}
-    />
+      <EditorComponent
+        path={files.activeFilePath}
+        initialContent={fileContent.content}
+        onnavigate={handleWikiLinkNavigate}
+        bind:this={editorRef}
+      />
+    {/key}
   {:else}
     <div class="file-view">
       <div class="file-view__info">
