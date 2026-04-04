@@ -318,8 +318,14 @@
 /* --------------------------------------------------------------------------
    Selection
    -------------------------------------------------------------------------- */
-.ProseMirror ::selection {
-  background: color-mix(in srgb, var(--color-accent) 20%, transparent);
+.ProseMirror ::selection,
+.ProseMirror *::selection {
+  background: rgba(99, 102, 241, 0.18);
+}
+
+.ProseMirror:focus ::selection,
+.ProseMirror:focus *::selection {
+  background: rgba(99, 102, 241, 0.22);
 }
 
 /* --------------------------------------------------------------------------
