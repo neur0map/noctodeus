@@ -4,6 +4,7 @@ export interface AppShortcuts {
   new_note: string;
   toggle_sidebar: string;
   toggle_right_panel: string;
+  collapse_sidebar: string;
   delete_file: string;
 }
 
@@ -13,6 +14,7 @@ export const APP_SHORTCUTS: AppShortcuts = {
   new_note: "Meta+N",
   toggle_sidebar: "Meta+B",
   toggle_right_panel: "Meta+\\",
+  collapse_sidebar: "Meta+Shift+B",
   delete_file: "Meta+Backspace",
 };
 

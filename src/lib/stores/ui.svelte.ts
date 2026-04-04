@@ -2,6 +2,7 @@ let sidebarVisible = $state(true);
 let rightPanelVisible = $state(false);
 let quickOpenVisible = $state(false);
 let commandPaletteVisible = $state(false);
+let sidebarCollapsed = $state(false);
 
 export function getUiState() {
   return {
@@ -17,12 +18,18 @@ export function getUiState() {
     get commandPaletteVisible() {
       return commandPaletteVisible;
     },
+    get sidebarCollapsed() {
+      return sidebarCollapsed;
+    },
 
     toggleSidebar() {
       sidebarVisible = !sidebarVisible;
     },
     toggleRightPanel() {
       rightPanelVisible = !rightPanelVisible;
+    },
+    toggleSidebarCollapse() {
+      sidebarCollapsed = !sidebarCollapsed;
     },
     showQuickOpen() {
       quickOpenVisible = true;
@@ -48,6 +55,7 @@ export function getUiState() {
       rightPanelVisible = false;
       quickOpenVisible = false;
       commandPaletteVisible = false;
+      sidebarCollapsed = false;
     },
   };
 }
