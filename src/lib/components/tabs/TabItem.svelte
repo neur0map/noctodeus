@@ -69,13 +69,16 @@
   <span class="tab-item__icon">{getTabIcon(tab)}</span>
   <span class="tab-item__label">{tab.label}</span>
   {#if tab.type !== 'home' && onclose}
-    <button
+    <span
       class="tab-item__close"
+      role="button"
+      tabindex={0}
       onclick={(e) => { e.stopPropagation(); onclose?.(); }}
+      onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); e.preventDefault(); onclose?.(); } }}
       aria-label="Close tab"
     >
       ×
-    </button>
+    </span>
   {/if}
 </button>
 
