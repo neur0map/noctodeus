@@ -105,6 +105,7 @@
 
   // --- File opening (imperative, not reactive) ---
   let opening = false;
+  let viewKey = $state(0);
 
   async function openFile(path: string) {
     if (opening) return;
@@ -117,18 +118,14 @@
       } catch {}
     }
 
-    // Clear current state
-    currentFilePath = null;
-    currentContent = null;
-    currentMetadata = null;
-    editorRef = undefined;
-
     try {
+      // Load content FIRST, then swap all state at once — no null flash
       const result = await readFile(path);
-      // Set all state at once after content is loaded
+      editorRef = undefined;
       currentContent = result.content;
       currentMetadata = result.metadata;
       currentFilePath = path;
+      viewKey++;
       files.setActiveFile(path);
       const fileNode = files.fileMap.get(path);
       if (fileNode) {
@@ -315,67 +312,71 @@
 </script>
 
 {#if currentFilePath && currentContent !== null}
-  {#if isMarkdown}
-    {#key currentFilePath}
-      <Worksurface flush={true}>
-        {#snippet toolbar()}
-          {#if editorInstance}
-            <EditorToolbar editor={editorInstance} />
-          {/if}
-        {/snippet}
-
-        <EditorComponent
-          path={currentFilePath}
-          initialContent={currentContent}
-          onnavigate={handleWikiLinkNavigate}
-          bind:this={editorRef}
-        />
-      </Worksurface>
-    {/key}
-  {:else}
-    <Worksurface>
-      <div class="file-view">
-        <div class="file-view__info">
-          {#if currentMetadata}
-            <div class="file-view__info-row">
-              <span class="file-view__info-label">Name</span>
-              <span class="file-view__info-value">{currentMetadata.name}</span>
-            </div>
-            <div class="file-view__info-row">
-              <span class="file-view__info-label">Path</span>
-              <span class="file-view__info-value">{currentMetadata.path}</span>
-            </div>
-            <div class="file-view__info-row">
-              <span class="file-view__info-label">Size</span>
-              <span class="file-view__info-value"
-                >{currentMetadata.size} bytes</span
-              >
-            </div>
-            {#if currentMetadata.extension}
-              <div class="file-view__info-row">
-                <span class="file-view__info-label">Extension</span>
-                <span class="file-view__info-value"
-                  >{currentMetadata.extension}</span
-                >
-              </div>
+  {#key viewKey}
+    <div class="view-transition">
+      {#if isMarkdown}
+        <Worksurface flush={true}>
+          {#snippet toolbar()}
+            {#if editorInstance}
+              <EditorToolbar editor={editorInstance} />
             {/if}
-          {/if}
-        </div>
-      </div>
-    </Worksurface>
-  {/if}
+          {/snippet}
+
+          <EditorComponent
+            path={currentFilePath}
+            initialContent={currentContent}
+            onnavigate={handleWikiLinkNavigate}
+            bind:this={editorRef}
+          />
+        </Worksurface>
+      {:else}
+        <Worksurface>
+          <div class="file-view">
+            <div class="file-view__info">
+              {#if currentMetadata}
+                <div class="file-view__info-row">
+                  <span class="file-view__info-label">Name</span>
+                  <span class="file-view__info-value">{currentMetadata.name}</span>
+                </div>
+                <div class="file-view__info-row">
+                  <span class="file-view__info-label">Path</span>
+                  <span class="file-view__info-value">{currentMetadata.path}</span>
+                </div>
+                <div class="file-view__info-row">
+                  <span class="file-view__info-label">Size</span>
+                  <span class="file-view__info-value"
+                    >{currentMetadata.size} bytes</span
+                  >
+                </div>
+                {#if currentMetadata.extension}
+                  <div class="file-view__info-row">
+                    <span class="file-view__info-label">Extension</span>
+                    <span class="file-view__info-value"
+                      >{currentMetadata.extension}</span
+                    >
+                  </div>
+                {/if}
+              {/if}
+            </div>
+          </div>
+        </Worksurface>
+      {/if}
+    </div>
+  {/key}
 {:else}
-  <Worksurface>
-    <Dashboard
-      coreName={core.activeCore?.name ?? "Noctodeus"}
-      {recentFiles}
-      {pinnedFiles}
-      totalNotes={Array.from(files.fileMap.values()).filter(f => !f.is_directory).length}
-      graphStats={graphState.stats}
-      graphScanning={graphState.scanning}
-      onfileopen={openFile}
-    />
-  </Worksurface>
+  <div class="view-transition">
+    <Worksurface>
+      <Dashboard
+        coreName={core.activeCore?.name ?? "Noctodeus"}
+        {recentFiles}
+        {pinnedFiles}
+        totalNotes={Array.from(files.fileMap.values()).filter(f => !f.is_directory).length}
+        graphStats={graphState.stats}
+        graphScanning={graphState.scanning}
+        onfileopen={openFile}
+      />
+    </Worksurface>
+  </div>
 {/if}
 
 <QuickOpen
@@ -392,6 +393,20 @@
 />
 
 <style>
+  .view-transition {
+    height: 100%;
+    animation: view-enter var(--duration-normal) var(--ease-out) both;
+  }
+
+  @keyframes view-enter {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
   .file-view {
     height: 100%;
     overflow-y: auto;
