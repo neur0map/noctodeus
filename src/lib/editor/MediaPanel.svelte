@@ -17,7 +17,7 @@
 
   let activeTab = $state<'upload' | 'link'>('upload');
   let linkUrl = $state('');
-  let dropZoneActive = $state(false);
+  let dropActive = $state(false);
   let fileInput: HTMLInputElement | undefined = $state();
 
   const acceptMap: Record<string, string> = {
@@ -26,188 +26,169 @@
     audio: 'audio/mpeg,audio/wav,audio/ogg,audio/mp4',
   };
 
+  const iconMap: Record<string, string> = {
+    image: '▣',
+    video: '▶',
+    audio: '♫',
+  };
+
   function handleDrop(e: DragEvent) {
     e.preventDefault();
-    dropZoneActive = false;
-    if (e.dataTransfer?.files?.length) {
-      onupload(e.dataTransfer.files);
-    }
+    dropActive = false;
+    if (e.dataTransfer?.files?.length) onupload(e.dataTransfer.files);
   }
 
   function handleFileSelect(e: Event) {
     const input = e.target as HTMLInputElement;
-    if (input.files?.length) {
-      onupload(input.files);
-    }
+    if (input.files?.length) onupload(input.files);
   }
 
   function handleLinkSubmit() {
-    if (linkUrl.trim()) {
-      onlinksubmit(linkUrl.trim());
-      linkUrl = '';
-    }
+    if (!linkUrl.trim()) return;
+    onlinksubmit(linkUrl.trim());
+    linkUrl = '';
   }
 
   function handleKeydown(e: KeyboardEvent) {
-    if (e.key === 'Escape') {
-      e.preventDefault();
-      e.stopPropagation();
-      onclose();
-    }
-    if (e.key === 'Enter' && activeTab === 'link') {
-      e.preventDefault();
-      handleLinkSubmit();
-    }
+    if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); onclose(); }
+    if (e.key === 'Enter' && activeTab === 'link') { e.preventDefault(); handleLinkSubmit(); }
   }
+
+  // Reset state when panel opens
+  $effect(() => {
+    if (visible) {
+      activeTab = 'upload';
+      linkUrl = '';
+      dropActive = false;
+    }
+  });
 </script>
 
 {#if visible}
   <!-- svelte-ignore a11y_no_static_element_interactions -->
-  <div class="media-panel-backdrop" onmousedown={onclose}></div>
+  <div class="mp-backdrop" onmousedown={onclose}></div>
   <!-- svelte-ignore a11y_no_static_element_interactions -->
   <div
-    class="media-panel"
+    class="mp"
     style="top: {position.top}px; left: {position.left}px;"
     onkeydown={handleKeydown}
   >
-    <div class="media-panel__tabs">
-      <button
-        class="media-panel__tab"
-        class:media-panel__tab--active={activeTab === 'upload'}
-        onclick={() => activeTab = 'upload'}
-      >
+    <div class="mp__tabs">
+      <button class="mp__tab" class:mp__tab--active={activeTab === 'upload'} onclick={() => activeTab = 'upload'}>
         Upload
       </button>
-      <button
-        class="media-panel__tab"
-        class:media-panel__tab--active={activeTab === 'link'}
-        onclick={() => activeTab = 'link'}
-      >
+      <button class="mp__tab" class:mp__tab--active={activeTab === 'link'} onclick={() => activeTab = 'link'}>
         Link
       </button>
     </div>
 
-    <div class="media-panel__body">
-      {#if activeTab === 'upload'}
-        <!-- svelte-ignore a11y_no_static_element_interactions -->
-        <div
-          class="media-panel__dropzone"
-          class:media-panel__dropzone--active={dropZoneActive}
-          ondragover={(e) => { e.preventDefault(); dropZoneActive = true; }}
-          ondragleave={() => dropZoneActive = false}
-          ondrop={handleDrop}
-          onclick={() => fileInput?.click()}
-        >
-          <span class="media-panel__dropzone-icon">
-            {mediaType === 'image' ? '▣' : mediaType === 'video' ? '▶' : '♫'}
-          </span>
-          <span class="media-panel__dropzone-text">
-            Drop {mediaType} here or click to browse
-          </span>
-        </div>
+    {#if activeTab === 'upload'}
+      <!-- svelte-ignore a11y_no_static_element_interactions -->
+      <div
+        class="mp__drop"
+        class:mp__drop--active={dropActive}
+        ondragover={(e) => { e.preventDefault(); dropActive = true; }}
+        ondragleave={() => dropActive = false}
+        ondrop={handleDrop}
+        onclick={() => fileInput?.click()}
+      >
+        <span class="mp__drop-icon">{iconMap[mediaType] ?? '▣'}</span>
+        <span class="mp__drop-label">
+          {#if dropActive}
+            Drop to upload
+          {:else}
+            Click to choose {mediaType}
+          {/if}
+        </span>
+        <span class="mp__drop-hint">or drag and drop</span>
+      </div>
+      <input
+        bind:this={fileInput}
+        type="file"
+        accept={acceptMap[mediaType] ?? '*/*'}
+        onchange={handleFileSelect}
+        style="display: none;"
+      />
+    {:else}
+      <div class="mp__link">
         <input
-          bind:this={fileInput}
-          type="file"
-          accept={acceptMap[mediaType] ?? '*/*'}
-          onchange={handleFileSelect}
-          style="display: none;"
+          class="mp__link-input"
+          type="url"
+          placeholder="https://..."
+          bind:value={linkUrl}
         />
-      {:else}
-        <div class="media-panel__link-form">
-          <input
-            class="media-panel__link-input"
-            type="url"
-            placeholder="Paste a URL..."
-            bind:value={linkUrl}
-            autofocus
-          />
-          <button
-            class="media-panel__link-submit"
-            onclick={handleLinkSubmit}
-            disabled={!linkUrl.trim()}
-          >
-            Embed
-          </button>
-        </div>
-      {/if}
-    </div>
+        <button class="mp__link-btn" onclick={handleLinkSubmit} disabled={!linkUrl.trim()}>
+          Embed
+        </button>
+      </div>
+    {/if}
   </div>
 {/if}
 
 <style>
-  .media-panel-backdrop {
+  .mp-backdrop {
     position: fixed;
     inset: 0;
-    z-index: 99;
+    z-index: 199;
   }
 
-  .media-panel {
+  .mp {
     position: fixed;
-    z-index: 100;
-    width: 320px;
-    background: rgba(20, 21, 27, 0.97);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 12px;
+    z-index: 200;
+    width: 260px;
+    background: rgba(18, 19, 24, 0.98);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 10px;
     box-shadow:
-      0 8px 40px rgba(0, 0, 0, 0.5),
-      0 0 0 1px rgba(255, 255, 255, 0.04);
-    backdrop-filter: blur(16px);
-    animation: panel-enter var(--duration-fast) var(--ease-out) both;
+      0 6px 32px rgba(0, 0, 0, 0.5),
+      0 0 0 1px rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(20px);
     overflow: hidden;
+    animation: mp-in var(--duration-fast) var(--ease-out) both;
   }
 
-  @keyframes panel-enter {
-    from {
-      opacity: 0;
-      transform: translateY(-4px) scale(0.98);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0) scale(1);
-    }
+  @keyframes mp-in {
+    from { opacity: 0; transform: translateY(-3px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
   }
 
-  .media-panel__tabs {
+  /* Tabs */
+  .mp__tabs {
     display: flex;
-    gap: 0;
     border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   }
 
-  .media-panel__tab {
+  .mp__tab {
     flex: 1;
-    padding: var(--space-3) var(--space-4);
-    font-family: var(--font-sans);
-    font-size: var(--text-sm);
-    color: rgba(255, 255, 255, 0.4);
+    padding: 8px 0;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.32);
     background: transparent;
     border: none;
     border-bottom: 2px solid transparent;
     cursor: pointer;
-    transition:
-      color var(--duration-fast) var(--ease-out),
-      border-color var(--duration-fast) var(--ease-out);
+    letter-spacing: 0.02em;
+    transition: color var(--duration-fast) var(--ease-out);
   }
 
-  .media-panel__tab:hover {
-    color: rgba(255, 255, 255, 0.64);
-  }
+  .mp__tab:hover { color: rgba(255, 255, 255, 0.56); }
 
-  .media-panel__tab--active {
+  .mp__tab--active {
     color: var(--color-text-primary);
     border-bottom-color: var(--color-accent);
   }
 
-  .media-panel__body {
-    padding: var(--space-4);
-  }
-
-  .media-panel__dropzone {
+  /* Upload drop zone */
+  .mp__drop {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: var(--space-2);
-    padding: var(--space-6) var(--space-4);
+    gap: 4px;
+    margin: var(--space-3);
+    padding: var(--space-5) var(--space-3);
     border: 1.5px dashed rgba(255, 255, 255, 0.1);
     border-radius: 8px;
     cursor: pointer;
@@ -216,34 +197,47 @@
       background var(--duration-fast) var(--ease-out);
   }
 
-  .media-panel__dropzone:hover,
-  .media-panel__dropzone--active {
+  .mp__drop:hover {
+    border-color: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.02);
+  }
+
+  .mp__drop--active {
     border-color: var(--color-accent);
-    background: rgba(122, 141, 255, 0.04);
+    background: rgba(122, 141, 255, 0.06);
   }
 
-  .media-panel__dropzone-icon {
-    font-size: 20px;
+  .mp__drop-icon {
+    font-size: 18px;
     color: rgba(255, 255, 255, 0.3);
+    margin-bottom: 2px;
   }
 
-  .media-panel__dropzone-text {
+  .mp__drop-label {
     font-family: var(--font-sans);
-    font-size: var(--text-xs);
-    color: rgba(255, 255, 255, 0.36);
-    text-align: center;
+    font-size: var(--text-sm);
+    color: rgba(255, 255, 255, 0.64);
   }
 
-  .media-panel__link-form {
+  .mp__drop-hint {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.22);
+  }
+
+  /* Link form */
+  .mp__link {
     display: flex;
     gap: var(--space-2);
+    padding: var(--space-3);
   }
 
-  .media-panel__link-input {
+  .mp__link-input {
     flex: 1;
-    padding: var(--space-2) var(--space-3);
+    min-width: 0;
+    padding: 6px 10px;
     font-family: var(--font-mono);
-    font-size: var(--text-sm);
+    font-size: 12px;
     color: var(--color-text-primary);
     background: rgba(255, 255, 255, 0.04);
     border: 1px solid rgba(255, 255, 255, 0.08);
@@ -252,38 +246,38 @@
     transition: border-color var(--duration-fast) var(--ease-out);
   }
 
-  .media-panel__link-input:focus {
+  .mp__link-input:focus {
     border-color: var(--color-accent);
   }
 
-  .media-panel__link-input::placeholder {
-    color: rgba(255, 255, 255, 0.26);
+  .mp__link-input::placeholder {
+    color: rgba(255, 255, 255, 0.22);
   }
 
-  .media-panel__link-submit {
-    padding: var(--space-2) var(--space-3);
-    font-family: var(--font-sans);
-    font-size: var(--text-sm);
-    color: var(--color-text-primary);
+  .mp__link-btn {
+    padding: 6px 12px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 500;
+    color: #fff;
     background: var(--color-accent);
     border: none;
     border-radius: 6px;
     cursor: pointer;
+    flex-shrink: 0;
     transition: opacity var(--duration-fast) var(--ease-out);
   }
 
-  .media-panel__link-submit:disabled {
-    opacity: 0.4;
+  .mp__link-btn:disabled {
+    opacity: 0.3;
     cursor: not-allowed;
   }
 
-  .media-panel__link-submit:not(:disabled):hover {
+  .mp__link-btn:not(:disabled):hover {
     opacity: 0.85;
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .media-panel {
-      animation: none;
-    }
+    .mp { animation: none; }
   }
 </style>

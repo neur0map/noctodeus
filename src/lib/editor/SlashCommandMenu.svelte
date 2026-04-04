@@ -85,7 +85,7 @@
 <style>
   .slash-menu {
     position: fixed;
-    z-index: 100;
+    z-index: 200;
     width: 280px;
     max-height: 380px;
     overflow-y: auto;
