@@ -76,17 +76,24 @@
     if (!editorElement) return;
 
     const html = parseMarkdown(initialContent);
+    let mounted = false;
 
     editor = new Editor({
       element: editorElement,
       extensions: createEditorExtensions(),
       content: html,
       onUpdate: () => {
+        // TipTap normalizes HTML on load, firing a spurious update.
+        // Ignore updates until after the initial content is settled.
+        if (!mounted) return;
         editorState.markDirty();
         scheduleAutoSave();
       },
       autofocus: true,
     });
+
+    // Allow the editor to settle before tracking changes
+    requestAnimationFrame(() => { mounted = true; });
 
     editorState.setPath(path);
 

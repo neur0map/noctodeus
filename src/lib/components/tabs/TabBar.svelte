@@ -20,45 +20,73 @@
   } = $props();
 
   let dragFromIndex = $state<number | null>(null);
+  let dragOverIndex = $state<number | null>(null);
+  let dragging = $state(false);
+  let tabsContainer: HTMLDivElement | undefined = $state();
 
-  function handleDragStart(index: number, e: DragEvent) {
-    if (index === 0) return;
-    dragFromIndex = index;
-    if (e.dataTransfer) {
-      e.dataTransfer.effectAllowed = 'move';
-      e.dataTransfer.setData('text/plain', String(index));
+  function handlePointerDown(index: number, e: PointerEvent) {
+    if (index === 0) return; // Home tab can't be dragged
+    if ((e.target as HTMLElement).closest('.tab-item__close')) return; // Don't drag from close button
+
+    const el = e.currentTarget as HTMLElement;
+    el.setPointerCapture(e.pointerId);
+
+    const startX = e.clientX;
+    let hasMoved = false;
+
+    function onMove(ev: PointerEvent) {
+      const dx = Math.abs(ev.clientX - startX);
+      if (!hasMoved && dx < 5) return; // Threshold before drag starts
+
+      if (!hasMoved) {
+        hasMoved = true;
+        dragging = true;
+        dragFromIndex = index;
+      }
+
+      // Determine which tab the pointer is over
+      if (!tabsContainer) return;
+      const tabEls = Array.from(tabsContainer.querySelectorAll<HTMLElement>('.tab-item'));
+      for (let i = 0; i < tabEls.length; i++) {
+        const rect = tabEls[i].getBoundingClientRect();
+        if (ev.clientX >= rect.left && ev.clientX <= rect.right) {
+          dragOverIndex = i === 0 ? null : i; // Can't drop on home
+          break;
+        }
+      }
     }
-  }
 
-  function handleDragOver(index: number, e: DragEvent) {
-    if (index === 0) return;
-    e.preventDefault();
-  }
+    function onUp() {
+      el.removeEventListener('pointermove', onMove);
+      el.removeEventListener('pointerup', onUp);
+      el.removeEventListener('pointercancel', onUp);
 
-  function handleDrop(index: number) {
-    if (dragFromIndex !== null && index !== 0 && dragFromIndex !== index) {
-      onreorder(dragFromIndex, index);
+      if (hasMoved && dragFromIndex !== null && dragOverIndex !== null && dragFromIndex !== dragOverIndex) {
+        onreorder(dragFromIndex, dragOverIndex);
+      }
+
+      dragFromIndex = null;
+      dragOverIndex = null;
+      dragging = false;
     }
-    dragFromIndex = null;
-  }
 
-  function handleDragEnd() {
-    dragFromIndex = null;
+    el.addEventListener('pointermove', onMove);
+    el.addEventListener('pointerup', onUp);
+    el.addEventListener('pointercancel', onUp);
   }
 </script>
 
 <div class="tab-bar">
-  <div class="tab-bar__tabs">
+  <div class="tab-bar__tabs" bind:this={tabsContainer}>
     {#each tabs as tab, i (tab.id)}
       <TabItem
         {tab}
         isActive={tab.id === activeTabId}
+        isDragging={dragging && dragFromIndex === i}
+        isDragOver={dragging && dragOverIndex === i && dragFromIndex !== i}
         onactivate={() => onactivate(tab.id)}
         onclose={tab.type !== 'home' ? () => onclose(tab.id) : undefined}
-        ondragstart={(e) => handleDragStart(i, e)}
-        ondragover={(e) => handleDragOver(i, e)}
-        ondrop={() => handleDrop(i)}
-        ondragend={handleDragEnd}
+        onpointerdown={(e) => handlePointerDown(i, e)}
       />
     {/each}
   </div>

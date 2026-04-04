@@ -4,24 +4,20 @@
   let {
     tab,
     isActive = false,
+    isDragging = false,
+    isDragOver = false,
     onactivate,
     onclose,
-    ondragstart,
-    ondragover,
-    ondrop,
-    ondragend,
+    onpointerdown,
   }: {
     tab: Tab;
     isActive?: boolean;
+    isDragging?: boolean;
+    isDragOver?: boolean;
     onactivate: () => void;
     onclose?: () => void;
-    ondragstart?: (e: DragEvent) => void;
-    ondragover?: (e: DragEvent) => void;
-    ondrop?: (e: DragEvent) => void;
-    ondragend?: (e: DragEvent) => void;
+    onpointerdown?: (e: PointerEvent) => void;
   } = $props();
-
-  let isDragOver = $state(false);
 
   function handleAuxClick(e: MouseEvent) {
     if (e.button === 1 && onclose) {
@@ -47,23 +43,12 @@
 <button
   class="tab-item"
   class:tab-item--active={isActive}
+  class:tab-item--dragging={isDragging}
   class:tab-item--drag-over={isDragOver}
   class:tab-item--home={tab.type === 'home'}
   onclick={onactivate}
   onauxclick={handleAuxClick}
-  draggable={tab.type !== 'home'}
-  ondragstart={ondragstart}
-  ondragover={(e) => {
-    e.preventDefault();
-    isDragOver = true;
-    ondragover?.(e);
-  }}
-  ondragleave={() => isDragOver = false}
-  ondrop={(e) => {
-    isDragOver = false;
-    ondrop?.(e);
-  }}
-  ondragend={ondragend}
+  onpointerdown={onpointerdown}
   title={tab.type === 'file' ? tab.fileNode?.path : 'Home'}
 >
   <span class="tab-item__icon">{getTabIcon(tab)}</span>
@@ -100,9 +85,11 @@
     flex-shrink: 0;
     position: relative;
     user-select: none;
+    touch-action: none;
     transition:
       color var(--duration-fast) var(--ease-out),
-      background var(--duration-fast) var(--ease-out);
+      background var(--duration-fast) var(--ease-out),
+      opacity var(--duration-fast) var(--ease-out);
     animation: tab-enter var(--duration-normal) var(--ease-out) both;
   }
 
@@ -127,17 +114,17 @@
     border-bottom-color: var(--color-accent);
   }
 
+  .tab-item--dragging {
+    opacity: 0.5;
+  }
+
   .tab-item--drag-over {
     background: rgba(122, 141, 255, 0.08);
+    border-bottom-color: var(--color-accent);
   }
 
   .tab-item--home {
     padding-left: var(--space-2);
-  }
-
-  .tab-item:active:not(.tab-item--home) {
-    transform: scale(1.03);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   }
 
   .tab-item__icon {
