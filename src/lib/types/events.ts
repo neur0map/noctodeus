@@ -1,4 +1,4 @@
-import type { FileNode } from './core';
+import type { FileNode } from "./core";
 
 // ---------------------------------------------------------------------------
 // Core lifecycle events
@@ -38,10 +38,10 @@ export interface FileRenamedEvent {
 
 /** Discriminated union covering every file-system event the backend can emit. */
 export type FileEvent =
-  | { type: 'created'; payload: FileCreatedEvent }
-  | { type: 'modified'; payload: FileModifiedEvent }
-  | { type: 'deleted'; payload: FileDeletedEvent }
-  | { type: 'renamed'; payload: FileRenamedEvent };
+  | { type: "created"; payload: FileCreatedEvent }
+  | { type: "modified"; payload: FileModifiedEvent }
+  | { type: "deleted"; payload: FileDeletedEvent }
+  | { type: "renamed"; payload: FileRenamedEvent };
 
 // ---------------------------------------------------------------------------
 // Errors

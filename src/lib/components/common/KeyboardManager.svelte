@@ -1,21 +1,25 @@
 <script lang="ts">
+  import { matchesShortcut, type AppShortcuts } from "../../utils/shortcuts";
+
   let {
     onquickopen,
     oncommandpalette,
     onnewnote,
     ontogglesidebar,
-    ontogglrightpanel,
+    ontogglerightpanel,
     ondeletefile,
-    onclosoverlay,
+    oncloseoverlay,
+    keymap,
     overlayOpen = false,
   }: {
     onquickopen: () => void;
     oncommandpalette: () => void;
     onnewnote: () => void;
     ontogglesidebar: () => void;
-    ontogglrightpanel: () => void;
+    ontogglerightpanel: () => void;
     ondeletefile: () => void;
-    onclosoverlay: () => void;
+    oncloseoverlay: () => void;
+    keymap: AppShortcuts;
     overlayOpen?: boolean;
   } = $props();
 
@@ -24,20 +28,18 @@
     if (!active) return false;
     const tag = active.tagName.toLowerCase();
     return (
-      tag === 'input' ||
-      tag === 'textarea' ||
-      tag === 'select' ||
+      tag === "input" ||
+      tag === "textarea" ||
+      tag === "select" ||
       (active as HTMLElement).isContentEditable
     );
   }
 
   function handleKeydown(e: KeyboardEvent) {
-    const meta = e.metaKey || e.ctrlKey;
-
     // Escape always works -- closes overlays
-    if (e.key === 'Escape') {
+    if (e.key === "Escape") {
       e.preventDefault();
-      onclosoverlay();
+      oncloseoverlay();
       return;
     }
 
@@ -48,43 +50,37 @@
     // If input focused, don't capture global shortcuts
     if (isInputFocused()) return;
 
-    // Cmd+P: Quick open
-    if (meta && !e.shiftKey && e.key === 'p') {
+    if (matchesShortcut(e, keymap.quick_open)) {
       e.preventDefault();
       onquickopen();
       return;
     }
 
-    // Cmd+Shift+P: Command palette
-    if (meta && e.shiftKey && e.key === 'p') {
+    if (matchesShortcut(e, keymap.command_palette)) {
       e.preventDefault();
       oncommandpalette();
       return;
     }
 
-    // Cmd+N: New note
-    if (meta && e.key === 'n') {
+    if (matchesShortcut(e, keymap.new_note)) {
       e.preventDefault();
       onnewnote();
       return;
     }
 
-    // Cmd+B: Toggle sidebar
-    if (meta && e.key === 'b') {
+    if (matchesShortcut(e, keymap.toggle_sidebar)) {
       e.preventDefault();
       ontogglesidebar();
       return;
     }
 
-    // Cmd+\: Toggle right panel
-    if (meta && e.key === '\\') {
+    if (matchesShortcut(e, keymap.toggle_right_panel)) {
       e.preventDefault();
-      ontogglrightpanel();
+      ontogglerightpanel();
       return;
     }
 
-    // Cmd+Backspace: Delete file
-    if (meta && e.key === 'Backspace') {
+    if (matchesShortcut(e, keymap.delete_file)) {
       e.preventDefault();
       ondeletefile();
       return;
@@ -92,7 +88,7 @@
   }
 
   $effect(() => {
-    window.addEventListener('keydown', handleKeydown);
-    return () => window.removeEventListener('keydown', handleKeydown);
+    window.addEventListener("keydown", handleKeydown);
+    return () => window.removeEventListener("keydown", handleKeydown);
   });
 </script>

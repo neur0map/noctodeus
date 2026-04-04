@@ -1,10 +1,12 @@
 <script lang="ts">
-  import type { FileNode } from '../../types/core';
+  import type { FileNode } from "../../types/core";
 
   let {
-    coreName = 'Noctodeus',
+    coreName = "Noctodeus",
     recentFiles = [],
     pinnedFiles = [],
+    newNoteShortcut = "",
+    quickOpenShortcut = "",
     onfileopen,
     onnewnote,
     onquickopen,
@@ -13,6 +15,8 @@
     coreName?: string;
     recentFiles?: FileNode[];
     pinnedFiles?: FileNode[];
+    newNoteShortcut?: string;
+    quickOpenShortcut?: string;
     onfileopen: (path: string) => void;
     onnewnote: () => void;
     onquickopen: () => void;
@@ -23,7 +27,7 @@
     const now = Date.now() / 1000;
     const diff = now - unixSeconds;
 
-    if (diff < 60) return 'just now';
+    if (diff < 60) return "just now";
     if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
     if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
     if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;
@@ -45,7 +49,10 @@
         <ul class="home-view__list">
           {#each pinnedFiles as file (file.path)}
             <li>
-              <button class="home-view__file" onclick={() => onfileopen(file.path)}>
+              <button
+                class="home-view__file"
+                onclick={() => onfileopen(file.path)}
+              >
                 <span class="home-view__file-name">{getDisplayName(file)}</span>
                 <span class="home-view__file-path">{file.path}</span>
               </button>
@@ -61,9 +68,14 @@
         <ul class="home-view__list">
           {#each recentFiles.slice(0, 8) as file (file.path)}
             <li>
-              <button class="home-view__file" onclick={() => onfileopen(file.path)}>
+              <button
+                class="home-view__file"
+                onclick={() => onfileopen(file.path)}
+              >
                 <span class="home-view__file-name">{getDisplayName(file)}</span>
-                <span class="home-view__file-time">{formatRelativeTime(file.modified_at)}</span>
+                <span class="home-view__file-time"
+                  >{formatRelativeTime(file.modified_at)}</span
+                >
               </button>
             </li>
           {/each}
@@ -73,17 +85,24 @@
 
     <section class="home-view__actions">
       {#if onopencore}
-        <button class="home-view__action home-view__action--primary" onclick={onopencore}>
+        <button
+          class="home-view__action home-view__action--primary"
+          onclick={onopencore}
+        >
           <span class="home-view__action-label">Open Core</span>
         </button>
       {/if}
       <button class="home-view__action" onclick={onnewnote}>
         <span class="home-view__action-label">New Note</span>
-        <kbd class="home-view__action-hint">{'\u2318'}N</kbd>
+        {#if newNoteShortcut}
+          <kbd class="home-view__action-hint">{newNoteShortcut}</kbd>
+        {/if}
       </button>
       <button class="home-view__action" onclick={onquickopen}>
         <span class="home-view__action-label">Open File</span>
-        <kbd class="home-view__action-hint">{'\u2318'}P</kbd>
+        {#if quickOpenShortcut}
+          <kbd class="home-view__action-hint">{quickOpenShortcut}</kbd>
+        {/if}
       </button>
     </section>
   </div>
@@ -92,27 +111,25 @@
 <style>
   .home-view {
     display: flex;
-    align-items: center;
-    justify-content: center;
     height: 100%;
-    background: var(--color-bg-base);
   }
 
   .home-view__content {
     display: flex;
     flex-direction: column;
-    gap: var(--space-8);
-    max-width: 480px;
+    gap: calc(var(--space-8) * var(--density-scale));
+    max-width: 920px;
     width: 100%;
-    padding: var(--space-6);
+    padding: calc(var(--stage-inner-padding) * var(--density-scale));
   }
 
   .home-view__title {
-    font-family: var(--font-mono);
-    font-size: var(--text-2xl);
+    font-family: var(--font-sans);
+    font-size: clamp(2rem, 3vw, 3rem);
     line-height: var(--text-2xl-leading);
     color: var(--color-text-primary);
-    font-weight: 400;
+    font-weight: 600;
+    letter-spacing: -0.04em;
   }
 
   .home-view__section {
@@ -140,16 +157,20 @@
     align-items: center;
     justify-content: space-between;
     width: 100%;
-    padding: var(--space-2) var(--space-3);
-    margin: 0 calc(-1 * var(--space-3));
-    width: calc(100% + var(--space-3) * 2);
-    border-radius: 6px;
+    padding: calc(var(--space-2) + 1px) var(--space-3);
+    margin: 0 calc(-1 * var(--space-2));
+    width: calc(100% + var(--space-2) * 2);
+    border-radius: 4px;
+    border-left: 1px solid transparent;
     text-align: left;
-    transition: background var(--duration-fast) var(--ease-out);
+    transition:
+      background var(--duration-fast) var(--ease-out),
+      border-color var(--duration-fast) var(--ease-out);
   }
 
   .home-view__file:hover {
-    background: var(--color-bg-hover);
+    background: rgba(255, 255, 255, 0.04);
+    border-left-color: rgba(255, 255, 255, 0.12);
   }
 
   .home-view__file-name {
@@ -182,35 +203,44 @@
 
   .home-view__actions {
     display: flex;
-    gap: var(--space-3);
+    gap: calc(var(--space-3) * var(--density-scale));
+    flex-wrap: wrap;
+    margin-top: auto;
+    padding-top: var(--space-8);
   }
 
   .home-view__action {
     display: inline-flex;
     align-items: center;
     gap: var(--space-2);
-    padding: var(--space-2) var(--space-3);
+    min-height: 46px;
+    padding: 0 var(--space-4);
     font-family: var(--font-sans);
     font-size: var(--text-sm);
-    color: var(--color-text-secondary);
-    background: var(--color-bg-hover);
-    border-radius: 6px;
+    color: rgba(255, 255, 255, 0.72);
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
     transition:
       color var(--duration-fast) var(--ease-out),
-      background var(--duration-fast) var(--ease-out);
+      background var(--duration-fast) var(--ease-out),
+      border-color var(--duration-fast) var(--ease-out);
   }
 
   .home-view__action:hover {
     color: var(--color-text-primary);
-    background: var(--color-bg-active);
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.12);
   }
 
   .home-view__action-hint {
     font-family: var(--font-mono);
     font-size: var(--text-xs);
-    color: var(--color-text-muted);
-    background: var(--color-bg-surface);
-    padding: 1px var(--space-2);
-    border-radius: 4px;
+    color: rgba(255, 255, 255, 0.48);
+    margin-left: var(--space-1);
+    padding-left: var(--space-3);
+    border-left: 1px solid rgba(255, 255, 255, 0.08);
+    background: none;
+    border-radius: 0;
   }
 </style>

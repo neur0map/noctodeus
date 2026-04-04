@@ -1,22 +1,33 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount } from "svelte";
 
-  import HomeView from '../lib/components/home/HomeView.svelte';
-  import QuickOpen from '../lib/components/quickopen/QuickOpen.svelte';
-  import CommandPalette from '../lib/components/command/CommandPalette.svelte';
-  import EditorComponent from '../lib/editor/Editor.svelte';
-  import EditorToolbar from '../lib/editor/EditorToolbar.svelte';
-  import type { Command } from '../lib/types/ui';
+  import HomeView from "../lib/components/home/HomeView.svelte";
+  import QuickOpen from "../lib/components/quickopen/QuickOpen.svelte";
+  import CommandPalette from "../lib/components/command/CommandPalette.svelte";
+  import Worksurface from "../lib/components/layout/Worksurface.svelte";
+  import EditorComponent from "../lib/editor/Editor.svelte";
+  import EditorToolbar from "../lib/editor/EditorToolbar.svelte";
+  import type { Command } from "../lib/types/ui";
 
-  import { getUiState } from '../lib/stores/ui.svelte';
-  import { getCoreState } from '../lib/stores/core.svelte';
-  import { getFilesState } from '../lib/stores/files.svelte';
-  import { getEditorState } from '../lib/stores/editor.svelte';
-  import { readFile, searchRecent, searchPinned, createFile, openCore, createCore, scanCore, listCores } from '../lib/bridge/commands';
-  import { open as openDialog } from '@tauri-apps/plugin-dialog';
-  import { toast } from '../lib/stores/toast.svelte';
-  import { logger } from '../lib/logger';
-  import type { FileNode, FileContent } from '../lib/types/core';
+  import { getUiState } from "../lib/stores/ui.svelte";
+  import { getCoreState } from "../lib/stores/core.svelte";
+  import { getFilesState } from "../lib/stores/files.svelte";
+  import { getEditorState } from "../lib/stores/editor.svelte";
+  import {
+    readFile,
+    searchRecent,
+    searchPinned,
+    createFile,
+    openCore,
+    createCore,
+    scanCore,
+    listCores,
+  } from "../lib/bridge/commands";
+  import { open as openDialog } from "@tauri-apps/plugin-dialog";
+  import { toast } from "../lib/stores/toast.svelte";
+  import { logger } from "../lib/logger";
+  import { APP_SHORTCUTS, formatShortcutLabel } from "../lib/utils/shortcuts";
+  import type { FileNode } from "../lib/types/core";
 
   const ui = getUiState();
   const core = getCoreState();
@@ -32,7 +43,7 @@
   let editorRef: EditorComponent | undefined = $state();
 
   let isMarkdown = $derived(
-    currentFilePath?.endsWith('.md') || currentFilePath?.endsWith('.markdown')
+    currentFilePath?.endsWith(".md") || currentFilePath?.endsWith(".markdown"),
   );
 
   let quickOpenItems = $derived(
@@ -43,28 +54,58 @@
         name: f.name,
         title: f.title,
         parentPath: f.parent_dir,
-      }))
+      })),
   );
 
   let commands: Command[] = $derived([
-    { id: 'new-note', label: 'New Note', shortcut: '\u2318N', action: handleNewNote },
-    { id: 'open-file', label: 'Open File', shortcut: '\u2318P', action: () => { ui.hideCommandPalette(); ui.showQuickOpen(); } },
-    { id: 'toggle-sidebar', label: 'Toggle Sidebar', shortcut: '\u2318B', action: () => ui.toggleSidebar() },
-    { id: 'toggle-right-panel', label: 'Toggle Right Panel', shortcut: '\u2318\\', action: () => ui.toggleRightPanel() },
+    {
+      id: "new-note",
+      label: "New Note",
+      shortcut: formatShortcutLabel(APP_SHORTCUTS.new_note),
+      action: handleNewNote,
+    },
+    {
+      id: "open-file",
+      label: "Open File",
+      shortcut: formatShortcutLabel(APP_SHORTCUTS.quick_open),
+      action: () => {
+        ui.hideCommandPalette();
+        ui.showQuickOpen();
+      },
+    },
+    {
+      id: "toggle-sidebar",
+      label: "Toggle Sidebar",
+      shortcut: formatShortcutLabel(APP_SHORTCUTS.toggle_sidebar),
+      action: () => ui.toggleSidebar(),
+    },
+    {
+      id: "toggle-right-panel",
+      label: "Toggle Right Panel",
+      shortcut: formatShortcutLabel(APP_SHORTCUTS.toggle_right_panel),
+      action: () => ui.toggleRightPanel(),
+    },
   ]);
 
   // --- Helpers ---
   function errorMessage(err: unknown): string {
-    if (err && typeof err === 'object' && 'message' in err) return (err as any).message;
-    if (typeof err === 'string') return err;
-    try { return JSON.stringify(err); } catch { return String(err); }
+    if (err && typeof err === "object" && "message" in err)
+      return (err as any).message;
+    if (typeof err === "string") return err;
+    try {
+      return JSON.stringify(err);
+    } catch {
+      return String(err);
+    }
   }
 
   // --- File opening (imperative, not reactive) ---
   async function openFile(path: string) {
     // Flush current editor if dirty
     if (editorRef && editorState.dirty) {
-      try { await editorRef.flush(); } catch {}
+      try {
+        await editorRef.flush();
+      } catch {}
     }
 
     // Clear current state
@@ -80,6 +121,7 @@
       currentMetadata = result.metadata;
       currentFilePath = path;
       files.setActiveFile(path);
+      await refreshHomeLists();
     } catch (err) {
       logger.error(`Failed to read file: ${errorMessage(err)}`);
       toast.error(`Failed to open: ${path}`);
@@ -98,9 +140,14 @@
   // --- Core management ---
   async function handleOpenCore() {
     try {
-      const selected = await openDialog({ directory: true, multiple: false, title: 'Open or Create Core' });
+      const selected = await openDialog({
+        directory: true,
+        multiple: false,
+        title: "Open or Create Core",
+      });
       if (!selected) return;
-      const folderPath = typeof selected === 'string' ? selected : String(selected);
+      const folderPath =
+        typeof selected === "string" ? selected : String(selected);
       await openOrCreateCore(folderPath);
     } catch (err) {
       logger.error(`Failed to open Core: ${errorMessage(err)}`);
@@ -114,7 +161,7 @@
       info = await openCore(folderPath);
       toast.success(`Opened Core: ${info.name}`);
     } catch {
-      const name = folderPath.split('/').pop() ?? 'Untitled';
+      const name = folderPath.split("/").pop() ?? "Untitled";
       info = await createCore(folderPath, name);
       toast.success(`Created Core: ${info.name}`);
     }
@@ -123,25 +170,46 @@
     closeFile();
     const fileTree = await scanCore();
     files.setFiles(fileTree);
+    await refreshHomeLists();
   }
 
   // --- Note creation ---
   async function handleNewNote() {
     ui.closeAllOverlays();
     if (!core.activeCore) {
-      toast.error('Open a Core first');
+      toast.error("Open a Core first");
       return;
     }
     try {
       const now = new Date();
-      const name = `untitled-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}${String(now.getSeconds()).padStart(2, '0')}.md`;
-      const node = await createFile(name, '');
+      const name = `untitled-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}-${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}${String(now.getSeconds()).padStart(2, "0")}.md`;
+      const node = await createFile(name, "");
       files.addFile(node);
       // Open the newly created file
       await openFile(node.path);
-      toast.success('Note created');
+      await refreshHomeLists();
+      toast.success("Note created");
     } catch (err) {
       toast.error(`Failed to create note: ${errorMessage(err)}`);
+    }
+  }
+
+  async function refreshHomeLists() {
+    if (!core.activeCore) {
+      recentFiles = [];
+      pinnedFiles = [];
+      return;
+    }
+
+    try {
+      const [recent, pinned] = await Promise.all([
+        searchRecent(8),
+        searchPinned(),
+      ]);
+      recentFiles = recent;
+      pinnedFiles = pinned;
+    } catch (err) {
+      logger.warn(`Failed to refresh home lists: ${errorMessage(err)}`);
     }
   }
 
@@ -149,7 +217,7 @@
   function handleWikiLinkNavigate(target: string) {
     const match = Array.from(files.fileMap.values()).find((f) => {
       if (f.is_directory) return false;
-      const nameWithoutExt = f.name.replace(/\.(md|markdown)$/i, '');
+      const nameWithoutExt = f.name.replace(/\.(md|markdown)$/i, "");
       return nameWithoutExt === target;
     });
     if (match) {
@@ -167,8 +235,9 @@
         const cores = await listCores();
         const lastCore = cores
           .filter((c) => c.last_opened)
-          .sort((a, b) => (b.last_opened ?? '').localeCompare(a.last_opened ?? ''))
-          [0];
+          .sort((a, b) =>
+            (b.last_opened ?? "").localeCompare(a.last_opened ?? ""),
+          )[0];
         if (lastCore) {
           await openOrCreateCore(lastCore.path);
         }
@@ -181,15 +250,19 @@
         editorRef.flush();
       }
     };
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   });
 
   // Watch for sidebar file tree clicks (layout sets files.activeFilePath)
   let lastSeenPath = $state<string | null>(null);
   $effect(() => {
     const sidebarPath = files.activeFilePath;
-    if (sidebarPath && sidebarPath !== lastSeenPath && sidebarPath !== currentFilePath) {
+    if (
+      sidebarPath &&
+      sidebarPath !== lastSeenPath &&
+      sidebarPath !== currentFilePath
+    ) {
       lastSeenPath = sidebarPath;
       openFile(sidebarPath);
     } else if (!sidebarPath && currentFilePath) {
@@ -205,53 +278,67 @@
 {#if currentFilePath && currentContent !== null}
   {#if isMarkdown}
     {#key currentFilePath}
-      {#if editorInstance}
-        <EditorToolbar editor={editorInstance} />
-      {/if}
+      <Worksurface flush={true}>
+        {#snippet toolbar()}
+          {#if editorInstance}
+            <EditorToolbar editor={editorInstance} />
+          {/if}
+        {/snippet}
 
-      <EditorComponent
-        path={currentFilePath}
-        initialContent={currentContent}
-        onnavigate={handleWikiLinkNavigate}
-        bind:this={editorRef}
-      />
+        <EditorComponent
+          path={currentFilePath}
+          initialContent={currentContent}
+          onnavigate={handleWikiLinkNavigate}
+          bind:this={editorRef}
+        />
+      </Worksurface>
     {/key}
   {:else}
-    <div class="file-view">
-      <div class="file-view__info">
-        {#if currentMetadata}
-          <div class="file-view__info-row">
-            <span class="file-view__info-label">Name</span>
-            <span class="file-view__info-value">{currentMetadata.name}</span>
-          </div>
-          <div class="file-view__info-row">
-            <span class="file-view__info-label">Path</span>
-            <span class="file-view__info-value">{currentMetadata.path}</span>
-          </div>
-          <div class="file-view__info-row">
-            <span class="file-view__info-label">Size</span>
-            <span class="file-view__info-value">{currentMetadata.size} bytes</span>
-          </div>
-          {#if currentMetadata.extension}
+    <Worksurface>
+      <div class="file-view">
+        <div class="file-view__info">
+          {#if currentMetadata}
             <div class="file-view__info-row">
-              <span class="file-view__info-label">Extension</span>
-              <span class="file-view__info-value">{currentMetadata.extension}</span>
+              <span class="file-view__info-label">Name</span>
+              <span class="file-view__info-value">{currentMetadata.name}</span>
             </div>
+            <div class="file-view__info-row">
+              <span class="file-view__info-label">Path</span>
+              <span class="file-view__info-value">{currentMetadata.path}</span>
+            </div>
+            <div class="file-view__info-row">
+              <span class="file-view__info-label">Size</span>
+              <span class="file-view__info-value"
+                >{currentMetadata.size} bytes</span
+              >
+            </div>
+            {#if currentMetadata.extension}
+              <div class="file-view__info-row">
+                <span class="file-view__info-label">Extension</span>
+                <span class="file-view__info-value"
+                  >{currentMetadata.extension}</span
+                >
+              </div>
+            {/if}
           {/if}
-        {/if}
+        </div>
       </div>
-    </div>
+    </Worksurface>
   {/if}
 {:else}
-  <HomeView
-    coreName={core.activeCore?.name ?? 'Noctodeus'}
-    {recentFiles}
-    {pinnedFiles}
-    onfileopen={openFile}
-    onnewnote={handleNewNote}
-    onquickopen={() => ui.showQuickOpen()}
-    onopencore={handleOpenCore}
-  />
+  <Worksurface>
+    <HomeView
+      coreName={core.activeCore?.name ?? "Noctodeus"}
+      {recentFiles}
+      {pinnedFiles}
+      newNoteShortcut={formatShortcutLabel(APP_SHORTCUTS.new_note)}
+      quickOpenShortcut={formatShortcutLabel(APP_SHORTCUTS.quick_open)}
+      onfileopen={openFile}
+      onnewnote={handleNewNote}
+      onquickopen={() => ui.showQuickOpen()}
+      onopencore={handleOpenCore}
+    />
+  </Worksurface>
 {/if}
 
 <QuickOpen
@@ -271,15 +358,15 @@
   .file-view {
     height: 100%;
     overflow-y: auto;
-    padding: var(--space-6) var(--space-8);
+    padding: var(--stage-inner-padding);
   }
 
   .file-view__info {
-    max-width: 480px;
+    max-width: 680px;
     margin: 0 auto;
     display: flex;
     flex-direction: column;
-    gap: var(--space-3);
+    gap: var(--space-4);
   }
 
   .file-view__info-row {
@@ -290,10 +377,10 @@
 
   .file-view__info-label {
     flex-shrink: 0;
-    width: 80px;
+    width: 96px;
     font-family: var(--font-mono);
     font-size: var(--text-xs);
-    color: var(--color-text-muted);
+    color: rgba(255, 255, 255, 0.46);
     text-transform: uppercase;
     letter-spacing: 0.05em;
   }

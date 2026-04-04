@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { Snippet } from 'svelte';
+  import type { Snippet } from "svelte";
 
   let {
     header,
@@ -27,17 +27,20 @@
     display: flex;
     flex-direction: column;
     height: 100%;
-    background: var(--color-bg-base);
+    background: transparent;
     overflow: hidden;
   }
 
   .content-area__header {
     flex-shrink: 0;
+    padding: 0 calc(var(--stage-outer-gutter) * var(--density-scale));
   }
 
   .content-area__body {
     flex: 1;
+    min-height: 0;
     overflow-y: auto;
     overflow-x: hidden;
+    padding: calc(var(--stage-outer-gutter) * var(--density-scale));
   }
 </style>

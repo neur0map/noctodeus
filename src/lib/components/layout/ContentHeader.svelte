@@ -1,19 +1,15 @@
 <script lang="ts">
-  import type { Snippet } from 'svelte';
+  import type { Snippet } from "svelte";
 
   let {
-    path = '',
+    path = "",
     trailing,
   }: {
     path?: string;
     trailing?: Snippet;
   } = $props();
 
-  let segments = $derived(
-    path
-      ? path.split('/').filter(Boolean)
-      : []
-  );
+  let segments = $derived(path ? path.split("/").filter(Boolean) : []);
 </script>
 
 <div class="content-header">
@@ -44,28 +40,42 @@
   .content-header {
     display: flex;
     align-items: center;
-    height: 40px;
-    padding: 0 var(--space-4);
-    border-bottom: 1px solid var(--color-border-subtle);
-    background: var(--color-bg-base);
+    height: var(--shell-header-height);
+    padding: 0 var(--space-1);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.045);
+    background: transparent;
     flex-shrink: 0;
   }
 
   .breadcrumb {
     display: flex;
     align-items: center;
-    gap: var(--space-1);
+    gap: var(--space-2);
     font-family: var(--font-mono);
-    font-size: var(--text-sm);
+    font-size: var(--text-xs);
     line-height: var(--text-sm-leading);
-    color: var(--color-text-secondary);
+    color: rgba(255, 255, 255, 0.52);
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
+    padding: 0 var(--space-2) 0 0;
+    min-height: auto;
+    border-radius: 0;
+    background: none;
+    border: none;
+    letter-spacing: 0.03em;
+  }
+
+  .breadcrumb::before {
+    content: "";
+    width: 20px;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.15);
+    flex-shrink: 0;
   }
 
   .breadcrumb__separator {
-    color: var(--color-text-muted);
+    color: rgba(255, 255, 255, 0.24);
     user-select: none;
   }
 

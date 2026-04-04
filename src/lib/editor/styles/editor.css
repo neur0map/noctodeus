@@ -9,13 +9,16 @@
 .ProseMirror {
   font-family: var(--font-content);
   font-size: var(--text-base);
-  line-height: 1.7;
+  line-height: var(--content-line-height);
   color: var(--color-text-primary);
-  max-width: 720px;
+  max-width: var(--editor-column-max-width);
   margin: 0 auto;
-  padding: var(--space-8) var(--space-6);
+  padding: calc(var(--stage-inner-padding) + var(--space-2))
+    var(--stage-inner-padding);
   outline: none;
   min-height: 100%;
+  position: relative;
+  z-index: 1;
 }
 
 .ProseMirror > * + * {
@@ -34,15 +37,17 @@
 }
 
 .ProseMirror h1 {
-  font-size: var(--text-2xl);
-  margin-top: var(--space-8);
+  font-size: clamp(2.6rem, 4vw, 3.4rem);
+  margin-top: var(--space-6);
   margin-bottom: var(--space-4);
+  letter-spacing: -0.05em;
 }
 
 .ProseMirror h2 {
   font-size: var(--text-xl);
   margin-top: var(--space-6);
   margin-bottom: var(--space-3);
+  letter-spacing: -0.03em;
 }
 
 .ProseMirror h3 {
@@ -65,9 +70,10 @@
 .ProseMirror pre {
   font-family: var(--font-mono);
   font-size: 0.9em;
-  background: var(--color-bg-surface);
-  border-radius: 8px;
+  background: rgba(7, 8, 11, 0.74);
+  border-radius: 10px;
   padding: var(--space-4);
+  border: 1px solid rgba(255, 255, 255, 0.05);
   overflow-x: auto;
   margin: var(--space-4) 0;
 }
@@ -86,7 +92,7 @@
 .ProseMirror code {
   font-family: var(--font-mono);
   font-size: 0.9em;
-  background: var(--color-bg-surface);
+  background: rgba(255, 255, 255, 0.05);
   border-radius: 4px;
   padding: 2px 6px;
 }
@@ -95,9 +101,9 @@
    Blockquotes
    -------------------------------------------------------------------------- */
 .ProseMirror blockquote {
-  border-left: 2px solid var(--color-border-strong);
+  border-left: 2px solid rgba(255, 255, 255, 0.22);
   padding-left: var(--space-4);
-  color: var(--color-text-secondary);
+  color: rgba(255, 255, 255, 0.68);
   margin: var(--space-4) 0;
   font-style: italic;
 }
@@ -153,17 +159,26 @@
   border-radius: 4px;
   cursor: pointer;
   position: relative;
-  transition: background var(--duration-fast) var(--ease-out),
-              border-color var(--duration-fast) var(--ease-out);
+  transition:
+    background var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out);
 }
 
-.ProseMirror ul[data-type="taskList"] li > label input[type="checkbox"]:checked {
+.ProseMirror
+  ul[data-type="taskList"]
+  li
+  > label
+  input[type="checkbox"]:checked {
   background: var(--color-accent);
   border-color: var(--color-accent);
 }
 
-.ProseMirror ul[data-type="taskList"] li > label input[type="checkbox"]:checked::after {
-  content: '';
+.ProseMirror
+  ul[data-type="taskList"]
+  li
+  > label
+  input[type="checkbox"]:checked::after {
+  content: "";
   position: absolute;
   left: 3px;
   top: 0px;
@@ -233,7 +248,7 @@
    -------------------------------------------------------------------------- */
 .ProseMirror hr {
   border: none;
-  border-top: 1px solid var(--color-border-subtle);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
   margin: var(--space-8) 0;
 }
 

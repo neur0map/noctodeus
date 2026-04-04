@@ -6,37 +6,34 @@
   } = $props();
 
   let linkPopover = $state(false);
-  let linkUrl = $state('');
+  let linkUrl = $state("");
   let imagePopover = $state(false);
-  let imageSrc = $state('');
+  let imageSrc = $state("");
 
-  function run(
-    e: MouseEvent,
-    action: () => void,
-  ) {
+  function run(e: MouseEvent, action: () => void) {
     e.preventDefault();
     action();
   }
 
   function applyLink(e: KeyboardEvent) {
-    if (e.key === 'Enter' && linkUrl) {
+    if (e.key === "Enter" && linkUrl) {
       editor.chain().focus().setLink({ href: linkUrl }).run();
-      linkUrl = '';
+      linkUrl = "";
       linkPopover = false;
-    } else if (e.key === 'Escape') {
-      linkUrl = '';
+    } else if (e.key === "Escape") {
+      linkUrl = "";
       linkPopover = false;
       editor.chain().focus().run();
     }
   }
 
   function applyImage(e: KeyboardEvent) {
-    if (e.key === 'Enter' && imageSrc) {
+    if (e.key === "Enter" && imageSrc) {
       editor.chain().focus().setImage({ src: imageSrc }).run();
-      imageSrc = '';
+      imageSrc = "";
       imagePopover = false;
-    } else if (e.key === 'Escape') {
-      imageSrc = '';
+    } else if (e.key === "Escape") {
+      imageSrc = "";
       imagePopover = false;
       editor.chain().focus().run();
     }
@@ -52,82 +49,100 @@
   <!-- Inline formatting -->
   <button
     class="toolbar-btn"
-    class:active={isActive('bold')}
+    class:active={isActive("bold")}
     title="Bold"
     onmousedown={(e) => run(e, () => editor.chain().focus().toggleBold().run())}
-  >B</button>
+    >B</button
+  >
   <button
     class="toolbar-btn toolbar-btn--italic"
-    class:active={isActive('italic')}
+    class:active={isActive("italic")}
     title="Italic"
-    onmousedown={(e) => run(e, () => editor.chain().focus().toggleItalic().run())}
-  >I</button>
+    onmousedown={(e) =>
+      run(e, () => editor.chain().focus().toggleItalic().run())}>I</button
+  >
   <button
     class="toolbar-btn"
-    class:active={isActive('code')}
+    class:active={isActive("code")}
     title="Inline code"
     onmousedown={(e) => run(e, () => editor.chain().focus().toggleCode().run())}
-  >&lt;&gt;</button>
+    >&lt;&gt;</button
+  >
 
   <span class="toolbar-sep"></span>
 
   <!-- Headings -->
   <button
     class="toolbar-btn"
-    class:active={isActive('heading', { level: 1 })}
+    class:active={isActive("heading", { level: 1 })}
     title="Heading 1"
-    onmousedown={(e) => run(e, () => editor.chain().focus().toggleHeading({ level: 1 }).run())}
-  >H1</button>
+    onmousedown={(e) =>
+      run(e, () => editor.chain().focus().toggleHeading({ level: 1 }).run())}
+    >H1</button
+  >
   <button
     class="toolbar-btn"
-    class:active={isActive('heading', { level: 2 })}
+    class:active={isActive("heading", { level: 2 })}
     title="Heading 2"
-    onmousedown={(e) => run(e, () => editor.chain().focus().toggleHeading({ level: 2 }).run())}
-  >H2</button>
+    onmousedown={(e) =>
+      run(e, () => editor.chain().focus().toggleHeading({ level: 2 }).run())}
+    >H2</button
+  >
   <button
     class="toolbar-btn"
-    class:active={isActive('heading', { level: 3 })}
+    class:active={isActive("heading", { level: 3 })}
     title="Heading 3"
-    onmousedown={(e) => run(e, () => editor.chain().focus().toggleHeading({ level: 3 }).run())}
-  >H3</button>
+    onmousedown={(e) =>
+      run(e, () => editor.chain().focus().toggleHeading({ level: 3 }).run())}
+    >H3</button
+  >
 
   <span class="toolbar-sep"></span>
 
   <!-- Lists -->
   <button
     class="toolbar-btn"
-    class:active={isActive('bulletList')}
+    class:active={isActive("bulletList")}
     title="Bullet list"
-    onmousedown={(e) => run(e, () => editor.chain().focus().toggleBulletList().run())}
-  >&#8226;</button>
+    onmousedown={(e) =>
+      run(e, () => editor.chain().focus().toggleBulletList().run())}
+    >&#8226;</button
+  >
   <button
     class="toolbar-btn"
-    class:active={isActive('orderedList')}
+    class:active={isActive("orderedList")}
     title="Ordered list"
-    onmousedown={(e) => run(e, () => editor.chain().focus().toggleOrderedList().run())}
-  >1.</button>
+    onmousedown={(e) =>
+      run(e, () => editor.chain().focus().toggleOrderedList().run())}>1.</button
+  >
   <button
     class="toolbar-btn"
-    class:active={isActive('taskList')}
+    class:active={isActive("taskList")}
     title="Task list"
-    onmousedown={(e) => run(e, () => editor.chain().focus().toggleTaskList().run())}
-  >&#9744;</button>
+    onmousedown={(e) =>
+      run(e, () => editor.chain().focus().toggleTaskList().run())}
+    >&#9744;</button
+  >
 
   <span class="toolbar-sep"></span>
 
   <!-- Block elements -->
   <button
     class="toolbar-btn"
-    class:active={isActive('blockquote')}
+    class:active={isActive("blockquote")}
     title="Blockquote"
-    onmousedown={(e) => run(e, () => editor.chain().focus().toggleBlockquote().run())}
-  >&#10077;</button>
+    onmousedown={(e) =>
+      run(e, () => editor.chain().focus().toggleBlockquote().run())}
+    >&#10077;</button
+  >
   <button
     class="toolbar-btn"
-    class:active={isActive('codeBlock')}
+    class:active={isActive("codeBlock")}
     title="Code block"
-    onmousedown={(e) => run(e, () => editor.chain().focus().toggleCodeBlock().run())}
-  >{'{}'}</button>
+    onmousedown={(e) =>
+      run(e, () => editor.chain().focus().toggleCodeBlock().run())}
+    >{"{}"}</button
+  >
 
   <span class="toolbar-sep"></span>
 
@@ -135,14 +150,14 @@
   <div class="toolbar-popover-anchor">
     <button
       class="toolbar-btn"
-      class:active={isActive('link')}
+      class:active={isActive("link")}
       title="Link"
       onmousedown={(e) => {
         e.preventDefault();
         linkPopover = !linkPopover;
         imagePopover = false;
-      }}
-    >&#128279;</button>
+      }}>&#128279;</button
+    >
     {#if linkPopover}
       <div class="toolbar-popover">
         <input
@@ -165,8 +180,8 @@
         e.preventDefault();
         imagePopover = !imagePopover;
         linkPopover = false;
-      }}
-    >&#128247;</button>
+      }}>&#128247;</button
+    >
     {#if imagePopover}
       <div class="toolbar-popover">
         <input
@@ -186,18 +201,20 @@
   <button
     class="toolbar-btn"
     title="Horizontal rule"
-    onmousedown={(e) => run(e, () => editor.chain().focus().setHorizontalRule().run())}
-  >&#8213;</button>
+    onmousedown={(e) =>
+      run(e, () => editor.chain().focus().setHorizontalRule().run())}
+    >&#8213;</button
+  >
 </div>
 
 <style>
   .editor-toolbar {
     display: flex;
     align-items: center;
-    height: 36px;
-    padding: 0 var(--space-2);
-    background: var(--color-bg-surface);
-    border-bottom: 1px solid var(--color-border-subtle);
+    height: var(--stage-toolbar-height);
+    padding: 0 var(--space-3);
+    background: transparent;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     gap: 2px;
     flex-shrink: 0;
     overflow-x: auto;
@@ -213,24 +230,25 @@
     border: none;
     border-radius: 4px;
     background: transparent;
-    color: var(--color-text-secondary);
+    color: rgba(255, 255, 255, 0.6);
     font-family: var(--font-mono);
     font-size: var(--text-xs);
     line-height: 1;
     cursor: pointer;
     user-select: none;
-    transition: background var(--duration-fast) var(--ease-out),
-                color var(--duration-fast) var(--ease-out);
+    transition:
+      background var(--duration-fast) var(--ease-out),
+      color var(--duration-fast) var(--ease-out);
   }
 
   .toolbar-btn:hover {
-    background: var(--color-bg-hover);
+    background: rgba(255, 255, 255, 0.06);
     color: var(--color-text-primary);
   }
 
   .toolbar-btn.active {
     color: var(--color-accent);
-    background: var(--color-bg-active);
+    background: rgba(122, 141, 255, 0.12);
   }
 
   .toolbar-btn--italic {
@@ -240,7 +258,7 @@
   .toolbar-sep {
     width: 1px;
     height: 16px;
-    background: var(--color-border-subtle);
+    background: rgba(255, 255, 255, 0.06);
     margin: 0 var(--space-1);
     flex-shrink: 0;
   }
@@ -254,8 +272,8 @@
     top: calc(100% + 4px);
     left: 0;
     z-index: 10;
-    background: var(--color-bg-elevated);
-    border: 1px solid var(--color-border-subtle);
+    background: rgba(11, 13, 18, 0.98);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 6px;
     padding: var(--space-1);
     box-shadow: var(--shadow-elevated);
@@ -279,8 +297,14 @@
   }
 
   @keyframes fade-in {
-    from { opacity: 0; transform: translateY(-4px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+      opacity: 0;
+      transform: translateY(-4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {

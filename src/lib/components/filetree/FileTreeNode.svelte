@@ -1,6 +1,6 @@
 <script lang="ts">
-  import type { TreeNode } from '../../types/core';
-  import FileTreeNode from './FileTreeNode.svelte';
+  import type { TreeNode } from "../../types/core";
+  import FileTreeNode from "./FileTreeNode.svelte";
 
   let {
     node,
@@ -27,27 +27,38 @@
   }
 
   function handleKeydown(e: KeyboardEvent) {
-    if (e.key === 'Enter' || e.key === ' ') {
+    if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
       handleClick();
     }
   }
 
   function getFileIcon(ext: string | null): string {
-    if (!ext) return '\u25CB';
+    if (!ext) return "\u25CB";
     switch (ext.toLowerCase()) {
-      case 'md': return '\u25A0';
-      case 'txt': return '\u25A1';
-      case 'json': return '\u25C6';
-      case 'yaml':
-      case 'yml': return '\u25C7';
-      case 'toml': return '\u25C8';
-      default: return '\u25CB';
+      case "md":
+        return "\u25A0";
+      case "txt":
+        return "\u25A1";
+      case "json":
+        return "\u25C6";
+      case "yaml":
+      case "yml":
+        return "\u25C7";
+      case "toml":
+        return "\u25C8";
+      default:
+        return "\u25CB";
     }
   }
 </script>
 
-<div class="tree-node" role="treeitem" aria-selected={isActive} aria-expanded={node.is_directory ? node.expanded : undefined}>
+<div
+  class="tree-node"
+  role="treeitem"
+  aria-selected={isActive}
+  aria-expanded={node.is_directory ? node.expanded : undefined}
+>
   <button
     class="tree-node__row"
     class:tree-node__row--active={isActive}
@@ -58,9 +69,18 @@
     aria-label={node.name}
   >
     {#if node.is_directory}
-      <span class="tree-node__chevron" class:tree-node__chevron--expanded={node.expanded}>
+      <span
+        class="tree-node__chevron"
+        class:tree-node__chevron--expanded={node.expanded}
+      >
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-          <path d="M4.5 2.5L8 6L4.5 9.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <path
+            d="M4.5 2.5L8 6L4.5 9.5"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
         </svg>
       </span>
     {:else}
@@ -90,32 +110,41 @@
     align-items: center;
     gap: var(--space-1);
     width: 100%;
-    height: 28px;
+    height: calc(30px * var(--sidebar-density));
     padding-right: var(--space-2);
     font-family: var(--font-mono);
-    font-size: var(--text-sm);
+    font-size: 12px;
     line-height: var(--text-sm-leading);
-    color: var(--color-text-secondary);
+    color: rgba(255, 255, 255, 0.56);
     background: transparent;
     border: none;
     border-left: 2px solid transparent;
+    border-radius: 0 6px 6px 0;
     cursor: pointer;
     user-select: none;
     text-align: left;
-    transition: background var(--duration-fast) var(--ease-out);
+    transition:
+      background var(--duration-fast) var(--ease-out),
+      color var(--duration-fast) var(--ease-out),
+      border-color var(--duration-fast) var(--ease-out);
   }
 
   .tree-node__row:hover {
-    background: var(--color-bg-hover);
+    background: rgba(255, 255, 255, calc(0.03 * var(--hover-softness)));
+    color: rgba(255, 255, 255, 0.84);
   }
 
   .tree-node__row:focus-visible {
-    outline: 1px solid var(--color-accent);
+    outline: calc(1px * var(--focus-ring-strength)) solid var(--color-accent);
     outline-offset: -1px;
   }
 
   .tree-node__row--active {
-    background: var(--color-bg-active);
+    background: linear-gradient(
+      90deg,
+      rgba(122, 141, 255, 0.12),
+      rgba(122, 141, 255, 0.03)
+    );
     color: var(--color-text-primary);
     border-left-color: var(--color-accent);
   }
@@ -143,7 +172,7 @@
     height: 16px;
     flex-shrink: 0;
     font-size: 8px;
-    color: var(--color-text-muted);
+    color: rgba(255, 255, 255, 0.38);
   }
 
   .tree-node__name {

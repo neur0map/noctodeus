@@ -1,12 +1,12 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import { Editor } from '@tiptap/core';
-  import { createEditorExtensions } from './extensions';
-  import { parseMarkdown, serializeMarkdown } from './serializer';
-  import { getEditorState } from '../stores/editor.svelte';
-  import { writeFile } from '../bridge/commands';
-  import { logger } from '../logger';
-  import './styles/editor.css';
+  import { onMount } from "svelte";
+  import { Editor } from "@tiptap/core";
+  import { createEditorExtensions } from "./extensions";
+  import { parseMarkdown, serializeMarkdown } from "./serializer";
+  import { getEditorState } from "../stores/editor.svelte";
+  import { writeFile } from "../bridge/commands";
+  import { logger } from "../logger";
+  import "./styles/editor.css";
 
   let {
     path,
@@ -27,9 +27,9 @@
   async function computeHash(content: string): Promise<string> {
     const encoder = new TextEncoder();
     const data = encoder.encode(content);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
     const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
+    return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
   }
 
   async function save() {
@@ -97,10 +97,13 @@
         onnavigate(detail.target);
       }
     };
-    editorElement.addEventListener('wiki-link-click', handleWikiLinkClick);
+    editorElement.addEventListener("wiki-link-click", handleWikiLinkClick);
 
     return () => {
-      editorElement?.removeEventListener('wiki-link-click', handleWikiLinkClick);
+      editorElement?.removeEventListener(
+        "wiki-link-click",
+        handleWikiLinkClick,
+      );
       if (debounceTimer) clearTimeout(debounceTimer);
       editor?.destroy();
       editor = undefined;
@@ -118,6 +121,7 @@
 <style>
   .editor-container {
     flex: 1;
+    min-height: 0;
     overflow-y: auto;
     overflow-x: hidden;
   }

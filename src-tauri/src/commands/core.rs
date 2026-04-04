@@ -9,9 +9,9 @@ use tauri::State;
 
 use crate::core::manifest::{create_manifest, ensure_noctodeus_dir, load_manifest};
 use crate::core::state::{ActiveCore, AppState, CoreInfo};
+use crate::db::mutations;
 use crate::db::queries::FileInfo;
 use crate::db::schema::run_migrations;
-use crate::db::{mutations, queries};
 use crate::errors::{CmdResult, NoctoError};
 use crate::indexer::{fts, scanner};
 

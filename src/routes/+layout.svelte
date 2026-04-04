@@ -1,24 +1,26 @@
 <script lang="ts">
-  import '../lib/styles/reset.css';
-  import '../lib/styles/tokens.css';
-  import '../lib/styles/typography.css';
-  import '../lib/styles/animations.css';
+  import "../lib/styles/reset.css";
+  import "../lib/styles/tokens.css";
+  import "../lib/styles/typography.css";
+  import "../lib/styles/animations.css";
 
-  import type { Snippet } from 'svelte';
-  import { onMount, onDestroy } from 'svelte';
-  import type { UnlistenFn } from '@tauri-apps/api/event';
+  import type { Snippet } from "svelte";
+  import { onMount, onDestroy } from "svelte";
+  import type { UnlistenFn } from "@tauri-apps/api/event";
 
-  import AppShell from '../lib/components/layout/AppShell.svelte';
-  import Sidebar from '../lib/components/layout/Sidebar.svelte';
-  import ContentArea from '../lib/components/layout/ContentArea.svelte';
-  import ContentHeader from '../lib/components/layout/ContentHeader.svelte';
-  import FileTree from '../lib/components/filetree/FileTree.svelte';
-  import KeyboardManager from '../lib/components/common/KeyboardManager.svelte';
-  import ToastContainer from '../lib/components/common/ToastContainer.svelte';
+  import AppShell from "../lib/components/layout/AppShell.svelte";
+  import Sidebar from "../lib/components/layout/Sidebar.svelte";
+  import ContentArea from "../lib/components/layout/ContentArea.svelte";
+  import ContentHeader from "../lib/components/layout/ContentHeader.svelte";
+  import FileTree from "../lib/components/filetree/FileTree.svelte";
+  import KeyboardManager from "../lib/components/common/KeyboardManager.svelte";
+  import ToastContainer from "../lib/components/common/ToastContainer.svelte";
+  import SaveIndicator from "../lib/editor/SaveIndicator.svelte";
 
-  import { getUiState } from '../lib/stores/ui.svelte';
-  import { getCoreState } from '../lib/stores/core.svelte';
-  import { getFilesState } from '../lib/stores/files.svelte';
+  import { getUiState } from "../lib/stores/ui.svelte";
+  import { getCoreState } from "../lib/stores/core.svelte";
+  import { getFilesState } from "../lib/stores/files.svelte";
+  import { getEditorState } from "../lib/stores/editor.svelte";
   import {
     onCoreReady,
     onCoreClosed,
@@ -26,30 +28,36 @@
     onFileModified,
     onFileDeleted,
     onFileRenamed,
-  } from '../lib/bridge/events';
-  import { createFile } from '../lib/bridge/commands';
-  import { logger } from '../lib/logger';
+  } from "../lib/bridge/events";
+  import { createFile } from "../lib/bridge/commands";
+  import { logger } from "../lib/logger";
+  import { APP_SHORTCUTS } from "../lib/utils/shortcuts";
 
   let { children }: { children: Snippet } = $props();
 
   const ui = getUiState();
   const core = getCoreState();
   const files = getFilesState();
+  const editor = getEditorState();
 
   let unlisteners: UnlistenFn[] = [];
   let overlayOpen = $derived(ui.quickOpenVisible || ui.commandPaletteVisible);
+  let isMarkdownActive = $derived(
+    files.activeFilePath?.endsWith(".md") ||
+      files.activeFilePath?.endsWith(".markdown"),
+  );
 
   onMount(async () => {
-    logger.info('Layout mounted, subscribing to Tauri events');
+    logger.info("Layout mounted, subscribing to Tauri events");
 
     try {
       const u1 = await onCoreReady((e) => {
-        logger.info('Core ready, loading file tree');
+        logger.info("Core ready, loading file tree");
         files.setFiles(e.file_tree);
       });
 
       const u2 = await onCoreClosed(() => {
-        logger.info('Core closed');
+        logger.info("Core closed");
         core.reset();
         files.reset();
       });
@@ -78,7 +86,9 @@
 
       unlisteners = [u1, u2, u3, u4, u5, u6];
     } catch (err) {
-      logger.warn('Tauri event subscription failed (expected in browser dev mode)');
+      logger.warn(
+        `Tauri event subscription failed (expected in browser dev mode): ${err}`,
+      );
     }
   });
 
@@ -101,8 +111,8 @@
     ui.closeAllOverlays();
     try {
       const now = new Date();
-      const name = `untitled-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}${String(now.getSeconds()).padStart(2, '0')}.md`;
-      const node = await createFile(name, '');
+      const name = `untitled-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}-${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}${String(now.getSeconds()).padStart(2, "0")}.md`;
+      const node = await createFile(name, "");
       files.addFile(node);
       files.setActiveFile(node.path);
     } catch (err) {
@@ -117,13 +127,14 @@
 
 <KeyboardManager
   {overlayOpen}
+  keymap={APP_SHORTCUTS}
   onquickopen={() => ui.showQuickOpen()}
   oncommandpalette={() => ui.showCommandPalette()}
   onnewnote={handleNewNote}
   ontogglesidebar={() => ui.toggleSidebar()}
-  ontogglrightpanel={() => ui.toggleRightPanel()}
+  ontogglerightpanel={() => ui.toggleRightPanel()}
   ondeletefile={handleDeleteFile}
-  onclosoverlay={() => ui.closeAllOverlays()}
+  oncloseoverlay={() => ui.closeAllOverlays()}
 />
 
 <AppShell
@@ -135,7 +146,7 @@
       {#snippet header()}
         <div class="sidebar-header">
           <span class="sidebar-header__name">
-            {core.activeCore?.name ?? 'Noctodeus'}
+            {core.activeCore?.name ?? "Noctodeus"}
           </span>
         </div>
       {/snippet}
@@ -160,16 +171,64 @@
   {#snippet content()}
     <ContentArea>
       {#snippet header()}
-        <ContentHeader path={files.activeFilePath ?? ''} />
+        <ContentHeader path={files.activeFilePath ?? ""}>
+          {#snippet trailing()}
+            {#if isMarkdownActive}
+              <SaveIndicator status={editor.saveStatus} />
+            {/if}
+          {/snippet}
+        </ContentHeader>
       {/snippet}
 
       {@render children()}
     </ContentArea>
   {/snippet}
 
+  {#snippet utilityRail()}
+    <div class="utility-rail">
+      <button
+        class="utility-rail__button"
+        class:utility-rail__button--active={ui.quickOpenVisible}
+        onclick={() => ui.showQuickOpen()}
+        title="Quick open"
+      >
+        ⌕
+      </button>
+      <button
+        class="utility-rail__button"
+        class:utility-rail__button--active={ui.commandPaletteVisible}
+        onclick={() => ui.showCommandPalette()}
+        title="Command palette"
+      >
+        ≡
+      </button>
+      <button
+        class="utility-rail__button"
+        class:utility-rail__button--active={ui.rightPanelVisible}
+        onclick={() => ui.toggleRightPanel()}
+        title="Toggle detail rail"
+      >
+        ◎
+      </button>
+      <button
+        class="utility-rail__button"
+        onclick={handleNewNote}
+        title="New note"
+      >
+        ＋
+      </button>
+    </div>
+  {/snippet}
+
   {#snippet rightPanel()}
     <div class="right-panel-placeholder">
-      <!-- Right panel content will be added later -->
+      <div class="right-panel-placeholder__inner">
+        <span class="right-panel-placeholder__label">Detail Rail</span>
+        <p class="right-panel-placeholder__copy">
+          This side stays intentionally quiet for future outline, source, and
+          assistant tools.
+        </p>
+      </div>
     </div>
   {/snippet}
 </AppShell>
@@ -184,7 +243,7 @@
     font-size: var(--text-base);
     line-height: var(--text-base-leading);
     color: var(--color-text-primary);
-    background: var(--color-bg-base);
+    background: #050608;
   }
 
   .sidebar-header {
@@ -195,10 +254,12 @@
 
   .sidebar-header__name {
     font-family: var(--font-mono);
-    font-size: var(--text-sm);
+    font-size: 12px;
     line-height: var(--text-sm-leading);
-    color: var(--color-text-primary);
-    font-weight: 500;
+    color: rgba(255, 255, 255, 0.84);
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -214,12 +275,80 @@
     font-family: var(--font-mono);
     font-size: var(--text-xs);
     line-height: var(--text-xs-leading);
-    color: var(--color-text-muted);
+    color: rgba(255, 255, 255, 0.36);
+  }
+
+  .utility-rail {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding-top: calc(var(--shell-header-height) + var(--space-2));
+  }
+
+  .utility-rail__button {
+    width: 34px;
+    height: 38px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    background:
+      linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 0.028),
+        rgba(255, 255, 255, 0.012)
+      ),
+      rgba(255, 255, 255, 0.016);
+    color: rgba(255, 255, 255, 0.58);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
+    transition:
+      color var(--duration-fast) var(--ease-out),
+      background var(--duration-fast) var(--ease-out),
+      border-color var(--duration-fast) var(--ease-out);
+  }
+
+  .utility-rail__button:hover,
+  .utility-rail__button--active {
+    color: var(--color-text-primary);
+    background:
+      linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 0.05),
+        rgba(255, 255, 255, 0.022)
+      ),
+      rgba(255, 255, 255, 0.024);
+    border-color: rgba(255, 255, 255, 0.13);
   }
 
   .right-panel-placeholder {
     height: 100%;
-    background: var(--color-bg-surface);
-    border-left: 1px solid var(--color-border-subtle);
+    padding: var(--stage-outer-gutter);
+    background: rgba(10, 12, 16, 0.72);
+  }
+
+  .right-panel-placeholder__inner {
+    height: 100%;
+    padding: var(--space-5);
+    border-radius: calc(var(--stage-radius) - 6px);
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  .right-panel-placeholder__label {
+    display: inline-flex;
+    margin-bottom: var(--space-3);
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: rgba(255, 255, 255, 0.5);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .right-panel-placeholder__copy {
+    font-family: var(--font-sans);
+    font-size: var(--text-sm);
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.68);
   }
 </style>
