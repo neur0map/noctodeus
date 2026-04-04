@@ -123,20 +123,10 @@
   }
 
   .tab-item--drag-over {
-    background: rgba(122, 141, 255, 0.06);
-  }
-
-  .tab-item--drag-over::before {
-    content: '';
-    position: absolute;
-    left: -1px;
-    top: 6px;
-    bottom: 6px;
-    width: 3px;
-    background: var(--color-accent);
-    border-radius: 2px;
-    box-shadow: 0 0 8px rgba(99, 102, 241, 0.6), 0 0 20px rgba(99, 102, 241, 0.25);
-    z-index: 1;
+    background: rgba(122, 141, 255, 0.1);
+    border-bottom-color: var(--color-accent);
+    color: var(--color-text-primary);
+    box-shadow: inset 0 0 12px rgba(99, 102, 241, 0.12);
   }
 
   .tab-item--home {
