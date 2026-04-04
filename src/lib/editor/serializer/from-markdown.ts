@@ -31,23 +31,33 @@ function wikiLinkPlugin(md: MarkdownIt) {
 }
 
 function taskListPlugin(md: MarkdownIt) {
+  // Transform markdown task lists into TipTap-compatible HTML:
+  //   <ul data-type="taskList">
+  //     <li data-type="taskItem" data-checked="false">text</li>
+  //   </ul>
   md.core.ruler.after('inline', 'task_list', (state) => {
     const tokens = state.tokens;
+    const taskListIndices = new Set<number>();
+
     for (let i = 0; i < tokens.length; i++) {
       if (tokens[i].type !== 'inline') continue;
-      // Find the list_item_open: sequence is list_item_open -> paragraph_open -> inline
       const isInList =
         i >= 2 &&
         tokens[i - 1].type === 'paragraph_open' &&
         tokens[i - 2].type === 'list_item_open';
       if (!isInList) continue;
+
       const content = tokens[i].content;
       const checked = content.startsWith('[x] ') || content.startsWith('[X] ');
       const unchecked = content.startsWith('[ ] ');
       if (!checked && !unchecked) continue;
+
+      // Mark the list_item_open with TipTap attributes
       const listItemOpen = tokens[i - 2];
-      listItemOpen.attrSet('class', 'task-list-item');
-      // Strip the checkbox prefix from inline content and children
+      listItemOpen.attrSet('data-type', 'taskItem');
+      listItemOpen.attrSet('data-checked', checked ? 'true' : 'false');
+
+      // Strip the [x]/[ ] prefix from content
       tokens[i].content = content.slice(4);
       if (tokens[i].children && tokens[i].children!.length > 0) {
         const firstChild = tokens[i].children![0];
@@ -55,14 +65,19 @@ function taskListPlugin(md: MarkdownIt) {
           firstChild.content = firstChild.content.slice(4);
         }
       }
-      // Insert a checkbox token at the start of inline children
-      const checkbox = new state.Token('html_inline', '', 0);
-      checkbox.content = checked
-        ? '<input type="checkbox" checked disabled> '
-        : '<input type="checkbox" disabled> ';
-      if (tokens[i].children) {
-        tokens[i].children!.unshift(checkbox);
+
+      // Find the parent bullet_list_open and mark it for data-type="taskList"
+      for (let j = i - 2; j >= 0; j--) {
+        if (tokens[j].type === 'bullet_list_open') {
+          taskListIndices.add(j);
+          break;
+        }
       }
+    }
+
+    // Set data-type="taskList" on identified bullet lists
+    for (const idx of taskListIndices) {
+      tokens[idx].attrSet('data-type', 'taskList');
     }
   });
 }
