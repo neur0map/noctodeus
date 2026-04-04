@@ -13,6 +13,7 @@
   import ContentArea from "../lib/components/layout/ContentArea.svelte";
   import TabBar from "../lib/components/tabs/TabBar.svelte";
   import FileTree from "../lib/components/filetree/FileTree.svelte";
+  import SearchBar from "../lib/components/search/SearchBar.svelte";
   import ContextMenu from "../lib/components/common/ContextMenu.svelte";
   import type { MenuItem } from "../lib/components/common/ContextMenu.svelte";
   import KeyboardManager from "../lib/components/common/KeyboardManager.svelte";
@@ -34,7 +35,8 @@
     onFileDeleted,
     onFileRenamed,
   } from "../lib/bridge/events";
-  import { createFile, deleteFile, renameFile, duplicateFile, createDir } from "../lib/bridge/commands";
+  import { createFile, deleteFile, renameFile, duplicateFile, createDir, searchQuery } from "../lib/bridge/commands";
+  import type { SearchHit } from "../lib/types/core";
   import { logger } from "../lib/logger";
   import { APP_SHORTCUTS } from "../lib/utils/shortcuts";
 
@@ -56,6 +58,17 @@
   let ctxItems = $state<MenuItem[]>([]);
   let ctxTargetPath = $state<string | null>(null);
   let ctxTargetIsDir = $state(false);
+
+  // Search state
+  let searchResults = $state<SearchHit[]>([]);
+
+  async function handleSearch(query: string) {
+    try {
+      searchResults = await searchQuery(query);
+    } catch {
+      searchResults = [];
+    }
+  }
 
   function handleTreeContextMenu(path: string, isDir: boolean, e: MouseEvent) {
     ctxTargetPath = path;
@@ -266,6 +279,12 @@
           </span>
         </div>
       {/snippet}
+
+      <SearchBar
+        results={searchResults}
+        onselect={handleFileSelect}
+        onsearch={handleSearch}
+      />
 
       <FileTree
         tree={files.tree}
