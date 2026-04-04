@@ -126,11 +126,30 @@ pub async fn file_create(
     }
 
     // Write file to disk (empty or with content).
-    std::fs::write(&abs_path, content.unwrap_or_default())?;
+    let file_content = content.unwrap_or_default();
+    std::fs::write(&abs_path, &file_content)?;
 
     let core = state.active_core.read().await;
-    let core_root = &core.as_ref().unwrap().core_path;
-    file_info_from_path(&abs_path, core_root)
+    let active = core.as_ref().unwrap();
+    let core_root = &active.core_path;
+    let info = file_info_from_path(&abs_path, core_root)?;
+
+    // Insert into FTS for markdown files
+    let ext = abs_path.extension().and_then(|e| e.to_str()).unwrap_or("");
+    if ext == "md" || ext == "markdown" || ext == "mdx" {
+        let db = active.db.clone();
+        let conn = db.lock().map_err(|e| NoctoError::Unexpected {
+            detail: format!("DB lock poisoned: {e}"),
+        })?;
+        let _ = crate::indexer::fts::update_fts_entry(
+            &conn,
+            &path,
+            info.title.as_deref(),
+            &file_content,
+        );
+    }
+
+    Ok(info)
 }
 
 #[tauri::command]
@@ -181,9 +200,26 @@ pub async fn file_write(
     std::fs::write(&abs_path, &content)?;
 
     let core = state.active_core.read().await;
-    let core_root = &core.as_ref().unwrap().core_path;
+    let active = core.as_ref().unwrap();
+    let core_root = &active.core_path;
     let mut info = file_info_from_path(&abs_path, core_root)?;
     info.content_hash = Some(crate::indexer::scanner::hash_bytes(content.as_bytes()));
+
+    // Update FTS index for markdown files
+    let ext = abs_path.extension().and_then(|e| e.to_str()).unwrap_or("");
+    if ext == "md" || ext == "markdown" || ext == "mdx" {
+        let db = active.db.clone();
+        let conn = db.lock().map_err(|e| NoctoError::Unexpected {
+            detail: format!("DB lock poisoned: {e}"),
+        })?;
+        let _ = crate::indexer::fts::update_fts_entry(
+            &conn,
+            &path,
+            info.title.as_deref(),
+            &content,
+        );
+    }
+
     Ok(info)
 }
 
@@ -196,6 +232,13 @@ pub async fn file_delete(
 
     if !abs_path.exists() {
         return Err(NoctoError::FileNotFound { path: path.clone() });
+    }
+
+    // Remove from FTS before deleting
+    if let Ok(db) = get_db(&state).await {
+        if let Ok(conn) = db.lock() {
+            let _ = crate::indexer::fts::remove_fts_entry(&conn, &path);
+        }
     }
 
     // Move to OS trash instead of permanent delete.

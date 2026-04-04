@@ -46,8 +46,14 @@
     }
 
     // If overlay is open, only handle overlay-specific keys
-    // (arrow/enter are handled by individual overlay components)
     if (overlayOpen) return;
+
+    // Delete file works even when editor is focused (shows confirm dialog)
+    if (matchesShortcut(e, keymap.delete_file)) {
+      e.preventDefault();
+      ondeletefile();
+      return;
+    }
 
     // If input focused, don't capture global shortcuts
     if (isInputFocused()) return;
@@ -88,11 +94,6 @@
       return;
     }
 
-    if (matchesShortcut(e, keymap.delete_file)) {
-      e.preventDefault();
-      ondeletefile();
-      return;
-    }
   }
 
   $effect(() => {

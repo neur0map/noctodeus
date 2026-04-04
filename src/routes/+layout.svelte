@@ -16,6 +16,7 @@
   import SearchBar from "../lib/components/search/SearchBar.svelte";
   import ContextMenu from "../lib/components/common/ContextMenu.svelte";
   import type { MenuItem } from "../lib/components/common/ContextMenu.svelte";
+  import InputDialog from "../lib/components/common/InputDialog.svelte";
   import KeyboardManager from "../lib/components/common/KeyboardManager.svelte";
   import ToastContainer from "../lib/components/common/ToastContainer.svelte";
   import SaveIndicator from "../lib/editor/SaveIndicator.svelte";
@@ -36,6 +37,7 @@
     onFileRenamed,
   } from "../lib/bridge/events";
   import { createFile, deleteFile, renameFile, duplicateFile, createDir, searchQuery } from "../lib/bridge/commands";
+  import { ask as tauriAsk } from "@tauri-apps/plugin-dialog";
   import type { SearchHit } from "../lib/types/core";
   import { logger } from "../lib/logger";
   import { APP_SHORTCUTS } from "../lib/utils/shortcuts";
@@ -58,6 +60,29 @@
   let ctxItems = $state<MenuItem[]>([]);
   let ctxTargetPath = $state<string | null>(null);
   let ctxTargetIsDir = $state(false);
+
+  // Input dialog state
+  let inputDialogVisible = $state(false);
+  let inputDialogTitle = $state('');
+  let inputDialogValue = $state('');
+  let inputDialogCallback: ((value: string) => void) | null = null;
+
+  function showInputDialog(title: string, defaultValue: string): Promise<string | null> {
+    return new Promise((resolve) => {
+      inputDialogTitle = title;
+      inputDialogValue = defaultValue;
+      inputDialogCallback = (val) => {
+        inputDialogVisible = false;
+        resolve(val);
+      };
+      inputDialogVisible = true;
+    });
+  }
+
+  function cancelInputDialog() {
+    inputDialogVisible = false;
+    inputDialogCallback = null;
+  }
 
   // Search state
   let searchResults = $state<SearchHit[]>([]);
@@ -122,7 +147,7 @@
       case 'rename': {
         const oldPath = ctxTargetPath;
         const oldName = oldPath.split('/').pop() ?? oldPath;
-        const newName = window.prompt('Rename', oldName);
+        const newName = await showInputDialog('Rename', oldName);
         if (!newName || newName === oldName) return;
         const parentDir = oldPath.includes('/') ? oldPath.slice(0, oldPath.lastIndexOf('/')) : '';
         const newPath = parentDir ? `${parentDir}/${newName}` : newName;
@@ -148,7 +173,8 @@
         break;
       }
       case 'delete': {
-        if (!window.confirm(`Move "${ctxTargetPath.split('/').pop()}" to trash?`)) return;
+        const confirmed = await tauriAsk(`Move "${ctxTargetPath.split('/').pop()}" to trash?`, { title: 'Delete', kind: 'warning' });
+        if (!confirmed) return;
         try {
           await deleteFile(ctxTargetPath);
           files.removeFile(ctxTargetPath);
@@ -160,7 +186,7 @@
         break;
       }
       case 'new-file': {
-        const name = window.prompt('File name', 'untitled.md');
+        const name = await showInputDialog('New file name', 'untitled.md');
         if (!name) return;
         const filePath = ctxTargetPath ? `${ctxTargetPath}/${name}` : name;
         try {
@@ -173,7 +199,7 @@
         break;
       }
       case 'new-folder': {
-        const name = window.prompt('Folder name');
+        const name = await showInputDialog('Folder name', '');
         if (!name) return;
         const dirPath = ctxTargetPath ? `${ctxTargetPath}/${name}` : name;
         try {
@@ -271,7 +297,7 @@
   }
 
   async function handleNewFolder() {
-    const name = window.prompt('Folder name');
+    const name = await showInputDialog('Folder name', '');
     if (!name) return;
     try {
       await createDir(name);
@@ -287,7 +313,8 @@
     const path = files.activeFilePath;
     if (!path) return;
     const name = path.split('/').pop() ?? path;
-    if (!window.confirm(`Move "${name}" to trash?`)) return;
+    const confirmed = await tauriAsk(`Move "${name}" to trash?`, { title: 'Delete', kind: 'warning' });
+    if (!confirmed) return;
     try {
       await deleteFile(path);
       files.removeFile(path);
@@ -451,6 +478,14 @@
   items={ctxItems}
   onselect={handleCtxSelect}
   onclose={() => ctxVisible = false}
+/>
+
+<InputDialog
+  visible={inputDialogVisible}
+  title={inputDialogTitle}
+  value={inputDialogValue}
+  onsubmit={(val) => inputDialogCallback?.(val)}
+  oncancel={cancelInputDialog}
 />
 
 <style>
