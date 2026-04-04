@@ -8,6 +8,7 @@
     rightPanel,
     sidebarVisible = true,
     utilityRailVisible = true,
+    sidebarCollapsed = false,
     rightPanelVisible = false,
   }: {
     sidebar: Snippet;
@@ -16,6 +17,7 @@
     rightPanel?: Snippet;
     sidebarVisible?: boolean;
     utilityRailVisible?: boolean;
+    sidebarCollapsed?: boolean;
     rightPanelVisible?: boolean;
   } = $props();
 </script>
@@ -27,7 +29,7 @@
     class:utility-rail-hidden={!utilityRailVisible}
     class:right-panel-open={rightPanelVisible}
   >
-    <aside class="app-shell__sidebar" class:collapsed={!sidebarVisible}>
+    <aside class="app-shell__sidebar" class:collapsed={!sidebarVisible} class:compact={sidebarCollapsed}>
       {@render sidebar()}
     </aside>
 
@@ -87,6 +89,11 @@
   .app-shell__sidebar.collapsed {
     width: 0;
     min-width: 0;
+  }
+
+  .app-shell__sidebar.compact {
+    width: 48px;
+    min-width: 48px;
   }
 
   .app-shell__content {
