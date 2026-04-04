@@ -65,9 +65,9 @@
         </div>
       </div>
 
-      {#if graphStats.mostConnected.length > 0}
+      {#if graphStats.mostConnected.some(n => n.count > 0)}
         <div class="dashboard__list">
-          {#each graphStats.mostConnected as node (node.path)}
+          {#each graphStats.mostConnected.filter(n => n.count > 0) as node (node.path)}
             <button class="row" onclick={() => onfileopen(node.path)}>
               <span class="row__name">{node.title}</span>
               <span class="row__badge">{node.count}</span>
