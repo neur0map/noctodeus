@@ -4,11 +4,15 @@
   import HomeView from '../lib/components/home/HomeView.svelte';
   import QuickOpen from '../lib/components/quickopen/QuickOpen.svelte';
   import CommandPalette from '../lib/components/command/CommandPalette.svelte';
+  import EditorComponent from '../lib/editor/Editor.svelte';
+  import EditorToolbar from '../lib/editor/EditorToolbar.svelte';
+  import SaveIndicator from '../lib/editor/SaveIndicator.svelte';
   import type { Command } from '../lib/types/ui';
 
   import { getUiState } from '../lib/stores/ui.svelte';
   import { getCoreState } from '../lib/stores/core.svelte';
   import { getFilesState } from '../lib/stores/files.svelte';
+  import { getEditorState } from '../lib/stores/editor.svelte';
   import { readFile, searchRecent, searchPinned, createFile } from '../lib/bridge/commands';
   import { toast } from '../lib/stores/toast.svelte';
   import { logger } from '../lib/logger';
@@ -17,10 +21,15 @@
   const ui = getUiState();
   const core = getCoreState();
   const files = getFilesState();
+  const editorState = getEditorState();
 
   let fileContent = $state<FileContent | null>(null);
   let recentFiles = $state<FileNode[]>([]);
   let pinnedFiles = $state<FileNode[]>([]);
+  let editorRef: EditorComponent | undefined = $state();
+  let editorInstance = $state<any>(null);
+  let showConflictNotice = $state(false);
+  let pendingExternalContent = $state<string | null>(null);
 
   // Build quick-open items from file map
   let quickOpenItems = $derived(
@@ -65,11 +74,16 @@
     },
   ]);
 
+  let isMarkdown = $derived(
+    files.activeFilePath?.endsWith('.md') || files.activeFilePath?.endsWith('.markdown')
+  );
+
   // Load file content when active file changes
   $effect(() => {
     const path = files.activeFilePath;
     if (!path) {
       fileContent = null;
+      editorState.reset();
       return;
     }
 
@@ -77,8 +91,15 @@
   });
 
   async function loadFileContent(path: string) {
+    // Flush any pending editor save before switching
+    if (editorRef && editorState.dirty) {
+      await editorRef.flush();
+    }
+
     try {
       fileContent = await readFile(path);
+      showConflictNotice = false;
+      pendingExternalContent = null;
     } catch (err) {
       logger.error(`Failed to read file: ${err}`);
       fileContent = null;
@@ -105,6 +126,18 @@
   onMount(() => {
     loadRecents();
     loadPinned();
+
+    // Safety net: flush editor on window close
+    const handleBeforeUnload = () => {
+      if (editorRef && editorState.dirty) {
+        editorRef.flush();
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
   });
 
   function handleFileOpen(path: string) {
@@ -131,43 +164,83 @@
     handleFileOpen(path);
   }
 
-  function renderMarkdown(content: string): string {
-    // Minimal markdown rendering for display
-    return content
-      .split('\n')
-      .map((line) => {
-        // Headings
-        if (line.startsWith('### ')) return `<h3>${escapeHtml(line.slice(4))}</h3>`;
-        if (line.startsWith('## ')) return `<h2>${escapeHtml(line.slice(3))}</h2>`;
-        if (line.startsWith('# ')) return `<h1>${escapeHtml(line.slice(2))}</h1>`;
-        // Empty line
-        if (line.trim() === '') return '<br />';
-        // Paragraph
-        return `<p>${escapeHtml(line)}</p>`;
-      })
-      .join('\n');
+  function handleWikiLinkNavigate(target: string) {
+    // Resolve wiki-link target to a file path
+    const match = Array.from(files.fileMap.values()).find((f) => {
+      if (f.is_directory) return false;
+      const nameWithoutExt = f.name.replace(/\.(md|markdown)$/i, '');
+      return nameWithoutExt === target;
+    });
+
+    if (match) {
+      handleFileOpen(match.path);
+    } else {
+      toast.info(`Note "${target}" not found`);
+    }
   }
 
-  function escapeHtml(text: string): string {
-    return text
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
+  /** Handle external file modification events */
+  export function handleExternalChange(path: string, contentHash: string | null) {
+    if (path !== files.activeFilePath) return;
+    if (editorState.isOwnSave(contentHash)) return;
+
+    if (!editorState.dirty) {
+      // Silently reload
+      loadFileContent(path);
+    } else {
+      // Show conflict notice
+      showConflictNotice = true;
+    }
+  }
+
+  function handleConflictReload() {
+    showConflictNotice = false;
+    if (files.activeFilePath) {
+      editorState.setPath(files.activeFilePath);
+      loadFileContent(files.activeFilePath);
+    }
+  }
+
+  function handleConflictKeep() {
+    showConflictNotice = false;
   }
 
   function getFileExtension(path: string): string {
     return path.split('.').pop()?.toLowerCase() ?? '';
   }
+
+  // Poll editor instance for toolbar binding
+  function handleEditorMount(e: EditorComponent) {
+    editorRef = e;
+    // Get editor instance after a tick
+    setTimeout(() => {
+      editorInstance = editorRef?.getEditor?.() ?? null;
+    }, 50);
+  }
 </script>
 
 {#if files.activeFilePath && fileContent}
-  <div class="file-view">
-    {#if getFileExtension(files.activeFilePath) === 'md'}
-      <article class="file-view__markdown">
-        {@html renderMarkdown(fileContent.content)}
-      </article>
-    {:else}
+  {#if isMarkdown}
+    {#if showConflictNotice}
+      <div class="conflict-notice">
+        <span>File changed externally.</span>
+        <button class="conflict-notice__btn" onclick={handleConflictReload}>Reload</button>
+        <button class="conflict-notice__btn" onclick={handleConflictKeep}>Keep mine</button>
+      </div>
+    {/if}
+
+    {#if editorInstance}
+      <EditorToolbar editor={editorInstance} />
+    {/if}
+
+    <EditorComponent
+      path={files.activeFilePath}
+      initialContent={fileContent.content}
+      onnavigate={handleWikiLinkNavigate}
+      bind:this={editorRef}
+    />
+  {:else}
+    <div class="file-view">
       <div class="file-view__info">
         <div class="file-view__info-row">
           <span class="file-view__info-label">Name</span>
@@ -188,8 +261,8 @@
           </div>
         {/if}
       </div>
-    {/if}
-  </div>
+    </div>
+  {/if}
 {:else}
   <HomeView
     coreName={core.activeCore?.name ?? 'Noctodeus'}
@@ -215,58 +288,38 @@
 />
 
 <style>
+  .conflict-notice {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-2) var(--space-4);
+    background: var(--color-bg-surface);
+    border-bottom: 1px solid var(--color-border-subtle);
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--color-text-secondary);
+  }
+
+  .conflict-notice__btn {
+    padding: var(--space-1) var(--space-2);
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--color-accent);
+    background: transparent;
+    border: 1px solid var(--color-accent);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background var(--duration-fast) var(--ease-out);
+  }
+
+  .conflict-notice__btn:hover {
+    background: var(--color-bg-hover);
+  }
+
   .file-view {
     height: 100%;
     overflow-y: auto;
     padding: var(--space-6) var(--space-8);
-  }
-
-  .file-view__markdown {
-    max-width: 720px;
-    margin: 0 auto;
-    font-family: var(--font-content);
-    font-size: var(--text-base);
-    line-height: 1.7;
-    color: var(--color-text-primary);
-  }
-
-  .file-view__markdown :global(h1) {
-    font-family: var(--font-sans);
-    font-size: var(--text-2xl);
-    line-height: var(--text-2xl-leading);
-    font-weight: 600;
-    margin-bottom: var(--space-4);
-    color: var(--color-text-primary);
-  }
-
-  .file-view__markdown :global(h2) {
-    font-family: var(--font-sans);
-    font-size: var(--text-xl);
-    line-height: var(--text-xl-leading);
-    font-weight: 600;
-    margin-top: var(--space-8);
-    margin-bottom: var(--space-3);
-    color: var(--color-text-primary);
-  }
-
-  .file-view__markdown :global(h3) {
-    font-family: var(--font-sans);
-    font-size: var(--text-lg);
-    line-height: var(--text-lg-leading);
-    font-weight: 600;
-    margin-top: var(--space-6);
-    margin-bottom: var(--space-2);
-    color: var(--color-text-primary);
-  }
-
-  .file-view__markdown :global(p) {
-    margin-bottom: var(--space-3);
-  }
-
-  .file-view__markdown :global(br) {
-    display: block;
-    content: '';
-    margin-top: var(--space-2);
   }
 
   .file-view__info {
