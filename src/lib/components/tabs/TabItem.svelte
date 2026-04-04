@@ -122,15 +122,21 @@
       transform var(--duration-fast) var(--ease-out);
   }
 
+  .tab-item--drag-over {
+    background: rgba(122, 141, 255, 0.06);
+  }
+
   .tab-item--drag-over::before {
     content: '';
     position: absolute;
     left: -1px;
-    top: 25%;
-    bottom: 25%;
-    width: 2px;
+    top: 6px;
+    bottom: 6px;
+    width: 3px;
     background: var(--color-accent);
-    border-radius: 1px;
+    border-radius: 2px;
+    box-shadow: 0 0 8px rgba(99, 102, 241, 0.6), 0 0 20px rgba(99, 102, 241, 0.25);
+    z-index: 1;
   }
 
   .tab-item--home {
