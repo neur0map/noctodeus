@@ -1,0 +1,52 @@
+/* ==========================================================================
+   Typography — Noctodeus
+   Font stacks, type scale, and baseline text styles.
+
+   Three distinct stacks serve different roles:
+     --font-mono    → UI chrome (file trees, status bars, code)
+     --font-sans    → Labels, buttons, interactive elements
+     --font-content → Long-form reading in the content area
+   ========================================================================== */
+
+:root {
+  /* --------------------------------------------------------------------------
+     Font Stacks
+     -------------------------------------------------------------------------- */
+  --font-mono:    'Berkeley Mono', 'JetBrains Mono', 'Fira Code', 'Cascadia Code',
+                  ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --font-sans:    'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+                  'Helvetica Neue', Arial, sans-serif;
+
+  --font-content: 'Source Serif 4', 'Charter', 'Iowan Old Style', Georgia,
+                  'Palatino Linotype', 'Times New Roman', serif;
+
+  /* --------------------------------------------------------------------------
+     Type Scale
+     Base size is 14px. Each step uses a line-height tuned for its role:
+     tighter for headings, looser for body text.
+     -------------------------------------------------------------------------- */
+  --text-xs:  12px;
+  --text-xs-leading:  1.4;   /* 16.8px */
+
+  --text-sm:  13px;
+  --text-sm-leading:  1.45;  /* 18.85px */
+
+  --text-base: 14px;
+  --text-base-leading: 1.5;  /* 21px */
+
+  --text-md:  16px;
+  --text-md-leading:  1.45;  /* 23.2px */
+
+  --text-lg:  18px;
+  --text-lg-leading:  1.4;   /* 25.2px */
+
+  --text-xl:  20px;
+  --text-xl-leading:  1.35;  /* 27px */
+
+  --text-2xl: 24px;
+  --text-2xl-leading: 1.25;  /* 30px */
+
+  --text-3xl: 32px;
+  --text-3xl-leading: 1.2;   /* 38.4px */
+}
