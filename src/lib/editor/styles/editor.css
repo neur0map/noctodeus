@@ -272,11 +272,10 @@
 }
 
 /* --------------------------------------------------------------------------
-   Block Drag Handle
+   Block Drag Handle (tiptap-extension-global-drag-handle)
    -------------------------------------------------------------------------- */
-.block-drag-handle {
-  position: absolute;
-  left: -28px;
+.drag-handle {
+  position: fixed;
   width: 20px;
   height: 20px;
   display: flex;
@@ -284,25 +283,40 @@
   justify-content: center;
   border-radius: 4px;
   cursor: grab;
-  color: rgba(255, 255, 255, 0.18);
-  opacity: 0;
-  transition:
-    opacity var(--duration-fast) var(--ease-out),
-    color var(--duration-fast) var(--ease-out),
-    background var(--duration-fast) var(--ease-out);
-  z-index: 10;
+  opacity: 1;
+  z-index: 50;
   user-select: none;
+  transition:
+    top 80ms var(--ease-out),
+    opacity var(--duration-fast) var(--ease-out);
 }
 
-.block-drag-handle:hover {
-  color: rgba(255, 255, 255, 0.48);
+/* 6-dot grip icon */
+.drag-handle::before {
+  content: '';
+  display: block;
+  width: 10px;
+  height: 14px;
+  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.22) 1.2px, transparent 1.2px);
+  background-size: 5px 5px;
+  background-position: 0 0;
+  transition: background-image var(--duration-fast) var(--ease-out);
+}
+
+.drag-handle:hover::before {
+  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.52) 1.2px, transparent 1.2px);
+}
+
+.drag-handle:hover {
   background: rgba(255, 255, 255, 0.05);
 }
 
-.block-drag-handle:active {
+.drag-handle:active {
   cursor: grabbing;
-  color: rgba(255, 255, 255, 0.64);
-  background: rgba(255, 255, 255, 0.08);
+}
+
+.drag-handle:active::before {
+  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.64) 1.2px, transparent 1.2px);
 }
 
 /* --------------------------------------------------------------------------
