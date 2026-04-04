@@ -68,7 +68,7 @@
   export function reload(newContent: string) {
     if (!editor) return;
     const html = parseMarkdown(newContent);
-    editor.commands.setContent(html, false);
+    editor.commands.setContent(html, { emitUpdate: false });
     editorState.setPath(path);
   }
 
