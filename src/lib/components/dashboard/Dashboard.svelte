@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onDestroy } from 'svelte';
   import type { FileNode } from '../../types/core';
   import type { GraphStats } from '../../stores/graph.svelte';
 
@@ -20,10 +21,17 @@
     onfileopen: (path: string) => void;
   } = $props();
 
-  function formatRelativeTime(unixSeconds: number): string {
+  // Tick every 15s so relative times stay fresh
+  let tick = $state(0);
+  const timer = setInterval(() => { tick++; }, 15_000);
+  onDestroy(() => clearInterval(timer));
+
+  // _tick param forces Svelte to re-evaluate when the clock ticks
+  function formatRelativeTime(unixSeconds: number, _tick: number): string {
     const now = Date.now() / 1000;
     const diff = now - unixSeconds;
-    if (diff < 60) return 'now';
+    if (diff < 10) return 'now';
+    if (diff < 60) return `${Math.floor(diff)}s`;
     if (diff < 3600) return `${Math.floor(diff / 60)}m`;
     if (diff < 86400) return `${Math.floor(diff / 3600)}h`;
     if (diff < 604800) return `${Math.floor(diff / 86400)}d`;
@@ -85,7 +93,7 @@
           {#each recentFiles.slice(0, 10) as file (file.path)}
             <button class="row" onclick={() => onfileopen(file.path)}>
               <span class="row__name">{displayName(file)}</span>
-              <span class="row__meta">{formatRelativeTime(file.modified_at)}</span>
+              <span class="row__meta">{formatRelativeTime(file.modified_at, tick)}</span>
             </button>
           {/each}
         </div>
