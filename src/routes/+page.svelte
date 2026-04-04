@@ -88,6 +88,8 @@
       return;
     }
 
+    // Clear content immediately so editor unmounts before new content loads
+    fileContent = null;
     loadFileContent(path);
   });
 
@@ -286,7 +288,7 @@
   });
 </script>
 
-{#if files.activeFilePath && fileContent}
+{#if files.activeFilePath && fileContent && fileContent.path === files.activeFilePath}
   {#if isMarkdown}
     {#if showConflictNotice}
       <div class="conflict-notice">
