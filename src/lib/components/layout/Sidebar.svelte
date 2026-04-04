@@ -5,28 +5,51 @@
     header,
     children,
     footer,
+    collapsed = false,
+    ontogglecollapse,
   }: {
     header?: Snippet;
     children: Snippet;
     footer?: Snippet;
+    collapsed?: boolean;
+    ontogglecollapse?: () => void;
   } = $props();
 </script>
 
-<div class="sidebar">
-  {#if header}
-    <div class="sidebar__header">
-      {@render header()}
+<div class="sidebar" class:sidebar--collapsed={collapsed}>
+  {#if collapsed}
+    <div class="sidebar__rail">
+      <button class="rail-button" onclick={ontogglecollapse} title="Expand sidebar">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M6 3L11 8L6 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
     </div>
-  {/if}
+  {:else}
+    {#if header}
+      <div class="sidebar__header">
+        <div class="sidebar__header-content">
+          {@render header()}
+        </div>
+        {#if ontogglecollapse}
+          <button class="collapse-button" onclick={ontogglecollapse} title="Collapse sidebar">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M10 3L5 8L10 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+        {/if}
+      </div>
+    {/if}
 
-  <div class="sidebar__body">
-    {@render children()}
-  </div>
-
-  {#if footer}
-    <div class="sidebar__footer">
-      {@render footer()}
+    <div class="sidebar__body">
+      {@render children()}
     </div>
+
+    {#if footer}
+      <div class="sidebar__footer">
+        {@render footer()}
+      </div>
+    {/if}
   {/if}
 </div>
 
@@ -42,11 +65,24 @@
     overflow: hidden;
   }
 
+  .sidebar--collapsed {
+    align-items: center;
+  }
+
   .sidebar__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     flex-shrink: 0;
     padding: calc(var(--space-3) * var(--sidebar-density))
       calc(var(--space-4) * var(--sidebar-density));
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    width: 100%;
+  }
+
+  .sidebar__header-content {
+    flex: 1;
+    min-width: 0;
   }
 
   .sidebar__body {
@@ -60,5 +96,69 @@
     padding: calc(var(--space-2) * var(--sidebar-density))
       calc(var(--space-4) * var(--sidebar-density));
     border-top: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  .sidebar__rail {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: var(--space-3);
+    gap: var(--space-2);
+    height: 100%;
+  }
+
+  .rail-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.46);
+    cursor: pointer;
+    transition:
+      color var(--duration-fast) var(--ease-out),
+      background var(--duration-fast) var(--ease-out);
+    animation: rail-icon-enter var(--duration-normal) var(--ease-out) both;
+  }
+
+  .rail-button:hover {
+    color: var(--color-text-primary);
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  @keyframes rail-icon-enter {
+    from {
+      opacity: 0;
+      transform: scale(0.9);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  .collapse-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.36);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition:
+      color var(--duration-fast) var(--ease-out),
+      background var(--duration-fast) var(--ease-out);
+  }
+
+  .collapse-button:hover {
+    color: var(--color-text-primary);
+    background: rgba(255, 255, 255, 0.06);
   }
 </style>
