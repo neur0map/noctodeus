@@ -8,18 +8,27 @@
     onselect,
     ontoggle,
     oncontextmenu,
+    ondelete,
   }: {
     tree?: TreeNode[];
     activeFilePath?: string | null;
     onselect: (path: string) => void;
     ontoggle: (path: string) => void;
     oncontextmenu?: (path: string, isDir: boolean, e: MouseEvent) => void;
+    ondelete?: () => void;
   } = $props();
 
   let container: HTMLElement | undefined = $state();
 
   function handleKeydown(e: KeyboardEvent) {
     if (!container) return;
+
+    // Cmd+Backspace = delete file (works when sidebar is focused)
+    if ((e.metaKey || e.ctrlKey) && e.key === 'Backspace') {
+      e.preventDefault();
+      ondelete?.();
+      return;
+    }
 
     const focusable = Array.from(
       container.querySelectorAll<HTMLElement>('button[tabindex="0"]')
@@ -42,13 +51,11 @@
       }
       case 'ArrowRight': {
         e.preventDefault();
-        // Expand if directory and collapsed
         current?.click();
         break;
       }
       case 'ArrowLeft': {
         e.preventDefault();
-        // Collapse if directory and expanded, otherwise focus parent
         current?.click();
         break;
       }

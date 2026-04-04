@@ -30,7 +30,7 @@
 
 {#if visible}
   <!-- svelte-ignore a11y_no_static_element_interactions -->
-  <div class="ctx-backdrop" onmousedown={onclose}></div>
+  <div class="ctx-backdrop" onclick={onclose}></div>
   <div
     class="ctx-menu"
     style="top: {position.top}px; left: {position.left}px;"
@@ -44,7 +44,7 @@
           class="ctx-menu__item"
           class:ctx-menu__item--danger={item.danger}
           role="menuitem"
-          onmousedown={(e) => { e.preventDefault(); onselect(item.id); }}
+          onclick={(e) => { e.stopPropagation(); onselect(item.id); }}
         >
           {#if item.icon}
             <span class="ctx-menu__icon">{item.icon}</span>

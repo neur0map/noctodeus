@@ -63,10 +63,31 @@
   let searchResults = $state<SearchHit[]>([]);
 
   async function handleSearch(query: string) {
+    // Try FTS5 backend first (with prefix matching)
     try {
-      searchResults = await searchQuery(query);
+      const ftsQuery = query.split(/\s+/).map(w => `${w}*`).join(' ');
+      searchResults = await searchQuery(ftsQuery);
     } catch {
       searchResults = [];
+    }
+
+    // Fallback: client-side fuzzy search across file names and titles
+    if (searchResults.length === 0) {
+      const q = query.toLowerCase();
+      searchResults = Array.from(files.fileMap.values())
+        .filter(f => !f.is_directory)
+        .filter(f => {
+          const name = f.name.toLowerCase();
+          const title = (f.title ?? '').toLowerCase();
+          return name.includes(q) || title.includes(q);
+        })
+        .slice(0, 10)
+        .map(f => ({
+          path: f.path,
+          title: f.title,
+          snippet: f.path,
+          score: 1,
+        }));
     }
   }
 
@@ -304,7 +325,10 @@
             {core.activeCore?.name ?? "Noctodeus"}
           </span>
           <button class="sidebar-header__btn" onclick={handleNewFolder} title="New folder">
-            ▸
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path d="M2 3.5h3.5l1.5 1.5H12v6H2V3.5z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>
+              <path d="M7 7v3M5.5 8.5h3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+            </svg>
           </button>
         </div>
       {/snippet}
@@ -321,6 +345,7 @@
         onselect={handleFileSelect}
         ontoggle={handleDirToggle}
         oncontextmenu={handleTreeContextMenu}
+        ondelete={handleDeleteFile}
       />
 
       {#snippet footer()}
