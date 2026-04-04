@@ -90,7 +90,7 @@ function serializeNode(node: JSONContent): string {
 
     case 'codeBlock': {
       const lang = node.attrs?.language ?? '';
-      const code = (node.content ?? []).map((c) => c.text ?? '').join('');
+      const code = (node.content ?? []).map((c) => c.text ?? '').join('').replace(/\n+$/, '');
       return '```' + lang + '\n' + code + '\n```\n\n';
     }
 
