@@ -7,6 +7,7 @@
   import { getFilesState } from "../stores/files.svelte";
   import { getCoreState } from "../stores/core.svelte";
   import { writeFile } from "../bridge/commands";
+  import { convertFileSrc } from "@tauri-apps/api/core";
   import { logger } from "../logger";
   import SlashCommandMenu from "./SlashCommandMenu.svelte";
   import MediaPanel from "./MediaPanel.svelte";
@@ -35,14 +36,16 @@
   let debounceTimer: ReturnType<typeof setTimeout> | undefined;
 
   // --- Media ---
-  function insertMediaByType(type: string, mediaPath: string) {
+  function insertMediaByType(type: string, filePath: string) {
     if (!editor) return;
+    // Convert local paths to Tauri asset protocol URLs so WebView can load them
+    const src = filePath.startsWith('http') ? filePath : convertFileSrc(filePath);
     if (type === 'image') {
-      editor.chain().focus().setImage({ src: mediaPath }).run();
+      editor.chain().focus().setImage({ src }).run();
     } else if (type === 'video') {
-      (editor.commands as any).setVideo({ src: mediaPath });
+      (editor.commands as any).setVideo({ src });
     } else if (type === 'audio') {
-      (editor.commands as any).setAudio({ src: mediaPath });
+      (editor.commands as any).setAudio({ src });
     }
   }
 
