@@ -8,3 +8,7 @@ node_modules
 !.env.example
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# Internal plans and specs
+docs/superpowers/
+docs/noctodeus-product-plan.md
