@@ -11,6 +11,7 @@
   import { logger } from "../logger";
   import SlashCommandMenu from "./SlashCommandMenu.svelte";
   import MediaPanel from "./MediaPanel.svelte";
+  import BubbleToolbar from "./BubbleToolbar.svelte";
   import type { SlashCommandItem } from "./extensions/slash-command";
   import { detectEmbed } from "./extensions/embed-block";
   import { open as openFileDialog } from "@tauri-apps/plugin-dialog";
@@ -114,6 +115,31 @@
     }
     mediaPanelVisible = false;
     editor?.chain().focus().run();
+  }
+
+  // --- Bubble toolbar state ---
+  let bubbleVisible = $state(false);
+  let bubblePosition = $state({ top: 0, left: 0 });
+
+  function updateBubbleToolbar() {
+    if (!editor) { bubbleVisible = false; return; }
+    const { from, to, empty } = editor.state.selection;
+    if (empty || slashVisible || mediaPanelVisible) {
+      bubbleVisible = false;
+      return;
+    }
+    try {
+      const start = editor.view.coordsAtPos(from);
+      const end = editor.view.coordsAtPos(to);
+      const midX = (start.left + end.left) / 2;
+      bubblePosition = {
+        top: Math.max(4, start.top - 48),
+        left: Math.max(8, Math.min(midX - 100, window.innerWidth - 260)),
+      };
+      bubbleVisible = true;
+    } catch {
+      bubbleVisible = false;
+    }
   }
 
   // --- Slash command menu state ---
@@ -272,6 +298,9 @@
         editorState.markDirty();
         scheduleAutoSave();
       },
+      onSelectionUpdate: () => {
+        updateBubbleToolbar();
+      },
       autofocus: true,
     });
 
@@ -314,6 +343,12 @@
   onupload={() => handleMediaPanelUpload()}
   onlinksubmit={handleMediaPanelLink}
   onclose={() => { mediaPanelVisible = false; editor?.chain().focus().run(); }}
+/>
+
+<BubbleToolbar
+  editor={editor ?? null}
+  visible={bubbleVisible}
+  position={bubblePosition}
 />
 
 <style>
