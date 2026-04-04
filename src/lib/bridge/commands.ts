@@ -20,6 +20,10 @@ export async function closeCore(): Promise<void> {
   return invoke('core_close');
 }
 
+export async function scanCore(): Promise<FileNode[]> {
+  return invoke('core_scan');
+}
+
 export async function listCores(): Promise<CoreInfo[]> {
   return invoke('core_list');
 }

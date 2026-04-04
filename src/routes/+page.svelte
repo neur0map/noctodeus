@@ -13,7 +13,8 @@
   import { getCoreState } from '../lib/stores/core.svelte';
   import { getFilesState } from '../lib/stores/files.svelte';
   import { getEditorState } from '../lib/stores/editor.svelte';
-  import { readFile, searchRecent, searchPinned, createFile } from '../lib/bridge/commands';
+  import { readFile, searchRecent, searchPinned, createFile, openCore, createCore, scanCore } from '../lib/bridge/commands';
+  import { open as openDialog } from '@tauri-apps/plugin-dialog';
   import { toast } from '../lib/stores/toast.svelte';
   import { logger } from '../lib/logger';
   import type { FileNode, FileContent } from '../lib/types/core';
@@ -123,6 +124,46 @@
     }
   }
 
+  function errorMessage(err: unknown): string {
+    if (err && typeof err === 'object' && 'message' in err) return (err as any).message;
+    if (typeof err === 'string') return err;
+    try { return JSON.stringify(err); } catch { return String(err); }
+  }
+
+  async function handleOpenCore() {
+    try {
+      const selected = await openDialog({
+        directory: true,
+        multiple: false,
+        title: 'Open or Create Core',
+      });
+      if (!selected) return;
+
+      const folderPath = typeof selected === 'string' ? selected : selected;
+
+      // Try to open as existing Core first, create if not found
+      let info;
+      try {
+        info = await openCore(folderPath);
+        toast.success(`Opened Core: ${info.name}`);
+      } catch {
+        // Not an existing Core — create it
+        const name = folderPath.split('/').pop() ?? 'Untitled';
+        info = await createCore(folderPath, name);
+        toast.success(`Created Core: ${info.name}`);
+      }
+
+      core.setCore(info);
+
+      // Scan the directory and populate the file tree
+      const fileTree = await scanCore();
+      files.setFiles(fileTree);
+    } catch (err) {
+      logger.error(`Failed to open Core: ${errorMessage(err)}`);
+      toast.error(`Failed to open Core: ${errorMessage(err)}`);
+    }
+  }
+
   onMount(() => {
     loadRecents();
     loadPinned();
@@ -155,8 +196,9 @@
       files.setActiveFile(node.path);
       toast.success('Note created');
     } catch (err) {
-      logger.error(`Failed to create note: ${err}`);
-      toast.error('Failed to create note');
+      const msg = errorMessage(err);
+      logger.error(`Failed to create note: ${msg}`);
+      toast.error(`Failed to create note: ${msg}`);
     }
   }
 
@@ -271,6 +313,7 @@
     onfileopen={handleFileOpen}
     onnewnote={handleNewNote}
     onquickopen={() => ui.showQuickOpen()}
+    onopencore={handleOpenCore}
   />
 {/if}
 

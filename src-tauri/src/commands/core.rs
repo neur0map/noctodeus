@@ -9,8 +9,11 @@ use tauri::State;
 
 use crate::core::manifest::{create_manifest, ensure_noctodeus_dir, load_manifest};
 use crate::core::state::{ActiveCore, AppState, CoreInfo};
+use crate::db::queries::FileInfo;
 use crate::db::schema::run_migrations;
+use crate::db::{mutations, queries};
 use crate::errors::{CmdResult, NoctoError};
+use crate::indexer::{fts, scanner};
 
 /// Persisted registry entry stored in `cores.json` inside the app data dir.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -94,7 +97,7 @@ fn upsert_registry_entry(entry: CoreEntry) -> Result<(), NoctoError> {
 /// 4. Opens SQLite DB with migrations
 /// 5. Registers in `cores.json`
 #[tauri::command]
-pub fn core_create(path: String, name: String) -> CmdResult<CoreInfo> {
+pub async fn core_create(path: String, name: String, state: State<'_, AppState>) -> CmdResult<CoreInfo> {
     let core_path = PathBuf::from(&path);
 
     if !core_path.is_dir() {
@@ -111,9 +114,7 @@ pub fn core_create(path: String, name: String) -> CmdResult<CoreInfo> {
 
     ensure_noctodeus_dir(&core_path)?;
     let manifest = create_manifest(&core_path, &name)?;
-
-    // Open DB so the schema is ready for first use.
-    let _conn = open_db(&core_path)?;
+    let conn = open_db(&core_path)?;
 
     let now = Utc::now().to_rfc3339();
 
@@ -124,6 +125,17 @@ pub fn core_create(path: String, name: String) -> CmdResult<CoreInfo> {
         created_at: manifest.core.created_at.clone(),
         last_opened: Some(now.clone()),
     };
+
+    let active = ActiveCore {
+        info: info.clone(),
+        db: Arc::new(Mutex::new(conn)),
+        core_path: core_path.clone(),
+    };
+
+    {
+        let mut lock = state.active_core.write().await;
+        *lock = Some(active);
+    }
 
     upsert_registry_entry(CoreEntry {
         id: info.id.clone(),
@@ -195,6 +207,33 @@ pub async fn core_close(state: State<'_, AppState>) -> CmdResult<()> {
     // Dropping the ActiveCore closes the rusqlite Connection.
     *lock = None;
     Ok(())
+}
+
+/// Scan the active Core's directory, populate SQLite index and FTS, return the
+/// full file tree. Called by the frontend after opening/creating a Core.
+#[tauri::command]
+pub async fn core_scan(state: State<'_, AppState>) -> CmdResult<Vec<FileInfo>> {
+    let core = state.active_core.read().await;
+    let active = core.as_ref().ok_or(NoctoError::CoreNotFound {
+        path: String::new(),
+    })?;
+
+    let files = scanner::scan_directory(&active.core_path)?;
+
+    let conn = active.db.lock().map_err(|e| NoctoError::Unexpected {
+        detail: format!("DB lock poisoned: {e}"),
+    })?;
+
+    // Clear and rebuild the file index
+    mutations::clear_files(&conn)?;
+    for f in &files {
+        mutations::upsert_file(&conn, f)?;
+    }
+
+    // Rebuild FTS from markdown files
+    fts::rebuild_fts(&conn, &active.core_path)?;
+
+    Ok(files)
 }
 
 /// List all known Cores from the registry. Entries whose folders no longer

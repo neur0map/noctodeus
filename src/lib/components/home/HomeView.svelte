@@ -8,6 +8,7 @@
     onfileopen,
     onnewnote,
     onquickopen,
+    onopencore,
   }: {
     coreName?: string;
     recentFiles?: FileNode[];
@@ -15,6 +16,7 @@
     onfileopen: (path: string) => void;
     onnewnote: () => void;
     onquickopen: () => void;
+    onopencore?: () => void;
   } = $props();
 
   function formatRelativeTime(unixSeconds: number): string {
@@ -70,6 +72,11 @@
     {/if}
 
     <section class="home-view__actions">
+      {#if onopencore}
+        <button class="home-view__action home-view__action--primary" onclick={onopencore}>
+          <span class="home-view__action-label">Open Core</span>
+        </button>
+      {/if}
       <button class="home-view__action" onclick={onnewnote}>
         <span class="home-view__action-label">New Note</span>
         <kbd class="home-view__action-hint">{'\u2318'}N</kbd>

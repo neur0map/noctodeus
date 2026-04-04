@@ -22,12 +22,14 @@ pub fn run() {
 
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_dialog::init())
         .manage(AppState::new())
         .invoke_handler(tauri::generate_handler![
             // Core commands
             commands::core_create,
             commands::core_open,
             commands::core_close,
+            commands::core_scan,
             commands::core_list,
             // File commands
             commands::file_create,
