@@ -135,10 +135,7 @@ const COMMANDS: SlashCommandItem[] = [
     command: (editor, range) => {
       editor.chain().focus().deleteRange(range).run();
       // Dispatch custom event — Editor.svelte handles the file picker
-      editor.view.dom.dispatchEvent(new CustomEvent('media-upload-request', {
-        detail: { type: 'image' },
-        bubbles: true,
-      }));
+      (globalThis as any).__noctodeusShowMediaPanel?.('image');
     },
   },
   {
@@ -149,10 +146,7 @@ const COMMANDS: SlashCommandItem[] = [
     group: 'Media',
     command: (editor, range) => {
       editor.chain().focus().deleteRange(range).run();
-      editor.view.dom.dispatchEvent(new CustomEvent('media-upload-request', {
-        detail: { type: 'video' },
-        bubbles: true,
-      }));
+      (globalThis as any).__noctodeusShowMediaPanel?.('video');
     },
   },
   {
@@ -163,10 +157,7 @@ const COMMANDS: SlashCommandItem[] = [
     group: 'Media',
     command: (editor, range) => {
       editor.chain().focus().deleteRange(range).run();
-      editor.view.dom.dispatchEvent(new CustomEvent('media-upload-request', {
-        detail: { type: 'audio' },
-        bubbles: true,
-      }));
+      (globalThis as any).__noctodeusShowMediaPanel?.('audio');
     },
   },
   {

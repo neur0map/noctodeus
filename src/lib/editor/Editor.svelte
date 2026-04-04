@@ -9,8 +9,9 @@
   import { writeFile } from "../bridge/commands";
   import { logger } from "../logger";
   import SlashCommandMenu from "./SlashCommandMenu.svelte";
+  import MediaPanel from "./MediaPanel.svelte";
   import type { SlashCommandItem } from "./extensions/slash-command";
-  import { open as openFileDialog } from "@tauri-apps/plugin-dialog";
+  import { detectEmbed } from "./extensions/embed-block";
   import "./styles/editor.css";
   import "./styles/media.css";
 
@@ -32,13 +33,13 @@
   let editor: Editor | undefined = $state();
   let debounceTimer: ReturnType<typeof setTimeout> | undefined;
 
-  // Media upload — copies file to <core>/media/ and returns relative path
+  // --- Media upload ---
   async function uploadMedia(file: File): Promise<string | null> {
     const corePath = coreState.activeCore?.path;
     if (!corePath) return null;
 
     try {
-      const { mkdir, copyFile, exists } = await import('@tauri-apps/plugin-fs');
+      const { mkdir, exists, writeFile: tauriWriteFile } = await import('@tauri-apps/plugin-fs');
       const mediaDir = `${corePath}/media`;
       if (!(await exists(mediaDir))) {
         await mkdir(mediaDir, { recursive: true });
@@ -47,12 +48,8 @@
       const hash = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
       const filename = `${hash}.${ext}`;
       const destPath = `${mediaDir}/${filename}`;
-
-      // Write file from ArrayBuffer
-      const { writeFile: tauriWriteFile } = await import('@tauri-apps/plugin-fs');
       const buffer = await file.arrayBuffer();
       await tauriWriteFile(destPath, new Uint8Array(buffer));
-
       return `media/${filename}`;
     } catch (err) {
       logger.error(`Media upload failed: ${err}`);
@@ -60,44 +57,67 @@
     }
   }
 
-  async function handleMediaUploadRequest(type: string) {
-    const filters: Record<string, { name: string; extensions: string[] }[]> = {
-      image: [{ name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'] }],
-      video: [{ name: 'Videos', extensions: ['mp4', 'webm', 'mov'] }],
-      audio: [{ name: 'Audio', extensions: ['mp3', 'wav', 'ogg', 'm4a', 'webm'] }],
-    };
-
-    const selected = await openFileDialog({
-      multiple: false,
-      filters: filters[type] ?? [],
-      title: `Select ${type}`,
-    });
-
-    if (!selected) return;
-    const filePath = typeof selected === 'string' ? selected : String(selected);
-
-    // Read the file and upload
-    try {
-      const { readFile: tauriReadFile } = await import('@tauri-apps/plugin-fs');
-      const contents = await tauriReadFile(filePath);
-      const ext = filePath.split('.').pop() ?? 'bin';
-      const blob = new File([contents], `upload.${ext}`, { type: `${type}/${ext}` });
-      const mediaPath = await uploadMedia(blob);
-      if (!mediaPath || !editor) return;
-
-      if (type === 'image') {
-        editor.chain().focus().setImage({ src: mediaPath }).run();
-      } else if (type === 'video') {
-        (editor.commands as any).setVideo({ src: mediaPath });
-      } else if (type === 'audio') {
-        (editor.commands as any).setAudio({ src: mediaPath });
-      }
-    } catch (err) {
-      logger.error(`Failed to read file for upload: ${err}`);
+  function insertMediaByType(type: string, mediaPath: string) {
+    if (!editor) return;
+    if (type === 'image') {
+      editor.chain().focus().setImage({ src: mediaPath }).run();
+    } else if (type === 'video') {
+      (editor.commands as any).setVideo({ src: mediaPath });
+    } else if (type === 'audio') {
+      (editor.commands as any).setAudio({ src: mediaPath });
     }
   }
 
-  // Slash command menu state
+  // --- Media panel state ---
+  let mediaPanelVisible = $state(false);
+  let mediaPanelPosition = $state({ top: 0, left: 0 });
+  let mediaPanelType = $state('image');
+
+  function showMediaPanel(type: string) {
+    mediaPanelType = type;
+    // Position at cursor
+    if (editor) {
+      const { from } = editor.state.selection;
+      const coords = editor.view.coordsAtPos(from);
+      const spaceBelow = window.innerHeight - coords.bottom;
+      const panelHeight = 200;
+      mediaPanelPosition = {
+        top: spaceBelow >= panelHeight + 8 ? coords.bottom + 4 : coords.top - panelHeight - 4,
+        left: Math.min(coords.left, window.innerWidth - 340),
+      };
+    }
+    mediaPanelVisible = true;
+  }
+
+  async function handleMediaPanelUpload(files: FileList) {
+    const file = files[0];
+    if (!file) return;
+    const mediaPath = await uploadMedia(file);
+    if (mediaPath) {
+      insertMediaByType(mediaPanelType, mediaPath);
+    }
+    mediaPanelVisible = false;
+    editor?.chain().focus().run();
+  }
+
+  function handleMediaPanelLink(url: string) {
+    if (!editor) return;
+    if (mediaPanelType === 'image') {
+      editor.chain().focus().setImage({ src: url }).run();
+    } else {
+      const embed = detectEmbed(url);
+      (editor.commands as any).setEmbed({
+        url,
+        embedType: embed.type,
+        embedUrl: embed.embedUrl ?? null,
+        provider: embed.provider ?? null,
+      });
+    }
+    mediaPanelVisible = false;
+    editor?.chain().focus().run();
+  }
+
+  // --- Slash command menu state ---
   let slashVisible = $state(false);
   let slashItems = $state<SlashCommandItem[]>([]);
   let slashPosition = $state({ top: 0, left: 0 });
@@ -114,11 +134,9 @@
 
   async function save() {
     if (!editor || !editorState.dirty) return;
-
     editorState.markSaving();
     const markdown = serializeMarkdown(editor.getJSON());
     const hash = await computeHash(markdown);
-
     try {
       const updated = await writeFile(path, markdown);
       filesState.updateFile(updated);
@@ -129,23 +147,16 @@
     }
   }
 
-  /** Flush any pending save. Called by parent before switching files. */
   export async function flush() {
-    if (debounceTimer) {
-      clearTimeout(debounceTimer);
-      debounceTimer = undefined;
-    }
+    if (debounceTimer) { clearTimeout(debounceTimer); debounceTimer = undefined; }
     await save();
   }
 
   function scheduleAutoSave() {
     if (debounceTimer) clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(() => {
-      save();
-    }, 1000);
+    debounceTimer = setTimeout(() => { save(); }, 1000);
   }
 
-  /** Reload editor content (for external file changes). */
   export function reload(newContent: string) {
     if (!editor) return;
     const html = parseMarkdown(newContent);
@@ -153,14 +164,13 @@
     editorState.setPath(path);
   }
 
-  // Bridge TipTap suggestion callbacks → Svelte reactive state
-  const MENU_HEIGHT = 340; // max-height from CSS
+  const MENU_HEIGHT = 380;
 
   function calcPosition(rect: DOMRect) {
     const spaceBelow = window.innerHeight - rect.bottom;
     const top = spaceBelow >= MENU_HEIGHT + 8
-      ? rect.bottom + 4        // open below
-      : rect.top - MENU_HEIGHT - 4; // open above
+      ? rect.bottom + 4
+      : rect.top - MENU_HEIGHT - 4;
     return { top: Math.max(4, top), left: rect.left };
   }
 
@@ -179,9 +189,7 @@
         slashCommand = props.command;
         const rect = props.clientRect?.();
         if (rect) slashPosition = calcPosition(rect);
-        if (slashSelectedIndex >= props.items.length) {
-          slashSelectedIndex = 0;
-        }
+        if (slashSelectedIndex >= props.items.length) slashSelectedIndex = 0;
       },
       onKeyDown(props: any) {
         const event = props.event as KeyboardEvent;
@@ -197,9 +205,7 @@
         }
         if (event.key === 'Enter') {
           event.preventDefault();
-          if (slashItems[slashSelectedIndex] && slashCommand) {
-            slashCommand(slashItems[slashSelectedIndex]);
-          }
+          if (slashItems[slashSelectedIndex] && slashCommand) slashCommand(slashItems[slashSelectedIndex]);
           slashVisible = false;
           return true;
         }
@@ -217,11 +223,12 @@
   }
 
   function handleSlashSelect(item: SlashCommandItem) {
-    if (slashCommand) {
-      slashCommand(item);
-    }
+    if (slashCommand) slashCommand(item);
     slashVisible = false;
   }
+
+  // Expose showMediaPanel so slash commands can call it
+  (globalThis as any).__noctodeusShowMediaPanel = showMediaPanel;
 
   onMount(() => {
     if (!editorElement) return;
@@ -234,8 +241,6 @@
       extensions: createEditorExtensions({ slashPopup: createSlashPopup, mediaUploader: uploadMedia }),
       content: html,
       onUpdate: () => {
-        // TipTap normalizes HTML on load, firing a spurious update.
-        // Ignore updates until after the initial content is settled.
         if (!mounted) return;
         editorState.markDirty();
         scheduleAutoSave();
@@ -243,39 +248,23 @@
       autofocus: true,
     });
 
-    // Allow the editor to settle before tracking changes
     requestAnimationFrame(() => { mounted = true; });
-
     editorState.setPath(path);
 
-    // Listen for wiki-link clicks
     const handleWikiLinkClick = (e: Event) => {
       const detail = (e as CustomEvent).detail;
-      if (detail?.target) {
-        onnavigate(detail.target);
-      }
+      if (detail?.target) onnavigate(detail.target);
     };
     editorElement.addEventListener("wiki-link-click", handleWikiLinkClick);
 
-    // Listen for media upload requests from slash commands
-    const handleMediaRequest = (e: Event) => {
-      const detail = (e as CustomEvent).detail;
-      if (detail?.type) {
-        handleMediaUploadRequest(detail.type);
-      }
-    };
-    editorElement.addEventListener("media-upload-request", handleMediaRequest);
-
     return () => {
       editorElement?.removeEventListener("wiki-link-click", handleWikiLinkClick);
-      editorElement?.removeEventListener("media-upload-request", handleMediaRequest);
       if (debounceTimer) clearTimeout(debounceTimer);
       editor?.destroy();
       editor = undefined;
     };
   });
 
-  // Export editor instance for toolbar
   export function getEditor(): Editor | undefined {
     return editor;
   }
@@ -289,6 +278,15 @@
   position={slashPosition}
   selectedIndex={slashSelectedIndex}
   onselect={handleSlashSelect}
+/>
+
+<MediaPanel
+  visible={mediaPanelVisible}
+  position={mediaPanelPosition}
+  mediaType={mediaPanelType}
+  onupload={handleMediaPanelUpload}
+  onlinksubmit={handleMediaPanelLink}
+  onclose={() => { mediaPanelVisible = false; editor?.chain().focus().run(); }}
 />
 
 <style>
