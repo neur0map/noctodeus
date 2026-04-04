@@ -2,7 +2,7 @@
   import { onMount } from "svelte";
   import { Editor } from "@tiptap/core";
   import { createEditorExtensions } from "./extensions";
-  import { parseMarkdown, serializeMarkdown } from "./serializer";
+  import { parseMarkdown, serializeMarkdown, extractFrontmatter } from "./serializer";
   import { getEditorState } from "../stores/editor.svelte";
   import { getFilesState } from "../stores/files.svelte";
   import { getCoreState } from "../stores/core.svelte";
@@ -35,6 +35,7 @@
   let editorElement: HTMLDivElement | undefined = $state();
   let editor: Editor | undefined = $state();
   let debounceTimer: ReturnType<typeof setTimeout> | undefined;
+  let savedFrontmatter: string | null = extractFrontmatter(initialContent);
 
   // --- Media ---
   function insertMediaByType(type: string, filePath: string) {
@@ -164,7 +165,11 @@
   async function save() {
     if (!editor || !editorState.dirty) return;
     editorState.markSaving();
-    const markdown = serializeMarkdown(editor.getJSON());
+    let markdown = serializeMarkdown(editor.getJSON());
+    // Re-attach frontmatter that was stripped on load
+    if (savedFrontmatter) {
+      markdown = savedFrontmatter + markdown;
+    }
     const hash = await computeHash(markdown);
     try {
       const updated = await writeFile(path, markdown);

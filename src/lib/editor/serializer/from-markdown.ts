@@ -144,6 +144,16 @@ md.use(wikiLinkPlugin);
 md.use(taskListPlugin);
 md.use(mediaBlockPlugin);
 
+const FRONTMATTER_RE = /^---\r?\n[\s\S]*?\r?\n---\r?\n?/;
+
+/** Strip YAML frontmatter before rendering. Returns [html, frontmatter]. */
 export function parseMarkdown(markdown: string): string {
-  return md.render(markdown);
+  const body = markdown.replace(FRONTMATTER_RE, '');
+  return md.render(body);
+}
+
+/** Extract raw frontmatter string (including delimiters) from markdown. */
+export function extractFrontmatter(markdown: string): string | null {
+  const match = markdown.match(FRONTMATTER_RE);
+  return match ? match[0] : null;
 }
