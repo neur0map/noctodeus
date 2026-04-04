@@ -1,8 +1,12 @@
 <script lang="ts">
+  import type { Snippet } from 'svelte';
+
   let {
     path = '',
+    trailing,
   }: {
     path?: string;
+    trailing?: Snippet;
   } = $props();
 
   let segments = $derived(
@@ -27,6 +31,12 @@
         </span>
       {/each}
     </nav>
+  {/if}
+
+  {#if trailing}
+    <div class="content-header__trailing">
+      {@render trailing()}
+    </div>
   {/if}
 </div>
 
@@ -61,5 +71,11 @@
 
   .breadcrumb__segment--last {
     color: var(--color-text-primary);
+  }
+
+  .content-header__trailing {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
   }
 </style>
