@@ -24,36 +24,86 @@
   let dragging = $state(false);
   let tabsContainer: HTMLDivElement | undefined = $state();
 
+  // Ghost state
+  let ghost: HTMLDivElement | null = null;
+  let ghostOffsetX = 0;
+
   function handlePointerDown(index: number, e: PointerEvent) {
-    if (index === 0) return; // Home tab can't be dragged
-    if ((e.target as HTMLElement).closest('.tab-item__close')) return; // Don't drag from close button
+    if (index === 0) return;
+    if ((e.target as HTMLElement).closest('.tab-item__close')) return;
 
     const el = e.currentTarget as HTMLElement;
     el.setPointerCapture(e.pointerId);
 
     const startX = e.clientX;
+    const startY = e.clientY;
     let hasMoved = false;
 
     function onMove(ev: PointerEvent) {
       const dx = Math.abs(ev.clientX - startX);
-      if (!hasMoved && dx < 5) return; // Threshold before drag starts
+      if (!hasMoved && dx < 5) return;
 
       if (!hasMoved) {
         hasMoved = true;
         dragging = true;
         dragFromIndex = index;
+
+        // Create floating ghost from the source tab
+        const rect = el.getBoundingClientRect();
+        ghostOffsetX = ev.clientX - rect.left;
+
+        ghost = document.createElement('div');
+        ghost.className = 'tab-ghost';
+        ghost.textContent = el.textContent;
+        ghost.style.cssText = `
+          position: fixed;
+          top: ${rect.top}px;
+          left: ${ev.clientX - ghostOffsetX}px;
+          width: ${rect.width}px;
+          height: ${rect.height}px;
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          padding: 0 12px;
+          font-family: var(--font-mono);
+          font-size: 12px;
+          color: var(--color-text-primary);
+          background: rgba(25, 26, 35, 0.95);
+          border: 1px solid rgba(255, 255, 255, 0.12);
+          border-radius: 8px;
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.06);
+          pointer-events: none;
+          z-index: 9999;
+          transform: scale(1.04);
+          transition: transform 120ms cubic-bezier(0.16, 1, 0.3, 1);
+          backdrop-filter: blur(12px);
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        `;
+        document.body.appendChild(ghost);
       }
 
-      // Determine which tab the pointer is over
+      // Move ghost
+      if (ghost) {
+        ghost.style.left = `${ev.clientX - ghostOffsetX}px`;
+      }
+
+      // Determine drop target by midpoint comparison
       if (!tabsContainer) return;
       const tabEls = Array.from(tabsContainer.querySelectorAll<HTMLElement>('.tab-item'));
+      let newOverIndex: number | null = null;
       for (let i = 0; i < tabEls.length; i++) {
+        if (i === 0) continue; // Can't drop on home
         const rect = tabEls[i].getBoundingClientRect();
-        if (ev.clientX >= rect.left && ev.clientX <= rect.right) {
-          dragOverIndex = i === 0 ? null : i; // Can't drop on home
+        const mid = rect.left + rect.width / 2;
+        if (ev.clientX < mid) {
+          newOverIndex = i;
           break;
         }
+        newOverIndex = i;
       }
+      dragOverIndex = newOverIndex;
     }
 
     function onUp() {
@@ -63,6 +113,12 @@
 
       if (hasMoved && dragFromIndex !== null && dragOverIndex !== null && dragFromIndex !== dragOverIndex) {
         onreorder(dragFromIndex, dragOverIndex);
+      }
+
+      // Remove ghost
+      if (ghost) {
+        ghost.remove();
+        ghost = null;
       }
 
       dragFromIndex = null;

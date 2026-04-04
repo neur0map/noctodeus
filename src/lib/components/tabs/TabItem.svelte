@@ -115,12 +115,22 @@
   }
 
   .tab-item--dragging {
-    opacity: 0.5;
+    opacity: 0.3;
+    transform: scaleX(0.6);
+    transition:
+      opacity var(--duration-fast) var(--ease-out),
+      transform var(--duration-fast) var(--ease-out);
   }
 
-  .tab-item--drag-over {
-    background: rgba(122, 141, 255, 0.08);
-    border-bottom-color: var(--color-accent);
+  .tab-item--drag-over::before {
+    content: '';
+    position: absolute;
+    left: -1px;
+    top: 25%;
+    bottom: 25%;
+    width: 2px;
+    background: var(--color-accent);
+    border-radius: 1px;
   }
 
   .tab-item--home {
