@@ -1,15 +1,18 @@
 import type { FileNode, TreeNode } from '../types/core';
 
+export type SortMode = 'name-asc' | 'name-desc' | 'modified-new' | 'modified-old';
+
 let fileMap = $state<Map<string, FileNode>>(new Map());
 let expandedDirs = $state<Set<string>>(new Set());
 let activeFilePath = $state<string | null>(null);
+let sortMode = $state<SortMode>('name-asc');
 
 // Derived tree structure from flat map
 let tree = $derived.by(() => {
-  return buildTree(fileMap, expandedDirs);
+  return buildTree(fileMap, expandedDirs, sortMode);
 });
 
-function buildTree(files: Map<string, FileNode>, expanded: Set<string>): TreeNode[] {
+function buildTree(files: Map<string, FileNode>, expanded: Set<string>, sort: SortMode): TreeNode[] {
   const childMap = new Map<string, TreeNode[]>();
 
   // Group files by parent_dir
@@ -23,10 +26,21 @@ function buildTree(files: Map<string, FileNode>, expanded: Set<string>): TreeNod
     });
   }
 
-  // Sort: directories first, then alphabetical case-insensitive
+  // Sort: directories first, then by chosen mode
   const sortNodes = (a: TreeNode, b: TreeNode) => {
     if (a.is_directory !== b.is_directory) return a.is_directory ? -1 : 1;
-    return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
+    switch (sort) {
+      case 'name-asc':
+        return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
+      case 'name-desc':
+        return b.name.localeCompare(a.name, undefined, { sensitivity: 'base' });
+      case 'modified-new':
+        return b.modified_at - a.modified_at;
+      case 'modified-old':
+        return a.modified_at - b.modified_at;
+      default:
+        return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
+    }
   };
 
   // Build tree recursively
@@ -57,7 +71,13 @@ export function getFilesState() {
     get expandedDirs() {
       return expandedDirs;
     },
+    get sortMode() {
+      return sortMode;
+    },
 
+    setSortMode(mode: SortMode) {
+      sortMode = mode;
+    },
     setFiles(files: FileNode[]) {
       const map = new Map<string, FileNode>();
       for (const f of files) map.set(f.path, f);

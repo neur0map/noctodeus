@@ -280,6 +280,16 @@
           <span class="sidebar-footer__count">
             {files.fileMap.size} files
           </span>
+          <select
+            class="sidebar-footer__sort"
+            value={files.sortMode}
+            onchange={(e) => files.setSortMode((e.target as HTMLSelectElement).value as any)}
+          >
+            <option value="name-asc">A → Z</option>
+            <option value="name-desc">Z → A</option>
+            <option value="modified-new">Newest</option>
+            <option value="modified-old">Oldest</option>
+          </select>
         </div>
       {/snippet}
     </Sidebar>
@@ -403,6 +413,7 @@
   .sidebar-footer {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     height: 24px;
   }
 
@@ -411,6 +422,24 @@
     font-size: var(--text-xs);
     line-height: var(--text-xs-leading);
     color: rgba(255, 255, 255, 0.36);
+  }
+
+  .sidebar-footer__sort {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.36);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+    padding: 0 2px;
+  }
+
+  .sidebar-footer__sort option {
+    background: var(--color-bg-elevated);
+    color: var(--color-text-primary);
   }
 
   .utility-rail {
