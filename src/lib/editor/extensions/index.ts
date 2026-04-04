@@ -7,7 +7,6 @@ import Image from '@tiptap/extension-image';
 import Placeholder from '@tiptap/extension-placeholder';
 import { createLowlight, common } from 'lowlight';
 import { WikiLink } from './wiki-link.js';
-import GlobalDragHandle from 'tiptap-extension-global-drag-handle';
 
 import type { Extensions } from '@tiptap/core';
 
@@ -45,8 +44,5 @@ export function createEditorExtensions(
       placeholder,
     }),
     WikiLink,
-    GlobalDragHandle.configure({
-      dragHandleWidth: 24,
-    }),
   ];
 }

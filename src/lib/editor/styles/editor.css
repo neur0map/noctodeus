@@ -15,7 +15,6 @@
   margin: 0 auto;
   padding: calc(var(--stage-inner-padding) + var(--space-2))
     var(--stage-inner-padding);
-  padding-left: calc(var(--stage-inner-padding) + 24px);
   outline: none;
   min-height: 100%;
   position: relative;
@@ -272,55 +271,6 @@
   pointer-events: none;
 }
 
-/* --------------------------------------------------------------------------
-   Block Drag Handle (tiptap-extension-global-drag-handle)
-   Extension creates a headless div.drag-handle in the editor's parent,
-   sets inline style.left/top, and toggles .hide class.
-   -------------------------------------------------------------------------- */
-.drag-handle {
-  position: fixed;
-  width: 20px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 4px;
-  cursor: grab;
-  z-index: 50;
-  user-select: none;
-  opacity: 1;
-  transition: opacity var(--duration-fast) var(--ease-out);
-}
-
-.drag-handle.hide {
-  opacity: 0;
-  pointer-events: none;
-}
-
-/* 6-dot grip icon */
-.drag-handle::after {
-  content: '\2807\2807';
-  font-size: 11px;
-  letter-spacing: 1px;
-  color: rgba(255, 255, 255, 0.2);
-  transition: color var(--duration-fast) var(--ease-out);
-}
-
-.drag-handle:hover {
-  background: rgba(255, 255, 255, 0.06);
-}
-
-.drag-handle:hover::after {
-  color: rgba(255, 255, 255, 0.5);
-}
-
-.drag-handle:active {
-  cursor: grabbing;
-}
-
-.drag-handle:active::after {
-  color: rgba(255, 255, 255, 0.7);
-}
 
 /* --------------------------------------------------------------------------
    Reduced Motion

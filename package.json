@@ -30,8 +30,7 @@
     "@tiptap/pm": "^3.22.1",
     "@tiptap/starter-kit": "^3.22.1",
     "lowlight": "^3.3.0",
-    "markdown-it": "^14.1.1",
-    "tiptap-extension-global-drag-handle": "^0.1.18"
+    "markdown-it": "^14.1.1"
   },
   "devDependencies": {
     "@sveltejs/adapter-static": "^3.0.6",
