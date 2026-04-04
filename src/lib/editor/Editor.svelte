@@ -85,6 +85,16 @@
   }
 
   // Bridge TipTap suggestion callbacks → Svelte reactive state
+  const MENU_HEIGHT = 340; // max-height from CSS
+
+  function calcPosition(rect: DOMRect) {
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const top = spaceBelow >= MENU_HEIGHT + 8
+      ? rect.bottom + 4        // open below
+      : rect.top - MENU_HEIGHT - 4; // open above
+    return { top: Math.max(4, top), left: rect.left };
+  }
+
   function createSlashPopup() {
     return {
       onStart(props: any) {
@@ -92,19 +102,14 @@
         slashCommand = props.command;
         slashSelectedIndex = 0;
         const rect = props.clientRect?.();
-        if (rect) {
-          slashPosition = { top: rect.bottom + 4, left: rect.left };
-        }
+        if (rect) slashPosition = calcPosition(rect);
         slashVisible = true;
       },
       onUpdate(props: any) {
         slashItems = props.items;
         slashCommand = props.command;
         const rect = props.clientRect?.();
-        if (rect) {
-          slashPosition = { top: rect.bottom + 4, left: rect.left };
-        }
-        // Reset selection if items changed
+        if (rect) slashPosition = calcPosition(rect);
         if (slashSelectedIndex >= props.items.length) {
           slashSelectedIndex = 0;
         }
