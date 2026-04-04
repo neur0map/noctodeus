@@ -67,9 +67,61 @@ function taskListPlugin(md: MarkdownIt) {
   });
 }
 
+function mediaBlockPlugin(md: MarkdownIt) {
+  // Transform ![video](src) and ![audio](src) into <video>/<audio> tags
+  // Transform [embed](url) into <div data-embed-url>
+  const defaultImageRenderer = md.renderer.rules.image;
+  md.renderer.rules.image = (tokens, idx, options, env, self) => {
+    const token = tokens[idx];
+    const alt = token.children?.map((t) => t.content).join('') ?? '';
+    const src = token.attrGet('src') ?? '';
+
+    if (alt === 'video') {
+      return `<video src="${src}" controls preload="metadata" class="media-video"></video>`;
+    }
+    if (alt === 'audio') {
+      return `<audio src="${src}" controls class="media-audio"></audio>`;
+    }
+
+    // Default image rendering
+    if (defaultImageRenderer) {
+      return defaultImageRenderer(tokens, idx, options, env, self);
+    }
+    return self.renderToken(tokens, idx, options);
+  };
+
+  // Transform [embed](url) links into embed divs
+  const defaultLinkOpenRenderer = md.renderer.rules.link_open;
+  const defaultLinkCloseRenderer = md.renderer.rules.link_close;
+
+  md.core.ruler.after('inline', 'embed_links', (state) => {
+    const tokens = state.tokens;
+    for (let i = 0; i < tokens.length; i++) {
+      if (tokens[i].type !== 'inline' || !tokens[i].children) continue;
+      const children = tokens[i].children!;
+      for (let j = 0; j < children.length; j++) {
+        if (
+          children[j].type === 'link_open' &&
+          j + 2 < children.length &&
+          children[j + 1].type === 'text' &&
+          children[j + 1].content === 'embed' &&
+          children[j + 2].type === 'link_close'
+        ) {
+          const href = children[j].attrGet('href') ?? '';
+          // Replace the three tokens with a single html_inline
+          const embedToken = new state.Token('html_inline', '', 0);
+          embedToken.content = `<div data-embed-url="${href.replace(/"/g, '&quot;')}"></div>`;
+          children.splice(j, 3, embedToken);
+        }
+      }
+    }
+  });
+}
+
 const md = new MarkdownIt('default', { html: false, linkify: true, typographer: false });
 md.use(wikiLinkPlugin);
 md.use(taskListPlugin);
+md.use(mediaBlockPlugin);
 
 export function parseMarkdown(markdown: string): string {
   return md.render(markdown);

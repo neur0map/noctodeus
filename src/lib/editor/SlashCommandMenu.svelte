@@ -17,7 +17,22 @@
 
   let listEl: HTMLDivElement | undefined = $state();
 
-  // Scroll selected item into view
+  // Group items by their group field, preserving order
+  let groupedItems = $derived(() => {
+    const groups: { label: string; items: { item: SlashCommandItem; globalIndex: number }[] }[] = [];
+    let currentGroup: string | null = null;
+
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (item.group !== currentGroup) {
+        currentGroup = item.group;
+        groups.push({ label: item.group, items: [] });
+      }
+      groups[groups.length - 1].items.push({ item, globalIndex: i });
+    }
+    return groups;
+  });
+
   $effect(() => {
     if (!listEl || !visible) return;
     const selected = listEl.querySelector('.slash-menu__item--selected');
@@ -35,24 +50,30 @@
     aria-label="Slash commands"
     bind:this={listEl}
   >
-    {#each items as item, i (item.id)}
-      <button
-        class="slash-menu__item"
-        class:slash-menu__item--selected={i === selectedIndex}
-        role="option"
-        aria-selected={i === selectedIndex}
-        onmousedown={(e) => { e.preventDefault(); onselect(item); }}
-        onmouseenter={() => { selectedIndex = i; }}
-      >
-        <span class="slash-menu__icon">{item.icon}</span>
-        <div class="slash-menu__text">
-          <span class="slash-menu__label">{item.label}</span>
-          <span class="slash-menu__desc">{item.description}</span>
-        </div>
-        {#if item.shortcut}
-          <kbd class="slash-menu__shortcut">{item.shortcut}</kbd>
-        {/if}
-      </button>
+    {#each groupedItems() as group, gi}
+      {#if gi > 0}
+        <div class="slash-menu__divider"></div>
+      {/if}
+      <div class="slash-menu__group-label">{group.label}</div>
+      {#each group.items as { item, globalIndex } (item.id)}
+        <button
+          class="slash-menu__item"
+          class:slash-menu__item--selected={globalIndex === selectedIndex}
+          role="option"
+          aria-selected={globalIndex === selectedIndex}
+          onmousedown={(e) => { e.preventDefault(); onselect(item); }}
+          onmouseenter={() => { selectedIndex = globalIndex; }}
+        >
+          <span class="slash-menu__icon">{item.icon}</span>
+          <div class="slash-menu__text">
+            <span class="slash-menu__label">{item.label}</span>
+            <span class="slash-menu__desc">{item.description}</span>
+          </div>
+          {#if item.shortcut}
+            <kbd class="slash-menu__shortcut">{item.shortcut}</kbd>
+          {/if}
+        </button>
+      {/each}
     {/each}
     <div class="slash-menu__footer">
       <span>Close</span>
@@ -66,7 +87,7 @@
     position: fixed;
     z-index: 100;
     width: 280px;
-    max-height: 340px;
+    max-height: 380px;
     overflow-y: auto;
     background: rgba(20, 21, 27, 0.97);
     border: 1px solid rgba(255, 255, 255, 0.08);
@@ -93,6 +114,22 @@
       opacity: 1;
       transform: translateY(0) scale(1);
     }
+  }
+
+  .slash-menu__group-label {
+    padding: var(--space-2) var(--space-3) var(--space-1);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.26);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    user-select: none;
+  }
+
+  .slash-menu__divider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.06);
+    margin: var(--space-1) var(--space-2);
   }
 
   .slash-menu__item {

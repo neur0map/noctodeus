@@ -1,6 +1,7 @@
 import { Extension } from '@tiptap/core';
 import Suggestion from '@tiptap/suggestion';
 import type { Editor, Range } from '@tiptap/core';
+import { detectEmbed } from './embed-block.js';
 
 export interface SlashCommandItem {
   id: string;
@@ -8,15 +9,18 @@ export interface SlashCommandItem {
   icon: string;
   description: string;
   shortcut?: string;
+  group: string;
   command: (editor: Editor, range: Range) => void;
 }
 
 const COMMANDS: SlashCommandItem[] = [
+  // --- Basic blocks ---
   {
     id: 'text',
     label: 'Text',
     icon: 'T',
     description: 'Plain text block',
+    group: 'Basic blocks',
     command: (editor, range) => {
       editor.chain().focus().deleteRange(range).setParagraph().run();
     },
@@ -27,6 +31,7 @@ const COMMANDS: SlashCommandItem[] = [
     icon: 'H1',
     description: 'Large heading',
     shortcut: '#',
+    group: 'Basic blocks',
     command: (editor, range) => {
       editor.chain().focus().deleteRange(range).setHeading({ level: 1 }).run();
     },
@@ -37,6 +42,7 @@ const COMMANDS: SlashCommandItem[] = [
     icon: 'H2',
     description: 'Medium heading',
     shortcut: '##',
+    group: 'Basic blocks',
     command: (editor, range) => {
       editor.chain().focus().deleteRange(range).setHeading({ level: 2 }).run();
     },
@@ -47,6 +53,7 @@ const COMMANDS: SlashCommandItem[] = [
     icon: 'H3',
     description: 'Small heading',
     shortcut: '###',
+    group: 'Basic blocks',
     command: (editor, range) => {
       editor.chain().focus().deleteRange(range).setHeading({ level: 3 }).run();
     },
@@ -57,6 +64,7 @@ const COMMANDS: SlashCommandItem[] = [
     icon: '•',
     description: 'Unordered list',
     shortcut: '-',
+    group: 'Basic blocks',
     command: (editor, range) => {
       editor.chain().focus().deleteRange(range).toggleBulletList().run();
     },
@@ -67,6 +75,7 @@ const COMMANDS: SlashCommandItem[] = [
     icon: '1.',
     description: 'Ordered list',
     shortcut: '1.',
+    group: 'Basic blocks',
     command: (editor, range) => {
       editor.chain().focus().deleteRange(range).toggleOrderedList().run();
     },
@@ -77,6 +86,7 @@ const COMMANDS: SlashCommandItem[] = [
     icon: '☐',
     description: 'Checklist with tasks',
     shortcut: '[]',
+    group: 'Basic blocks',
     command: (editor, range) => {
       editor.chain().focus().deleteRange(range).toggleTaskList().run();
     },
@@ -87,6 +97,7 @@ const COMMANDS: SlashCommandItem[] = [
     icon: '❝',
     description: 'Block quote',
     shortcut: '>',
+    group: 'Basic blocks',
     command: (editor, range) => {
       editor.chain().focus().deleteRange(range).setBlockquote().run();
     },
@@ -97,6 +108,7 @@ const COMMANDS: SlashCommandItem[] = [
     icon: '</>',
     description: 'Syntax highlighted code',
     shortcut: '```',
+    group: 'Basic blocks',
     command: (editor, range) => {
       editor.chain().focus().deleteRange(range).setCodeBlock().run();
     },
@@ -107,20 +119,77 @@ const COMMANDS: SlashCommandItem[] = [
     icon: '—',
     description: 'Horizontal rule',
     shortcut: '---',
+    group: 'Basic blocks',
     command: (editor, range) => {
       editor.chain().focus().deleteRange(range).setHorizontalRule().run();
     },
   },
+
+  // --- Media ---
   {
     id: 'image',
     label: 'Image',
     icon: '▣',
-    description: 'Embed an image from URL',
+    description: 'Upload or embed an image',
+    group: 'Media',
     command: (editor, range) => {
-      const url = window.prompt('Image URL');
-      if (url) {
-        editor.chain().focus().deleteRange(range).setImage({ src: url }).run();
-      }
+      editor.chain().focus().deleteRange(range).run();
+      // Dispatch custom event — Editor.svelte handles the file picker
+      editor.view.dom.dispatchEvent(new CustomEvent('media-upload-request', {
+        detail: { type: 'image' },
+        bubbles: true,
+      }));
+    },
+  },
+  {
+    id: 'video',
+    label: 'Video',
+    icon: '▶',
+    description: 'Upload a video file',
+    group: 'Media',
+    command: (editor, range) => {
+      editor.chain().focus().deleteRange(range).run();
+      editor.view.dom.dispatchEvent(new CustomEvent('media-upload-request', {
+        detail: { type: 'video' },
+        bubbles: true,
+      }));
+    },
+  },
+  {
+    id: 'audio',
+    label: 'Audio',
+    icon: '♫',
+    description: 'Upload an audio file',
+    group: 'Media',
+    command: (editor, range) => {
+      editor.chain().focus().deleteRange(range).run();
+      editor.view.dom.dispatchEvent(new CustomEvent('media-upload-request', {
+        detail: { type: 'audio' },
+        bubbles: true,
+      }));
+    },
+  },
+  {
+    id: 'embed-url',
+    label: 'Embed URL',
+    icon: '⊞',
+    description: 'YouTube, Spotify, or any link',
+    group: 'Media',
+    command: (editor, range) => {
+      const url = window.prompt('Paste a URL');
+      if (!url) return;
+
+      editor.chain().focus().deleteRange(range).run();
+
+      const embed = detectEmbed(url);
+      const attrs: Record<string, unknown> = {
+        url,
+        embedType: embed.type,
+        embedUrl: embed.embedUrl ?? null,
+        provider: embed.provider ?? null,
+      };
+
+      (editor.commands as any).setEmbed(attrs);
     },
   },
 ];
@@ -129,7 +198,6 @@ function fuzzyMatch(query: string, text: string): boolean {
   const q = query.toLowerCase();
   const t = text.toLowerCase();
   if (t.includes(q)) return true;
-  // Simple fuzzy: every char in query appears in order in text
   let qi = 0;
   for (let ti = 0; ti < t.length && qi < q.length; ti++) {
     if (t[ti] === q[qi]) qi++;
@@ -137,15 +205,7 @@ function fuzzyMatch(query: string, text: string): boolean {
   return qi === q.length;
 }
 
-// The popup renderer interface expected by @tiptap/suggestion
-export interface SlashCommandPopup {
-  show: (props: { query: string; items: SlashCommandItem[]; clientRect: (() => DOMRect | null) | null; command: (item: SlashCommandItem) => void }) => void;
-  update: (props: { query: string; items: SlashCommandItem[]; clientRect: (() => DOMRect | null) | null; command: (item: SlashCommandItem) => void }) => void;
-  hide: () => void;
-  onKeyDown: (props: { event: KeyboardEvent }) => boolean;
-}
-
-export type CreatePopup = () => SlashCommandPopup;
+export type CreatePopup = () => any;
 
 export function createSlashCommand(createPopup: CreatePopup) {
   return Extension.create({

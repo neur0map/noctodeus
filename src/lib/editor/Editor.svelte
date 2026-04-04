@@ -5,11 +5,14 @@
   import { parseMarkdown, serializeMarkdown } from "./serializer";
   import { getEditorState } from "../stores/editor.svelte";
   import { getFilesState } from "../stores/files.svelte";
+  import { getCoreState } from "../stores/core.svelte";
   import { writeFile } from "../bridge/commands";
   import { logger } from "../logger";
   import SlashCommandMenu from "./SlashCommandMenu.svelte";
   import type { SlashCommandItem } from "./extensions/slash-command";
+  import { open as openFileDialog } from "@tauri-apps/plugin-dialog";
   import "./styles/editor.css";
+  import "./styles/media.css";
 
   let {
     path,
@@ -23,10 +26,76 @@
 
   const editorState = getEditorState();
   const filesState = getFilesState();
+  const coreState = getCoreState();
 
   let editorElement: HTMLDivElement | undefined = $state();
   let editor: Editor | undefined = $state();
   let debounceTimer: ReturnType<typeof setTimeout> | undefined;
+
+  // Media upload — copies file to <core>/media/ and returns relative path
+  async function uploadMedia(file: File): Promise<string | null> {
+    const corePath = coreState.activeCore?.path;
+    if (!corePath) return null;
+
+    try {
+      const { mkdir, copyFile, exists } = await import('@tauri-apps/plugin-fs');
+      const mediaDir = `${corePath}/media`;
+      if (!(await exists(mediaDir))) {
+        await mkdir(mediaDir, { recursive: true });
+      }
+      const ext = file.name.split('.').pop() ?? 'bin';
+      const hash = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+      const filename = `${hash}.${ext}`;
+      const destPath = `${mediaDir}/${filename}`;
+
+      // Write file from ArrayBuffer
+      const { writeFile: tauriWriteFile } = await import('@tauri-apps/plugin-fs');
+      const buffer = await file.arrayBuffer();
+      await tauriWriteFile(destPath, new Uint8Array(buffer));
+
+      return `media/${filename}`;
+    } catch (err) {
+      logger.error(`Media upload failed: ${err}`);
+      return null;
+    }
+  }
+
+  async function handleMediaUploadRequest(type: string) {
+    const filters: Record<string, { name: string; extensions: string[] }[]> = {
+      image: [{ name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'] }],
+      video: [{ name: 'Videos', extensions: ['mp4', 'webm', 'mov'] }],
+      audio: [{ name: 'Audio', extensions: ['mp3', 'wav', 'ogg', 'm4a', 'webm'] }],
+    };
+
+    const selected = await openFileDialog({
+      multiple: false,
+      filters: filters[type] ?? [],
+      title: `Select ${type}`,
+    });
+
+    if (!selected) return;
+    const filePath = typeof selected === 'string' ? selected : String(selected);
+
+    // Read the file and upload
+    try {
+      const { readFile: tauriReadFile } = await import('@tauri-apps/plugin-fs');
+      const contents = await tauriReadFile(filePath);
+      const ext = filePath.split('.').pop() ?? 'bin';
+      const blob = new File([contents], `upload.${ext}`, { type: `${type}/${ext}` });
+      const mediaPath = await uploadMedia(blob);
+      if (!mediaPath || !editor) return;
+
+      if (type === 'image') {
+        editor.chain().focus().setImage({ src: mediaPath }).run();
+      } else if (type === 'video') {
+        (editor.commands as any).setVideo({ src: mediaPath });
+      } else if (type === 'audio') {
+        (editor.commands as any).setAudio({ src: mediaPath });
+      }
+    } catch (err) {
+      logger.error(`Failed to read file for upload: ${err}`);
+    }
+  }
 
   // Slash command menu state
   let slashVisible = $state(false);
@@ -162,7 +231,7 @@
 
     editor = new Editor({
       element: editorElement,
-      extensions: createEditorExtensions({ slashPopup: createSlashPopup }),
+      extensions: createEditorExtensions({ slashPopup: createSlashPopup, mediaUploader: uploadMedia }),
       content: html,
       onUpdate: () => {
         // TipTap normalizes HTML on load, firing a spurious update.
@@ -188,11 +257,18 @@
     };
     editorElement.addEventListener("wiki-link-click", handleWikiLinkClick);
 
+    // Listen for media upload requests from slash commands
+    const handleMediaRequest = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail?.type) {
+        handleMediaUploadRequest(detail.type);
+      }
+    };
+    editorElement.addEventListener("media-upload-request", handleMediaRequest);
+
     return () => {
-      editorElement?.removeEventListener(
-        "wiki-link-click",
-        handleWikiLinkClick,
-      );
+      editorElement?.removeEventListener("wiki-link-click", handleWikiLinkClick);
+      editorElement?.removeEventListener("media-upload-request", handleMediaRequest);
       if (debounceTimer) clearTimeout(debounceTimer);
       editor?.destroy();
       editor = undefined;

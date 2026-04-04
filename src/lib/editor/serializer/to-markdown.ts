@@ -109,6 +109,21 @@ function serializeNode(node: JSONContent): string {
       return `![${alt}](${src})\n\n`;
     }
 
+    case 'videoBlock': {
+      const src = node.attrs?.src ?? '';
+      return `![video](${src})\n\n`;
+    }
+
+    case 'audioBlock': {
+      const src = node.attrs?.src ?? '';
+      return `![audio](${src})\n\n`;
+    }
+
+    case 'embedBlock': {
+      const url = node.attrs?.url ?? '';
+      return `[embed](${url})\n\n`;
+    }
+
     case 'hardBreak':
       return '  \n';
 
