@@ -15,6 +15,7 @@
   margin: 0 auto;
   padding: calc(var(--stage-inner-padding) + var(--space-2))
     var(--stage-inner-padding);
+  padding-left: calc(var(--stage-inner-padding) + 24px);
   outline: none;
   min-height: 100%;
   position: relative;
@@ -273,42 +274,43 @@
 
 /* --------------------------------------------------------------------------
    Block Drag Handle (tiptap-extension-global-drag-handle)
+   The extension appends a fixed-position div to the editor's parent.
+   We override its sizing/look and use ::before for the 6-dot grip.
    -------------------------------------------------------------------------- */
 .drag-handle {
-  position: fixed;
-  width: 20px;
-  height: 20px;
-  display: flex;
+  /* Extension sets position:fixed + top/left. We just control size/look. */
+  width: 18px !important;
+  height: 18px !important;
+  display: flex !important;
   align-items: center;
   justify-content: center;
   border-radius: 4px;
   cursor: grab;
-  opacity: 1;
   z-index: 50;
   user-select: none;
-  transition:
-    top 80ms var(--ease-out),
-    opacity var(--duration-fast) var(--ease-out);
+  /* Shift left so it doesn't overlap text */
+  transform: translateX(-8px);
 }
 
-/* 6-dot grip icon */
+/* 6-dot grip icon via radial-gradient */
 .drag-handle::before {
   content: '';
   display: block;
-  width: 10px;
-  height: 14px;
-  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.22) 1.2px, transparent 1.2px);
-  background-size: 5px 5px;
+  width: 8px;
+  height: 12px;
+  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.22) 1px, transparent 1px);
+  background-size: 4px 4px;
   background-position: 0 0;
+  flex-shrink: 0;
   transition: background-image var(--duration-fast) var(--ease-out);
-}
-
-.drag-handle:hover::before {
-  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.52) 1.2px, transparent 1.2px);
 }
 
 .drag-handle:hover {
   background: rgba(255, 255, 255, 0.05);
+}
+
+.drag-handle:hover::before {
+  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.52) 1px, transparent 1px);
 }
 
 .drag-handle:active {
@@ -316,7 +318,7 @@
 }
 
 .drag-handle:active::before {
-  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.64) 1.2px, transparent 1.2px);
+  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.64) 1px, transparent 1px);
 }
 
 /* --------------------------------------------------------------------------
