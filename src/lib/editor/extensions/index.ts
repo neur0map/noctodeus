@@ -7,6 +7,7 @@ import Image from '@tiptap/extension-image';
 import Placeholder from '@tiptap/extension-placeholder';
 import { createLowlight, common } from 'lowlight';
 import { WikiLink } from './wiki-link.js';
+import { BlockDragHandle } from './block-drag-handle.js';
 
 import type { Extensions } from '@tiptap/core';
 
@@ -44,5 +45,6 @@ export function createEditorExtensions(
       placeholder,
     }),
     WikiLink,
+    BlockDragHandle,
   ];
 }
