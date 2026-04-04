@@ -366,8 +366,6 @@
       graphStats={graphState.stats}
       graphScanning={graphState.scanning}
       onfileopen={openFile}
-      onnewnote={handleNewNote}
-      onopencore={handleOpenCore}
     />
   </Worksurface>
 {/if}
