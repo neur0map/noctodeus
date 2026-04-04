@@ -98,11 +98,17 @@ function mediaBlockPlugin(md: MarkdownIt) {
       return `<audio src="${src}" controls class="media-audio"></audio>`;
     }
 
-    // Default image rendering
-    if (defaultImageRenderer) {
-      return defaultImageRenderer(tokens, idx, options, env, self);
+    // Check for width suffix: ![alt](src =WIDTHx)
+    let imgSrc = src;
+    let widthAttr = '';
+    const widthMatch = src.match(/^(.+?)\s+=(\d+)x\)?$/);
+    if (widthMatch) {
+      imgSrc = widthMatch[1];
+      widthAttr = ` width="${widthMatch[2]}" style="width:${widthMatch[2]}px"`;
     }
-    return self.renderToken(tokens, idx, options);
+
+    const escapedAlt = alt.replace(/"/g, '&quot;');
+    return `<img src="${imgSrc}" alt="${escapedAlt}"${widthAttr} />`;
   };
 
   // Transform [embed](url) links into embed divs

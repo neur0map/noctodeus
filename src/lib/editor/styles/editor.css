@@ -228,19 +228,58 @@
 }
 
 /* --------------------------------------------------------------------------
-   Images
+   Resizable Images
    -------------------------------------------------------------------------- */
-.ProseMirror img {
+.resizable-image {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+  margin: var(--space-4) 0;
+  line-height: 0;
+}
+
+.resizable-image__img {
   max-width: 100%;
   height: auto;
   border-radius: 8px;
-  margin: var(--space-4) 0;
   display: block;
+  cursor: default;
 }
 
-.ProseMirror img.ProseMirror-selectednode {
+/* Resize handle — bottom-right corner */
+.resizable-image__handle {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  background: var(--color-accent);
+  cursor: nwse-resize;
+  opacity: 0;
+  transition: opacity var(--duration-fast) var(--ease-out);
+  z-index: 2;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+.resizable-image:hover .resizable-image__handle,
+.resizable-image--resizing .resizable-image__handle {
+  opacity: 1;
+}
+
+/* Selected state */
+.resizable-image.ProseMirror-selectednode {
   outline: 2px solid var(--color-accent);
   outline-offset: 2px;
+  border-radius: 8px;
+}
+
+.resizable-image--resizing {
+  user-select: none;
+}
+
+.resizable-image--resizing .resizable-image__img {
+  pointer-events: none;
 }
 
 /* --------------------------------------------------------------------------

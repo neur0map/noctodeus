@@ -106,6 +106,10 @@ function serializeNode(node: JSONContent): string {
     case 'image': {
       const alt = node.attrs?.alt ?? '';
       const src = node.attrs?.src ?? '';
+      const width = node.attrs?.width;
+      if (width) {
+        return `![${alt}](${src} =${width}x)\n\n`;
+      }
       return `![${alt}](${src})\n\n`;
     }
 

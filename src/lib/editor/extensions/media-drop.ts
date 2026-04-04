@@ -40,7 +40,7 @@ export function createMediaDrop(uploadFile: MediaUploader) {
                 if (!mediaPath) return;
 
                 if (nodeType === 'image') {
-                  editorRef.chain().focus().setImage({ src: mediaPath }).run();
+                  (editorRef.commands as any).setImage({ src: mediaPath });
                 } else {
                   editorRef.chain().focus().insertContentAt(
                     pos?.pos ?? editorRef.state.selection.head,

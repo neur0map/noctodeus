@@ -41,7 +41,7 @@
     // Convert local paths to Tauri asset protocol URLs so WebView can load them
     const src = filePath.startsWith('http') ? filePath : convertFileSrc(filePath);
     if (type === 'image') {
-      editor.chain().focus().setImage({ src }).run();
+      (editor.commands as any).setImage({ src });
     } else if (type === 'video') {
       (editor.commands as any).setVideo({ src });
     } else if (type === 'audio') {
@@ -98,7 +98,7 @@
   function handleMediaPanelLink(url: string) {
     if (!editor) return;
     if (mediaPanelType === 'image') {
-      editor.chain().focus().setImage({ src: url }).run();
+      (editor.commands as any).setImage({ src: url });
     } else {
       const embed = detectEmbed(url);
       (editor.commands as any).setEmbed({

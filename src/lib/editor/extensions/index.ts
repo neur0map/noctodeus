@@ -3,7 +3,7 @@ import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
 import TaskList from '@tiptap/extension-task-list';
 import TaskItem from '@tiptap/extension-task-item';
 import Link from '@tiptap/extension-link';
-import Image from '@tiptap/extension-image';
+import { ResizableImage } from './resizable-image.js';
 import Placeholder from '@tiptap/extension-placeholder';
 import { createLowlight, common } from 'lowlight';
 import { WikiLink } from './wiki-link.js';
@@ -43,10 +43,7 @@ export function createEditorExtensions(
       openOnClick: false,
       autolink: true,
     }),
-    Image.configure({
-      inline: false,
-      allowBase64: false,
-    }),
+    ResizableImage,
     Placeholder.configure({
       placeholder,
     }),
