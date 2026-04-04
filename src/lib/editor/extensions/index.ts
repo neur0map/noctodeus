@@ -7,6 +7,7 @@ import Image from '@tiptap/extension-image';
 import Placeholder from '@tiptap/extension-placeholder';
 import { createLowlight, common } from 'lowlight';
 import { WikiLink } from './wiki-link.js';
+import { createSlashCommand } from './slash-command.js';
 
 import type { Extensions } from '@tiptap/core';
 
@@ -14,14 +15,15 @@ const lowlight = createLowlight(common);
 
 export interface EditorExtensionOptions {
   placeholder?: string;
+  slashPopup?: () => any;
 }
 
 export function createEditorExtensions(
   options: EditorExtensionOptions = {},
 ): Extensions {
-  const { placeholder = 'Start writing...' } = options;
+  const { placeholder = 'Start writing...', slashPopup } = options;
 
-  return [
+  const extensions: Extensions = [
     StarterKit.configure({
       codeBlock: false,
     }),
@@ -45,4 +47,10 @@ export function createEditorExtensions(
     }),
     WikiLink,
   ];
+
+  if (slashPopup) {
+    extensions.push(createSlashCommand(slashPopup));
+  }
+
+  return extensions;
 }

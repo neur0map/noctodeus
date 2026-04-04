@@ -7,6 +7,8 @@
   import { getFilesState } from "../stores/files.svelte";
   import { writeFile } from "../bridge/commands";
   import { logger } from "../logger";
+  import SlashCommandMenu from "./SlashCommandMenu.svelte";
+  import type { SlashCommandItem } from "./extensions/slash-command";
   import "./styles/editor.css";
 
   let {
@@ -25,6 +27,13 @@
   let editorElement: HTMLDivElement | undefined = $state();
   let editor: Editor | undefined = $state();
   let debounceTimer: ReturnType<typeof setTimeout> | undefined;
+
+  // Slash command menu state
+  let slashVisible = $state(false);
+  let slashItems = $state<SlashCommandItem[]>([]);
+  let slashPosition = $state({ top: 0, left: 0 });
+  let slashSelectedIndex = $state(0);
+  let slashCommand: ((item: SlashCommandItem) => void) | null = null;
 
   async function computeHash(content: string): Promise<string> {
     const encoder = new TextEncoder();
@@ -75,6 +84,71 @@
     editorState.setPath(path);
   }
 
+  // Bridge TipTap suggestion callbacks → Svelte reactive state
+  function createSlashPopup() {
+    return {
+      onStart(props: any) {
+        slashItems = props.items;
+        slashCommand = props.command;
+        slashSelectedIndex = 0;
+        const rect = props.clientRect?.();
+        if (rect) {
+          slashPosition = { top: rect.bottom + 4, left: rect.left };
+        }
+        slashVisible = true;
+      },
+      onUpdate(props: any) {
+        slashItems = props.items;
+        slashCommand = props.command;
+        const rect = props.clientRect?.();
+        if (rect) {
+          slashPosition = { top: rect.bottom + 4, left: rect.left };
+        }
+        // Reset selection if items changed
+        if (slashSelectedIndex >= props.items.length) {
+          slashSelectedIndex = 0;
+        }
+      },
+      onKeyDown(props: any) {
+        const event = props.event as KeyboardEvent;
+        if (event.key === 'ArrowDown') {
+          event.preventDefault();
+          slashSelectedIndex = (slashSelectedIndex + 1) % slashItems.length;
+          return true;
+        }
+        if (event.key === 'ArrowUp') {
+          event.preventDefault();
+          slashSelectedIndex = (slashSelectedIndex - 1 + slashItems.length) % slashItems.length;
+          return true;
+        }
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          if (slashItems[slashSelectedIndex] && slashCommand) {
+            slashCommand(slashItems[slashSelectedIndex]);
+          }
+          slashVisible = false;
+          return true;
+        }
+        if (event.key === 'Escape') {
+          slashVisible = false;
+          return true;
+        }
+        return false;
+      },
+      onExit() {
+        slashVisible = false;
+        slashCommand = null;
+      },
+    };
+  }
+
+  function handleSlashSelect(item: SlashCommandItem) {
+    if (slashCommand) {
+      slashCommand(item);
+    }
+    slashVisible = false;
+  }
+
   onMount(() => {
     if (!editorElement) return;
 
@@ -83,7 +157,7 @@
 
     editor = new Editor({
       element: editorElement,
-      extensions: createEditorExtensions(),
+      extensions: createEditorExtensions({ slashPopup: createSlashPopup }),
       content: html,
       onUpdate: () => {
         // TipTap normalizes HTML on load, firing a spurious update.
@@ -127,6 +201,14 @@
 </script>
 
 <div class="editor-container" bind:this={editorElement}></div>
+
+<SlashCommandMenu
+  items={slashItems}
+  visible={slashVisible}
+  position={slashPosition}
+  selectedIndex={slashSelectedIndex}
+  onselect={handleSlashSelect}
+/>
 
 <style>
   .editor-container {
