@@ -30,6 +30,7 @@
     display: flex;
     flex-direction: column;
     min-height: 0;
+    height: 100%;
     width: min(100%, var(--stage-max-width));
     margin: 0 auto;
     background:
