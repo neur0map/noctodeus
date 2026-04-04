@@ -1,0 +1,269 @@
+/* ==========================================================================
+   Editor Styles — TipTap ProseMirror Content
+   Styles for the WYSIWYG editing surface. Uses design system tokens.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Base Editor
+   -------------------------------------------------------------------------- */
+.ProseMirror {
+  font-family: var(--font-content);
+  font-size: var(--text-base);
+  line-height: 1.7;
+  color: var(--color-text-primary);
+  max-width: 720px;
+  margin: 0 auto;
+  padding: var(--space-8) var(--space-6);
+  outline: none;
+  min-height: 100%;
+}
+
+.ProseMirror > * + * {
+  margin-top: var(--space-3);
+}
+
+/* --------------------------------------------------------------------------
+   Headings
+   -------------------------------------------------------------------------- */
+.ProseMirror h1,
+.ProseMirror h2,
+.ProseMirror h3 {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.ProseMirror h1 {
+  font-size: var(--text-2xl);
+  margin-top: var(--space-8);
+  margin-bottom: var(--space-4);
+}
+
+.ProseMirror h2 {
+  font-size: var(--text-xl);
+  margin-top: var(--space-6);
+  margin-bottom: var(--space-3);
+}
+
+.ProseMirror h3 {
+  font-size: var(--text-lg);
+  margin-top: var(--space-5);
+  margin-bottom: var(--space-2);
+}
+
+/* --------------------------------------------------------------------------
+   Paragraphs
+   -------------------------------------------------------------------------- */
+.ProseMirror p {
+  margin-top: 0;
+  margin-bottom: var(--space-3);
+}
+
+/* --------------------------------------------------------------------------
+   Code Blocks
+   -------------------------------------------------------------------------- */
+.ProseMirror pre {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  background: var(--color-bg-surface);
+  border-radius: 8px;
+  padding: var(--space-4);
+  overflow-x: auto;
+  margin: var(--space-4) 0;
+}
+
+.ProseMirror pre code {
+  background: none;
+  padding: 0;
+  border-radius: 0;
+  font-size: inherit;
+  color: inherit;
+}
+
+/* --------------------------------------------------------------------------
+   Inline Code
+   -------------------------------------------------------------------------- */
+.ProseMirror code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  background: var(--color-bg-surface);
+  border-radius: 4px;
+  padding: 2px 6px;
+}
+
+/* --------------------------------------------------------------------------
+   Blockquotes
+   -------------------------------------------------------------------------- */
+.ProseMirror blockquote {
+  border-left: 2px solid var(--color-border-strong);
+  padding-left: var(--space-4);
+  color: var(--color-text-secondary);
+  margin: var(--space-4) 0;
+  font-style: italic;
+}
+
+.ProseMirror blockquote > * + * {
+  margin-top: var(--space-2);
+}
+
+/* --------------------------------------------------------------------------
+   Lists
+   -------------------------------------------------------------------------- */
+.ProseMirror ul,
+.ProseMirror ol {
+  padding-left: var(--space-6);
+  margin: var(--space-3) 0;
+}
+
+.ProseMirror li {
+  margin-bottom: var(--space-1);
+}
+
+.ProseMirror li > p {
+  margin-bottom: 0;
+}
+
+/* --------------------------------------------------------------------------
+   Task Lists
+   -------------------------------------------------------------------------- */
+.ProseMirror ul[data-type="taskList"] {
+  list-style: none;
+  padding-left: 0;
+}
+
+.ProseMirror ul[data-type="taskList"] li {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin-bottom: var(--space-1);
+}
+
+.ProseMirror ul[data-type="taskList"] li > label {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  margin-top: 2px;
+}
+
+.ProseMirror ul[data-type="taskList"] li > label input[type="checkbox"] {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--color-border-strong);
+  border-radius: 4px;
+  cursor: pointer;
+  position: relative;
+  transition: background var(--duration-fast) var(--ease-out),
+              border-color var(--duration-fast) var(--ease-out);
+}
+
+.ProseMirror ul[data-type="taskList"] li > label input[type="checkbox"]:checked {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+.ProseMirror ul[data-type="taskList"] li > label input[type="checkbox"]:checked::after {
+  content: '';
+  position: absolute;
+  left: 3px;
+  top: 0px;
+  width: 6px;
+  height: 10px;
+  border: solid var(--color-bg-base);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.ProseMirror ul[data-type="taskList"] li > div {
+  flex: 1;
+  min-width: 0;
+}
+
+.ProseMirror ul[data-type="taskList"] li[data-checked="true"] > div {
+  text-decoration: line-through;
+  color: var(--color-text-muted);
+}
+
+/* --------------------------------------------------------------------------
+   Links
+   -------------------------------------------------------------------------- */
+.ProseMirror a {
+  color: var(--color-accent);
+  text-decoration: none;
+  transition: text-decoration var(--duration-fast) var(--ease-out);
+}
+
+.ProseMirror a:hover {
+  text-decoration: underline;
+}
+
+/* --------------------------------------------------------------------------
+   Wiki Links
+   -------------------------------------------------------------------------- */
+.wiki-link {
+  color: var(--color-accent);
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  cursor: pointer;
+  transition: color var(--duration-fast) var(--ease-out);
+}
+
+.wiki-link:hover {
+  color: var(--color-accent-hover);
+}
+
+/* --------------------------------------------------------------------------
+   Images
+   -------------------------------------------------------------------------- */
+.ProseMirror img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  margin: var(--space-4) 0;
+  display: block;
+}
+
+.ProseMirror img.ProseMirror-selectednode {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* --------------------------------------------------------------------------
+   Horizontal Rule
+   -------------------------------------------------------------------------- */
+.ProseMirror hr {
+  border: none;
+  border-top: 1px solid var(--color-border-subtle);
+  margin: var(--space-8) 0;
+}
+
+/* --------------------------------------------------------------------------
+   Selection
+   -------------------------------------------------------------------------- */
+.ProseMirror ::selection {
+  background: color-mix(in srgb, var(--color-accent) 20%, transparent);
+}
+
+/* --------------------------------------------------------------------------
+   Placeholder
+   -------------------------------------------------------------------------- */
+.ProseMirror.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: var(--color-text-muted);
+  font-style: italic;
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+/* --------------------------------------------------------------------------
+   Reduced Motion
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .ProseMirror *,
+  .ProseMirror *::before,
+  .ProseMirror *::after {
+    animation-duration: 0ms !important;
+    transition-duration: 0ms !important;
+  }
+}
