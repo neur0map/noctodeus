@@ -180,7 +180,9 @@ pub async fn file_write(
 
     let core = state.active_core.read().await;
     let core_root = &core.as_ref().unwrap().core_path;
-    file_info_from_path(&abs_path, core_root)
+    let mut info = file_info_from_path(&abs_path, core_root)?;
+    info.content_hash = Some(crate::indexer::scanner::hash_bytes(content.as_bytes()));
+    Ok(info)
 }
 
 #[tauri::command]

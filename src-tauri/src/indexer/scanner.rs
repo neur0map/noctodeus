@@ -267,6 +267,13 @@ fn extract_first_heading(content: &str) -> Option<String> {
     None
 }
 
+/// Compute SHA-256 hash of a byte slice, returned as hex string.
+pub fn hash_bytes(data: &[u8]) -> String {
+    let mut hasher = Sha256::new();
+    hasher.update(data);
+    hex::encode(hasher.finalize())
+}
+
 /// Compute SHA-256 hash of a file's content, hex-encoded.
 /// Returns `None` for files larger than `MAX_HASH_SIZE` or on read errors.
 fn compute_hash(path: &Path) -> Option<String> {
