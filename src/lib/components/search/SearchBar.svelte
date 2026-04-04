@@ -18,7 +18,10 @@
 
   function handleInput() {
     if (debounceTimer) clearTimeout(debounceTimer);
-    if (!query.trim()) return;
+    if (!query.trim()) {
+      results = [];
+      return;
+    }
     debounceTimer = setTimeout(() => {
       onsearch(query.trim());
       selectedIndex = 0;

@@ -112,6 +112,8 @@
           if (files.activeFilePath === oldPath) files.setActiveFile(newPath);
         } catch (err) {
           logger.error(`Rename failed: ${err}`);
+          const { toast } = await import('../lib/stores/toast.svelte');
+          toast.error(`Rename failed: ${err}`);
         }
         break;
       }
@@ -247,8 +249,32 @@
     }
   }
 
-  function handleDeleteFile() {
-    // Placeholder: the page component handles confirmation
+  async function handleNewFolder() {
+    const name = window.prompt('Folder name');
+    if (!name) return;
+    try {
+      await createDir(name);
+      const { scanCore } = await import('../lib/bridge/commands');
+      const fileTree = await scanCore();
+      files.setFiles(fileTree);
+    } catch (err) {
+      logger.error(`Create folder failed: ${err}`);
+    }
+  }
+
+  async function handleDeleteFile() {
+    const path = files.activeFilePath;
+    if (!path) return;
+    const name = path.split('/').pop() ?? path;
+    if (!window.confirm(`Move "${name}" to trash?`)) return;
+    try {
+      await deleteFile(path);
+      files.removeFile(path);
+      tabsState.removeFileTab(path);
+      files.setActiveFile(null);
+    } catch (err) {
+      logger.error(`Delete failed: ${err}`);
+    }
   }
 </script>
 
@@ -277,6 +303,9 @@
           <span class="sidebar-header__name">
             {core.activeCore?.name ?? "Noctodeus"}
           </span>
+          <button class="sidebar-header__btn" onclick={handleNewFolder} title="New folder">
+            ▸
+          </button>
         </div>
       {/snippet}
 
@@ -413,7 +442,28 @@
   .sidebar-header {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     height: 28px;
+  }
+
+  .sidebar-header__btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.36);
+    font-size: 12px;
+    cursor: pointer;
+    transition: color var(--duration-fast) var(--ease-out), background var(--duration-fast) var(--ease-out);
+  }
+
+  .sidebar-header__btn:hover {
+    color: var(--color-text-primary);
+    background: rgba(255, 255, 255, 0.06);
   }
 
   .sidebar-header__name {

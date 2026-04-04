@@ -12,11 +12,14 @@ let tree = $derived.by(() => {
   return buildTree(fileMap, expandedDirs, sortMode);
 });
 
+const HIDDEN_FILES = new Set(['.DS_Store', '.noctodeus', 'Thumbs.db', '.git', '.gitignore', 'media']);
+
 function buildTree(files: Map<string, FileNode>, expanded: Set<string>, sort: SortMode): TreeNode[] {
   const childMap = new Map<string, TreeNode[]>();
 
-  // Group files by parent_dir
+  // Group files by parent_dir, skipping hidden/system files
   for (const file of files.values()) {
+    if (HIDDEN_FILES.has(file.name) || file.name.startsWith('.')) continue;
     const parent = file.parent_dir || '';
     if (!childMap.has(parent)) childMap.set(parent, []);
     childMap.get(parent)!.push({
