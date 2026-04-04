@@ -6,6 +6,7 @@
     oncommandpalette,
     onnewnote,
     ontogglesidebar,
+    oncollapsesidebar,
     ontogglerightpanel,
     ondeletefile,
     oncloseoverlay,
@@ -16,6 +17,7 @@
     oncommandpalette: () => void;
     onnewnote: () => void;
     ontogglesidebar: () => void;
+    oncollapsesidebar: () => void;
     ontogglerightpanel: () => void;
     ondeletefile: () => void;
     oncloseoverlay: () => void;
@@ -71,6 +73,12 @@
     if (matchesShortcut(e, keymap.toggle_sidebar)) {
       e.preventDefault();
       ontogglesidebar();
+      return;
+    }
+
+    if (matchesShortcut(e, keymap.collapse_sidebar)) {
+      e.preventDefault();
+      oncollapsesidebar();
       return;
     }
 

@@ -135,16 +135,18 @@
   onnewnote={handleNewNote}
   ontogglesidebar={() => ui.toggleSidebar()}
   ontogglerightpanel={() => ui.toggleRightPanel()}
+  oncollapsesidebar={() => ui.toggleSidebarCollapse()}
   ondeletefile={handleDeleteFile}
   oncloseoverlay={() => ui.closeAllOverlays()}
 />
 
 <AppShell
   sidebarVisible={ui.sidebarVisible}
+  sidebarCollapsed={ui.sidebarCollapsed}
   rightPanelVisible={ui.rightPanelVisible}
 >
   {#snippet sidebar()}
-    <Sidebar>
+    <Sidebar collapsed={ui.sidebarCollapsed} ontogglecollapse={() => ui.toggleSidebarCollapse()}>
       {#snippet header()}
         <div class="sidebar-header">
           <span class="sidebar-header__name">
