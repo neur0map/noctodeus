@@ -236,6 +236,7 @@
   max-width: 100%;
   margin: var(--space-4) 0;
   line-height: 0;
+  border-radius: 8px;
 }
 
 .resizable-image__img {
@@ -244,42 +245,65 @@
   border-radius: 8px;
   display: block;
   cursor: default;
+  transition: box-shadow var(--duration-fast) var(--ease-out);
 }
 
-/* Resize handle — bottom-right corner */
-.resizable-image__handle {
+/* Subtle ring on hover */
+.resizable-image:hover .resizable-image__img {
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
+}
+
+/* Edge resize handles — thin vertical bars on left/right */
+.resizable-image__edge {
   position: absolute;
-  right: -4px;
-  bottom: -4px;
-  width: 14px;
-  height: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 6px;
+  height: 48px;
+  max-height: 60%;
   border-radius: 3px;
-  background: var(--color-accent);
-  cursor: nwse-resize;
+  background: rgba(255, 255, 255, 0.22);
   opacity: 0;
-  transition: opacity var(--duration-fast) var(--ease-out);
   z-index: 2;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  transition:
+    opacity var(--duration-fast) var(--ease-out),
+    background var(--duration-fast) var(--ease-out);
 }
 
-.resizable-image:hover .resizable-image__handle,
-.resizable-image--resizing .resizable-image__handle {
+.resizable-image__edge--left {
+  left: 6px;
+  cursor: ew-resize;
+}
+
+.resizable-image__edge--right {
+  right: 6px;
+  cursor: ew-resize;
+}
+
+.resizable-image:hover .resizable-image__edge {
   opacity: 1;
 }
 
-/* Selected state */
-.resizable-image.ProseMirror-selectednode {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 2px;
-  border-radius: 8px;
+.resizable-image__edge:hover,
+.resizable-image--resizing .resizable-image__edge {
+  background: var(--color-accent);
+  opacity: 1;
+  box-shadow: 0 0 8px rgba(99, 102, 241, 0.4);
 }
 
+/* Selected state */
+.resizable-image.ProseMirror-selectednode .resizable-image__img {
+  box-shadow: 0 0 0 2px var(--color-accent);
+}
+
+/* During resize */
 .resizable-image--resizing {
   user-select: none;
 }
 
 .resizable-image--resizing .resizable-image__img {
   pointer-events: none;
+  box-shadow: 0 0 0 2px var(--color-accent);
 }
 
 /* --------------------------------------------------------------------------

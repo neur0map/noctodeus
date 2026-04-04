@@ -37,11 +37,9 @@ export const ResizableImage = Node.create({
     return (props: NodeViewRendererProps) => {
       const { node, editor, getPos } = props;
 
-      // Container
       const dom = document.createElement('div');
       dom.className = 'resizable-image';
 
-      // Image
       const img = document.createElement('img');
       img.src = node.attrs.src || '';
       if (node.attrs.alt) img.alt = node.attrs.alt;
@@ -50,35 +48,39 @@ export const ResizableImage = Node.create({
       img.draggable = false;
       dom.appendChild(img);
 
-      // Resize handle (bottom-right corner)
-      const handle = document.createElement('div');
-      handle.className = 'resizable-image__handle';
-      dom.appendChild(handle);
+      // Left and right edge handles
+      const handleL = document.createElement('div');
+      handleL.className = 'resizable-image__edge resizable-image__edge--left';
+      dom.appendChild(handleL);
 
-      // Resize logic
-      handle.addEventListener('pointerdown', (e: PointerEvent) => {
+      const handleR = document.createElement('div');
+      handleR.className = 'resizable-image__edge resizable-image__edge--right';
+      dom.appendChild(handleR);
+
+      function startResize(e: PointerEvent, direction: 'left' | 'right') {
         e.preventDefault();
         e.stopPropagation();
 
         const startX = e.clientX;
         const startWidth = img.offsetWidth;
+        const el = e.currentTarget as HTMLElement;
 
-        handle.setPointerCapture(e.pointerId);
+        el.setPointerCapture(e.pointerId);
         dom.classList.add('resizable-image--resizing');
 
         function onMove(ev: PointerEvent) {
           const dx = ev.clientX - startX;
-          const newWidth = Math.max(80, startWidth + dx);
+          const delta = direction === 'right' ? dx : -dx;
+          const newWidth = Math.max(80, Math.min(startWidth + delta, dom.parentElement?.clientWidth ?? 9999));
           img.style.width = `${newWidth}px`;
         }
 
-        function onUp(ev: PointerEvent) {
-          handle.removeEventListener('pointermove', onMove);
-          handle.removeEventListener('pointerup', onUp);
-          handle.removeEventListener('pointercancel', onUp);
+        function onUp() {
+          el.removeEventListener('pointermove', onMove);
+          el.removeEventListener('pointerup', onUp);
+          el.removeEventListener('pointercancel', onUp);
           dom.classList.remove('resizable-image--resizing');
 
-          // Persist the width to the node attribute
           const finalWidth = img.offsetWidth;
           const pos = typeof getPos === 'function' ? getPos() : null;
           if (pos !== null && pos !== undefined) {
@@ -91,10 +93,13 @@ export const ResizableImage = Node.create({
           }
         }
 
-        handle.addEventListener('pointermove', onMove);
-        handle.addEventListener('pointerup', onUp);
-        handle.addEventListener('pointercancel', onUp);
-      });
+        el.addEventListener('pointermove', onMove);
+        el.addEventListener('pointerup', onUp);
+        el.addEventListener('pointercancel', onUp);
+      }
+
+      handleL.addEventListener('pointerdown', (e) => startResize(e, 'left'));
+      handleR.addEventListener('pointerdown', (e) => startResize(e, 'right'));
 
       return { dom };
     };
