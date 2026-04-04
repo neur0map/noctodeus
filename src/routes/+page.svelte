@@ -6,7 +6,7 @@
   import CommandPalette from "../lib/components/command/CommandPalette.svelte";
   import Worksurface from "../lib/components/layout/Worksurface.svelte";
   import EditorComponent from "../lib/editor/Editor.svelte";
-  import EditorToolbar from "../lib/editor/EditorToolbar.svelte";
+
   import type { Command } from "../lib/types/ui";
 
   import { getUiState } from "../lib/stores/ui.svelte";
@@ -307,18 +307,12 @@
   });
 
   // Get editor instance for toolbar (reactive to editorRef)
-  let editorInstance = $derived(editorRef?.getEditor?.() ?? null);
+
 </script>
 
 {#if currentFilePath && currentContent !== null}
   {#if isMarkdown}
     <Worksurface flush={true}>
-      {#snippet toolbar()}
-        {#if editorInstance}
-          <EditorToolbar editor={editorInstance} />
-        {/if}
-      {/snippet}
-
       {#key viewKey}
         <div class="view-enter">
           <EditorComponent
