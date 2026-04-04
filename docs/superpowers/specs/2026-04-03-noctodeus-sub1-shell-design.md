@@ -163,8 +163,22 @@ pin:remove     { path }                 -> Result<()>
 state:save     { key, value }           -> Result<()>
 state:load     { key }                  -> Result<Value>
 
+log:write      { level, message, ctx? }  -> Result<()>
 log:export     {}                       -> Result<String>
 log:clear      {}                       -> Result<()>
+```
+
+### Tauri events (Rust to frontend)
+
+```
+core:ready     { file_tree: Vec<FileNode> }
+core:closed    {}
+core:lost      {}                          # Core folder moved/deleted externally
+
+file:created   { path, metadata }
+file:modified  { path, metadata }
+file:deleted   { path }
+file:renamed   { old_path, new_path, metadata }
 ```
 
 ### SQLite schema
@@ -201,6 +215,9 @@ recents (
     path        TEXT PRIMARY KEY,
     accessed_at INTEGER
 )
+
+-- Note: On file rename/move, recents and pinned entries must be
+-- cascade-updated by the indexer to reflect the new path.
 
 -- Key-value state store (UI state, preferences)
 state (
