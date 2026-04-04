@@ -17,7 +17,6 @@
   import { getTabsState } from "../lib/stores/tabs.svelte";
   import {
     readFile,
-    searchRecent,
     searchPinned,
     createFile,
     openCore,
@@ -42,7 +41,12 @@
   let currentFilePath = $state<string | null>(null);
   let currentContent = $state<string | null>(null);
   let currentMetadata = $state<FileNode | null>(null);
-  let recentFiles = $state<FileNode[]>([]);
+  let recentFiles = $derived(
+    Array.from(files.fileMap.values())
+      .filter((f) => !f.is_directory)
+      .sort((a, b) => b.modified_at - a.modified_at)
+      .slice(0, 10),
+  );
   let pinnedFiles = $state<FileNode[]>([]);
   let editorRef: EditorComponent | undefined = $state();
 
@@ -211,18 +215,12 @@
 
   async function refreshHomeLists() {
     if (!core.activeCore) {
-      recentFiles = [];
       pinnedFiles = [];
       return;
     }
 
     try {
-      const [recent, pinned] = await Promise.all([
-        searchRecent(8),
-        searchPinned(),
-      ]);
-      recentFiles = recent;
-      pinnedFiles = pinned;
+      pinnedFiles = await searchPinned();
     } catch (err) {
       logger.warn(`Failed to refresh home lists: ${errorMessage(err)}`);
     }
