@@ -131,10 +131,14 @@
     try {
       const start = editor.view.coordsAtPos(from);
       const end = editor.view.coordsAtPos(to);
-      const midX = (start.left + end.left) / 2;
+      const midX = (start.left + end.right) / 2;
+      const toolbarWidth = 240;
+      const toolbarHeight = 40;
+      // Position well above the selection start
+      const top = start.top - toolbarHeight - 10;
       bubblePosition = {
-        top: Math.max(4, start.top - 48),
-        left: Math.max(8, Math.min(midX - 100, window.innerWidth - 260)),
+        top: Math.max(4, top),
+        left: Math.max(8, Math.min(midX - toolbarWidth / 2, window.innerWidth - toolbarWidth - 8)),
       };
       bubbleVisible = true;
     } catch {

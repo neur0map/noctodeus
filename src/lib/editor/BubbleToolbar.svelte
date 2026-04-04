@@ -11,7 +11,10 @@
     position: { top: number; left: number };
   } = $props();
 
-  let showSizeMenu = $state(false);
+  let showTypeMenu = $state(false);
+
+  // Hide type menu when toolbar hides
+  $effect(() => { if (!visible) showTypeMenu = false; });
 
   function toggle(cmd: string) {
     if (!editor) return;
@@ -32,14 +35,20 @@
     }
   }
 
-  function setHeading(level: number) {
+  function setBlockType(type: string) {
     if (!editor) return;
-    if (level === 0) {
-      editor.chain().focus().setParagraph().run();
-    } else {
-      editor.chain().focus().setHeading({ level: level as 1|2|3 }).run();
+    switch (type) {
+      case 'paragraph': editor.chain().focus().setParagraph().run(); break;
+      case 'h1': editor.chain().focus().setHeading({ level: 1 }).run(); break;
+      case 'h2': editor.chain().focus().setHeading({ level: 2 }).run(); break;
+      case 'h3': editor.chain().focus().setHeading({ level: 3 }).run(); break;
+      case 'bullet': editor.chain().focus().toggleBulletList().run(); break;
+      case 'ordered': editor.chain().focus().toggleOrderedList().run(); break;
+      case 'task': editor.chain().focus().toggleTaskList().run(); break;
+      case 'code': editor.chain().focus().toggleCodeBlock().run(); break;
+      case 'quote': editor.chain().focus().toggleBlockquote().run(); break;
     }
-    showSizeMenu = false;
+    showTypeMenu = false;
   }
 
   function isActive(cmd: string): boolean {
@@ -52,35 +61,68 @@
     if (editor.isActive('heading', { level: 1 })) return 'H1';
     if (editor.isActive('heading', { level: 2 })) return 'H2';
     if (editor.isActive('heading', { level: 3 })) return 'H3';
+    if (editor.isActive('bulletList')) return '•';
+    if (editor.isActive('orderedList')) return '1.';
+    if (editor.isActive('taskList')) return '☐';
+    if (editor.isActive('codeBlock')) return '</>';
+    if (editor.isActive('blockquote')) return '❝';
     return 'T';
   }
+
+  function isBlockActive(type: string): boolean {
+    if (!editor) return false;
+    switch (type) {
+      case 'paragraph': return !editor.isActive('heading') && !editor.isActive('bulletList') && !editor.isActive('orderedList') && !editor.isActive('taskList') && !editor.isActive('codeBlock') && !editor.isActive('blockquote');
+      case 'h1': return editor.isActive('heading', { level: 1 });
+      case 'h2': return editor.isActive('heading', { level: 2 });
+      case 'h3': return editor.isActive('heading', { level: 3 });
+      case 'bullet': return editor.isActive('bulletList');
+      case 'ordered': return editor.isActive('orderedList');
+      case 'task': return editor.isActive('taskList');
+      case 'code': return editor.isActive('codeBlock');
+      case 'quote': return editor.isActive('blockquote');
+      default: return false;
+    }
+  }
+
+  const blockTypes = [
+    { id: 'paragraph', icon: 'T', label: 'Text' },
+    { id: 'h1', icon: 'H1', label: 'Heading 1' },
+    { id: 'h2', icon: 'H2', label: 'Heading 2' },
+    { id: 'h3', icon: 'H3', label: 'Heading 3' },
+    { id: 'bullet', icon: '•', label: 'Bulleted list' },
+    { id: 'ordered', icon: '1.', label: 'Numbered list' },
+    { id: 'task', icon: '☐', label: 'To-do list' },
+    { id: 'code', icon: '</>', label: 'Code block' },
+    { id: 'quote', icon: '❝', label: 'Quote' },
+  ];
 </script>
 
 {#if visible && editor}
-  <div
-    class="bt"
-    style="top: {position.top}px; left: {position.left}px;"
-  >
+  <div class="bt" style="top: {position.top}px; left: {position.left}px;">
     <div class="bt__row">
-      <!-- Block type toggle -->
       <button
-        class="bt__btn bt__btn--wide"
-        class:bt__btn--active={showSizeMenu}
-        onclick={() => showSizeMenu = !showSizeMenu}
+        class="bt__btn bt__btn--type"
+        class:bt__btn--active={showTypeMenu}
+        onclick={() => showTypeMenu = !showTypeMenu}
+        title="Block type"
       >
         {currentBlockLabel()}
+        <svg class="bt__chevron" width="8" height="5" viewBox="0 0 8 5" fill="currentColor">
+          <path d="M.7.7L4 4 7.3.7" stroke="currentColor" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+        </svg>
       </button>
 
       <span class="bt__sep"></span>
 
       <button class="bt__btn" class:bt__btn--active={isActive('bold')} onclick={() => toggle('bold')} title="Bold">
-        B
+        <strong>B</strong>
       </button>
-      <button class="bt__btn bt__btn--italic" class:bt__btn--active={isActive('italic')} onclick={() => toggle('italic')} title="Italic">
-        I
+      <button class="bt__btn bt__btn--i" class:bt__btn--active={isActive('italic')} onclick={() => toggle('italic')} title="Italic">
+        <em>I</em>
       </button>
       <button class="bt__btn" class:bt__btn--active={isActive('strike')} onclick={() => toggle('strike')} title="Strikethrough">
-        S
+        <s>S</s>
       </button>
       <button class="bt__btn" class:bt__btn--active={isActive('code')} onclick={() => toggle('code')} title="Inline code">
         &lt;&gt;
@@ -90,20 +132,21 @@
       </button>
     </div>
 
-    {#if showSizeMenu}
-      <div class="bt__dropdown">
-        <button class="bt__dd-item" class:bt__dd-item--active={!isActive('heading')} onclick={() => setHeading(0)}>
-          <span class="bt__dd-icon">T</span> Text
-        </button>
-        <button class="bt__dd-item" class:bt__dd-item--active={isActive('heading') && editor.isActive('heading', {level:1})} onclick={() => setHeading(1)}>
-          <span class="bt__dd-icon">H1</span> Heading 1
-        </button>
-        <button class="bt__dd-item" class:bt__dd-item--active={isActive('heading') && editor.isActive('heading', {level:2})} onclick={() => setHeading(2)}>
-          <span class="bt__dd-icon">H2</span> Heading 2
-        </button>
-        <button class="bt__dd-item" class:bt__dd-item--active={isActive('heading') && editor.isActive('heading', {level:3})} onclick={() => setHeading(3)}>
-          <span class="bt__dd-icon">H3</span> Heading 3
-        </button>
+    {#if showTypeMenu}
+      <div class="bt__menu">
+        {#each blockTypes as bt (bt.id)}
+          <button
+            class="bt__menu-item"
+            class:bt__menu-item--active={isBlockActive(bt.id)}
+            onclick={() => setBlockType(bt.id)}
+          >
+            <span class="bt__menu-icon">{bt.icon}</span>
+            <span class="bt__menu-label">{bt.label}</span>
+            {#if isBlockActive(bt.id)}
+              <span class="bt__menu-check">✓</span>
+            {/if}
+          </button>
+        {/each}
       </div>
     {/if}
   </div>
@@ -140,20 +183,21 @@
     width: 1px;
     height: 18px;
     background: rgba(255, 255, 255, 0.08);
-    margin: 0 3px;
+    margin: 0 2px;
   }
 
   .bt__btn {
     display: flex;
     align-items: center;
     justify-content: center;
-    min-width: 30px;
-    height: 30px;
-    padding: 0 6px;
+    gap: 3px;
+    min-width: 28px;
+    height: 28px;
+    padding: 0 5px;
     border: none;
     border-radius: 6px;
     background: transparent;
-    color: rgba(255, 255, 255, 0.6);
+    color: rgba(255, 255, 255, 0.56);
     font-family: var(--font-mono);
     font-size: 12px;
     font-weight: 600;
@@ -173,60 +217,79 @@
     color: var(--color-accent-hover);
   }
 
-  .bt__btn--wide {
-    min-width: 36px;
+  .bt__btn--type {
+    min-width: 40px;
+    font-size: 11px;
   }
 
-  .bt__btn--italic {
+  .bt__btn--i {
     font-style: italic;
     font-family: var(--font-content);
   }
 
-  /* Dropdown */
-  .bt__dropdown {
+  .bt__chevron {
+    opacity: 0.4;
+    margin-left: 1px;
+  }
+
+  /* Block type dropdown */
+  .bt__menu {
     border-top: 1px solid rgba(255, 255, 255, 0.06);
     margin-top: 3px;
-    padding-top: 3px;
+    padding: 3px 0 0;
     display: flex;
     flex-direction: column;
     gap: 1px;
+    max-height: 280px;
+    overflow-y: auto;
   }
 
-  .bt__dd-item {
+  .bt__menu-item {
     display: flex;
     align-items: center;
     gap: var(--space-2);
-    padding: 6px 10px;
+    padding: 5px 8px;
     border: none;
     border-radius: 6px;
     background: transparent;
-    color: rgba(255, 255, 255, 0.64);
+    color: rgba(255, 255, 255, 0.6);
     font-family: var(--font-sans);
-    font-size: var(--text-sm);
+    font-size: 13px;
     cursor: pointer;
     text-align: left;
     transition: background var(--duration-fast) var(--ease-out);
   }
 
-  .bt__dd-item:hover {
+  .bt__menu-item:hover {
     background: rgba(255, 255, 255, 0.06);
     color: var(--color-text-primary);
   }
 
-  .bt__dd-item--active {
+  .bt__menu-item--active {
     color: var(--color-accent-hover);
   }
 
-  .bt__dd-icon {
+  .bt__menu-icon {
     font-family: var(--font-mono);
     font-size: 11px;
     font-weight: 600;
     width: 22px;
-    color: rgba(255, 255, 255, 0.36);
+    flex-shrink: 0;
+    color: rgba(255, 255, 255, 0.3);
   }
 
-  .bt__dd-item--active .bt__dd-icon {
+  .bt__menu-item--active .bt__menu-icon {
     color: var(--color-accent);
+  }
+
+  .bt__menu-label {
+    flex: 1;
+  }
+
+  .bt__menu-check {
+    font-size: 11px;
+    color: var(--color-accent);
+    margin-left: auto;
   }
 
   @media (prefers-reduced-motion: reduce) {
