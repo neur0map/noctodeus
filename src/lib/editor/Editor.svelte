@@ -4,6 +4,7 @@
   import { createEditorExtensions } from "./extensions";
   import { parseMarkdown, serializeMarkdown } from "./serializer";
   import { getEditorState } from "../stores/editor.svelte";
+  import { getFilesState } from "../stores/files.svelte";
   import { writeFile } from "../bridge/commands";
   import { logger } from "../logger";
   import "./styles/editor.css";
@@ -19,6 +20,7 @@
   } = $props();
 
   const editorState = getEditorState();
+  const filesState = getFilesState();
 
   let editorElement: HTMLDivElement | undefined = $state();
   let editor: Editor | undefined = $state();
@@ -40,7 +42,8 @@
     const hash = await computeHash(markdown);
 
     try {
-      await writeFile(path, markdown);
+      const updated = await writeFile(path, markdown);
+      filesState.updateFile(updated);
       editorState.markSaved(hash);
     } catch (err) {
       logger.error(`Failed to save ${path}: ${err}`);
