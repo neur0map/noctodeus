@@ -13,15 +13,19 @@
   import ContentArea from "../lib/components/layout/ContentArea.svelte";
   import TabBar from "../lib/components/tabs/TabBar.svelte";
   import FileTree from "../lib/components/filetree/FileTree.svelte";
+  import ContextMenu from "../lib/components/common/ContextMenu.svelte";
+  import type { MenuItem } from "../lib/components/common/ContextMenu.svelte";
   import KeyboardManager from "../lib/components/common/KeyboardManager.svelte";
   import ToastContainer from "../lib/components/common/ToastContainer.svelte";
   import SaveIndicator from "../lib/editor/SaveIndicator.svelte";
+  import GraphView from "../lib/components/graph/GraphView.svelte";
 
   import { getUiState } from "../lib/stores/ui.svelte";
   import { getCoreState } from "../lib/stores/core.svelte";
   import { getFilesState } from "../lib/stores/files.svelte";
   import { getEditorState } from "../lib/stores/editor.svelte";
   import { getTabsState } from "../lib/stores/tabs.svelte";
+  import { getGraphState } from "../lib/stores/graph.svelte";
   import {
     onCoreReady,
     onCoreClosed,
@@ -30,7 +34,7 @@
     onFileDeleted,
     onFileRenamed,
   } from "../lib/bridge/events";
-  import { createFile } from "../lib/bridge/commands";
+  import { createFile, deleteFile, renameFile, duplicateFile, createDir } from "../lib/bridge/commands";
   import { logger } from "../lib/logger";
   import { APP_SHORTCUTS } from "../lib/utils/shortcuts";
 
@@ -41,9 +45,114 @@
   const files = getFilesState();
   const editor = getEditorState();
   const tabsState = getTabsState();
+  const graphState = getGraphState();
 
   let unlisteners: UnlistenFn[] = [];
   let overlayOpen = $derived(ui.quickOpenVisible || ui.commandPaletteVisible);
+
+  // Context menu state
+  let ctxVisible = $state(false);
+  let ctxPosition = $state({ top: 0, left: 0 });
+  let ctxItems = $state<MenuItem[]>([]);
+  let ctxTargetPath = $state<string | null>(null);
+  let ctxTargetIsDir = $state(false);
+
+  function handleTreeContextMenu(path: string, isDir: boolean, e: MouseEvent) {
+    ctxTargetPath = path;
+    ctxTargetIsDir = isDir;
+    ctxPosition = {
+      top: Math.min(e.clientY, window.innerHeight - 250),
+      left: Math.min(e.clientX, window.innerWidth - 200),
+    };
+    ctxItems = isDir ? [
+      { id: 'new-file', label: 'New File', icon: '＋' },
+      { id: 'new-folder', label: 'New Folder', icon: '▸' },
+      { id: 'sep1', label: '', separator: true },
+      { id: 'rename', label: 'Rename', icon: '✎' },
+      { id: 'sep2', label: '', separator: true },
+      { id: 'delete', label: 'Delete', icon: '✕', danger: true },
+    ] : [
+      { id: 'rename', label: 'Rename', icon: '✎' },
+      { id: 'duplicate', label: 'Duplicate', icon: '⊕' },
+      { id: 'sep1', label: '', separator: true },
+      { id: 'delete', label: 'Delete', icon: '✕', danger: true },
+    ];
+    ctxVisible = true;
+  }
+
+  async function handleCtxSelect(id: string) {
+    ctxVisible = false;
+    if (!ctxTargetPath) return;
+
+    switch (id) {
+      case 'rename': {
+        const oldPath = ctxTargetPath;
+        const oldName = oldPath.split('/').pop() ?? oldPath;
+        const newName = window.prompt('Rename', oldName);
+        if (!newName || newName === oldName) return;
+        const parentDir = oldPath.includes('/') ? oldPath.slice(0, oldPath.lastIndexOf('/')) : '';
+        const newPath = parentDir ? `${parentDir}/${newName}` : newName;
+        try {
+          const updated = await renameFile(oldPath, newPath);
+          files.renameFile(oldPath, newPath, updated);
+          tabsState.updateFileTab(oldPath, updated);
+          if (files.activeFilePath === oldPath) files.setActiveFile(newPath);
+        } catch (err) {
+          logger.error(`Rename failed: ${err}`);
+        }
+        break;
+      }
+      case 'duplicate': {
+        try {
+          const dup = await duplicateFile(ctxTargetPath);
+          files.addFile(dup);
+        } catch (err) {
+          logger.error(`Duplicate failed: ${err}`);
+        }
+        break;
+      }
+      case 'delete': {
+        if (!window.confirm(`Move "${ctxTargetPath.split('/').pop()}" to trash?`)) return;
+        try {
+          await deleteFile(ctxTargetPath);
+          files.removeFile(ctxTargetPath);
+          tabsState.removeFileTab(ctxTargetPath);
+          if (files.activeFilePath === ctxTargetPath) files.setActiveFile(null);
+        } catch (err) {
+          logger.error(`Delete failed: ${err}`);
+        }
+        break;
+      }
+      case 'new-file': {
+        const name = window.prompt('File name', 'untitled.md');
+        if (!name) return;
+        const filePath = ctxTargetPath ? `${ctxTargetPath}/${name}` : name;
+        try {
+          const node = await createFile(filePath, '');
+          files.addFile(node);
+          files.setActiveFile(node.path);
+        } catch (err) {
+          logger.error(`Create file failed: ${err}`);
+        }
+        break;
+      }
+      case 'new-folder': {
+        const name = window.prompt('Folder name');
+        if (!name) return;
+        const dirPath = ctxTargetPath ? `${ctxTargetPath}/${name}` : name;
+        try {
+          await createDir(dirPath);
+          // Re-scan to pick up the new folder
+          const { scanCore } = await import('../lib/bridge/commands');
+          const fileTree = await scanCore();
+          files.setFiles(fileTree);
+        } catch (err) {
+          logger.error(`Create folder failed: ${err}`);
+        }
+        break;
+      }
+    }
+  }
   let isMarkdownActive = $derived(
     files.activeFilePath?.endsWith(".md") ||
       files.activeFilePath?.endsWith(".markdown"),
@@ -163,6 +272,7 @@
         activeFilePath={files.activeFilePath}
         onselect={handleFileSelect}
         ontoggle={handleDirToggle}
+        oncontextmenu={handleTreeContextMenu}
       />
 
       {#snippet footer()}
@@ -234,19 +344,31 @@
   {/snippet}
 
   {#snippet rightPanel()}
-    <div class="right-panel-placeholder">
-      <div class="right-panel-placeholder__inner">
-        <span class="right-panel-placeholder__label">Detail Rail</span>
-        <p class="right-panel-placeholder__copy">
-          This side stays intentionally quiet for future outline, source, and
-          assistant tools.
-        </p>
+    <div class="right-panel-graph">
+      <div class="right-panel-graph__header">
+        <span class="right-panel-graph__label">Graph</span>
+      </div>
+      <div class="right-panel-graph__body">
+        <GraphView
+          nodes={graphState.nodes}
+          edges={graphState.edges}
+          activeFilePath={files.activeFilePath}
+          onselect={handleFileSelect}
+        />
       </div>
     </div>
   {/snippet}
 </AppShell>
 
 <ToastContainer />
+
+<ContextMenu
+  visible={ctxVisible}
+  position={ctxPosition}
+  items={ctxItems}
+  onselect={handleCtxSelect}
+  onclose={() => ctxVisible = false}
+/>
 
 <style>
   :global(html),
@@ -334,34 +456,30 @@
     border-color: rgba(255, 255, 255, 0.13);
   }
 
-  .right-panel-placeholder {
+  .right-panel-graph {
+    display: flex;
+    flex-direction: column;
     height: 100%;
-    padding: var(--stage-outer-gutter);
     background: rgba(10, 12, 16, 0.72);
   }
 
-  .right-panel-placeholder__inner {
-    height: 100%;
-    padding: var(--space-5);
-    border-radius: calc(var(--stage-radius) - 6px);
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.05);
+  .right-panel-graph__header {
+    flex-shrink: 0;
+    padding: var(--space-3) var(--space-4);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   }
 
-  .right-panel-placeholder__label {
-    display: inline-flex;
-    margin-bottom: var(--space-3);
+  .right-panel-graph__label {
     font-family: var(--font-mono);
     font-size: var(--text-xs);
-    color: rgba(255, 255, 255, 0.5);
+    color: rgba(255, 255, 255, 0.4);
     text-transform: uppercase;
     letter-spacing: 0.05em;
   }
 
-  .right-panel-placeholder__copy {
-    font-family: var(--font-sans);
-    font-size: var(--text-sm);
-    line-height: 1.6;
-    color: rgba(255, 255, 255, 0.68);
+  .right-panel-graph__body {
+    flex: 1;
+    min-height: 0;
+    padding: var(--space-2);
   }
 </style>

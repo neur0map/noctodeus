@@ -7,11 +7,13 @@
     activeFilePath = null,
     onselect,
     ontoggle,
+    oncontextmenu,
   }: {
     tree?: TreeNode[];
     activeFilePath?: string | null;
     onselect: (path: string) => void;
     ontoggle: (path: string) => void;
+    oncontextmenu?: (path: string, isDir: boolean, e: MouseEvent) => void;
   } = $props();
 
   let container: HTMLElement | undefined = $state();
@@ -73,6 +75,7 @@
         {activeFilePath}
         {onselect}
         {ontoggle}
+        {oncontextmenu}
       />
     {/each}
   {/if}

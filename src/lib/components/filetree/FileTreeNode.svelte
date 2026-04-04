@@ -8,12 +8,14 @@
     activeFilePath = null,
     onselect,
     ontoggle,
+    oncontextmenu,
   }: {
     node: TreeNode;
     depth?: number;
     activeFilePath?: string | null;
     onselect: (path: string) => void;
     ontoggle: (path: string) => void;
+    oncontextmenu?: (path: string, isDir: boolean, e: MouseEvent) => void;
   } = $props();
 
   let isActive = $derived(node.path === activeFilePath);
@@ -65,6 +67,7 @@
     style:padding-left="{depth * 16 + 8}px"
     onclick={handleClick}
     onkeydown={handleKeydown}
+    oncontextmenu={(e) => { e.preventDefault(); oncontextmenu?.(node.path, node.is_directory, e); }}
     tabindex={0}
     aria-label={node.name}
   >
@@ -98,6 +101,7 @@
           {activeFilePath}
           {onselect}
           {ontoggle}
+          {oncontextmenu}
         />
       {/each}
     </div>

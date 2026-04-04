@@ -8,6 +8,22 @@ export interface GraphStats {
   orphanPaths: string[];
 }
 
+export interface GraphNode {
+  id: string;
+  path: string;
+  title: string;
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  linkCount: number;
+}
+
+export interface GraphEdge {
+  source: string;
+  target: string;
+}
+
 const WIKI_LINK_RE = /\[\[([^\]]+)\]\]/g;
 
 let graphStats = $state<GraphStats>({
@@ -18,17 +34,22 @@ let graphStats = $state<GraphStats>({
   orphanPaths: [],
 });
 
+let graphNodes = $state<GraphNode[]>([]);
+let graphEdges = $state<GraphEdge[]>([]);
 let scanning = $state(false);
 
 export function getGraphState() {
   return {
     get stats() { return graphStats; },
+    get nodes() { return graphNodes; },
+    get edges() { return graphEdges; },
     get scanning() { return scanning; },
 
     async scan(files: Map<string, FileNode>, readFile: (path: string) => Promise<{ content: string }>) {
       scanning = true;
 
       const linkCounts = new Map<string, number>();
+      const edges: GraphEdge[] = [];
       const noteFiles = Array.from(files.values()).filter(f => !f.is_directory && (f.extension === 'md' || f.extension === 'markdown'));
 
       for (const f of noteFiles) {
@@ -51,6 +72,7 @@ export function getGraphState() {
             });
             if (targetFile) {
               linkCounts.set(targetFile.path, (linkCounts.get(targetFile.path) ?? 0) + 1);
+              edges.push({ source: f.path, target: targetFile.path });
             }
           }
           linkCounts.set(f.path, (linkCounts.get(f.path) ?? 0) + outbound);
@@ -77,6 +99,19 @@ export function getGraphState() {
         orphanPaths: orphans.map(o => o.path),
       };
 
+      // Build graph nodes with random initial positions
+      graphNodes = noteFiles.map((f) => ({
+        id: f.path,
+        path: f.path,
+        title: f.title || f.name.replace(/\.(md|markdown)$/i, ''),
+        x: Math.random() * 600 - 300,
+        y: Math.random() * 400 - 200,
+        vx: 0,
+        vy: 0,
+        linkCount: linkCounts.get(f.path) ?? 0,
+      }));
+
+      graphEdges = edges;
       scanning = false;
     },
 
@@ -88,6 +123,8 @@ export function getGraphState() {
         orphanCount: 0,
         orphanPaths: [],
       };
+      graphNodes = [];
+      graphEdges = [];
       scanning = false;
     },
   };
