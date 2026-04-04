@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
 
-  import HomeView from "../lib/components/home/HomeView.svelte";
+  import Dashboard from "../lib/components/dashboard/Dashboard.svelte";
   import QuickOpen from "../lib/components/quickopen/QuickOpen.svelte";
   import CommandPalette from "../lib/components/command/CommandPalette.svelte";
   import Worksurface from "../lib/components/layout/Worksurface.svelte";
@@ -13,6 +13,7 @@
   import { getCoreState } from "../lib/stores/core.svelte";
   import { getFilesState } from "../lib/stores/files.svelte";
   import { getEditorState } from "../lib/stores/editor.svelte";
+  import { getGraphState } from "../lib/stores/graph.svelte";
   import { getTabsState } from "../lib/stores/tabs.svelte";
   import {
     readFile,
@@ -35,6 +36,7 @@
   const files = getFilesState();
   const editorState = getEditorState();
   const tabsState = getTabsState();
+  const graphState = getGraphState();
 
   // --- State ---
   let currentFilePath = $state<string | null>(null);
@@ -178,6 +180,7 @@
     const fileTree = await scanCore();
     files.setFiles(fileTree);
     await refreshHomeLists();
+    graphState.scan(files.fileMap, readFile);
   }
 
   // --- Note creation ---
@@ -355,15 +358,15 @@
   {/if}
 {:else}
   <Worksurface>
-    <HomeView
+    <Dashboard
       coreName={core.activeCore?.name ?? "Noctodeus"}
       {recentFiles}
       {pinnedFiles}
-      newNoteShortcut={formatShortcutLabel(APP_SHORTCUTS.new_note)}
-      quickOpenShortcut={formatShortcutLabel(APP_SHORTCUTS.quick_open)}
+      totalNotes={Array.from(files.fileMap.values()).filter(f => !f.is_directory).length}
+      graphStats={graphState.stats}
+      graphScanning={graphState.scanning}
       onfileopen={openFile}
       onnewnote={handleNewNote}
-      onquickopen={() => ui.showQuickOpen()}
       onopencore={handleOpenCore}
     />
   </Worksurface>
