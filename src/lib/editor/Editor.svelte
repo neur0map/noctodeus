@@ -59,11 +59,15 @@
     if (editor) {
       const { from } = editor.state.selection;
       const coords = editor.view.coordsAtPos(from);
+      const panelHeight = 140;
+      const panelWidth = 260;
       const spaceBelow = window.innerHeight - coords.bottom;
-      const panelHeight = 200;
+      const top = spaceBelow >= panelHeight + 8
+        ? coords.bottom + 4
+        : coords.top - panelHeight - 4;
       mediaPanelPosition = {
-        top: spaceBelow >= panelHeight + 8 ? coords.bottom + 4 : coords.top - panelHeight - 4,
-        left: Math.min(coords.left, window.innerWidth - 280),
+        top: Math.max(4, Math.min(top, window.innerHeight - 40)),
+        left: Math.max(4, Math.min(coords.left, window.innerWidth - panelWidth - 8)),
       };
     }
     mediaPanelVisible = true;
@@ -160,13 +164,26 @@
   }
 
   const MENU_HEIGHT = 380;
+  const MENU_WIDTH = 280;
 
-  function calcPosition(rect: DOMRect) {
+  function calcMenuPosition(props: any) {
+    const rectFn = props.clientRect;
+    if (!rectFn) return null;
+    const rect = rectFn();
+    if (!rect) return null;
+
+    // rect is in viewport coordinates (for position:fixed)
     const spaceBelow = window.innerHeight - rect.bottom;
     const top = spaceBelow >= MENU_HEIGHT + 8
       ? rect.bottom + 4
       : rect.top - MENU_HEIGHT - 4;
-    return { top: Math.max(4, top), left: rect.left };
+
+    const left = Math.min(rect.left, window.innerWidth - MENU_WIDTH - 8);
+
+    return {
+      top: Math.max(4, Math.min(top, window.innerHeight - 40)),
+      left: Math.max(4, left),
+    };
   }
 
   function createSlashPopup() {
@@ -175,15 +192,15 @@
         slashItems = props.items;
         slashCommand = props.command;
         slashSelectedIndex = 0;
-        const rect = props.clientRect?.();
-        if (rect) slashPosition = calcPosition(rect);
+        const pos = calcMenuPosition(props);
+        if (pos) slashPosition = pos;
         slashVisible = true;
       },
       onUpdate(props: any) {
         slashItems = props.items;
         slashCommand = props.command;
-        const rect = props.clientRect?.();
-        if (rect) slashPosition = calcPosition(rect);
+        const pos = calcMenuPosition(props);
+        if (pos) slashPosition = pos;
         if (slashSelectedIndex >= props.items.length) slashSelectedIndex = 0;
       },
       onKeyDown(props: any) {
