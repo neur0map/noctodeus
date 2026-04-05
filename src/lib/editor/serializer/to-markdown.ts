@@ -18,6 +18,21 @@ function serializeInline(node: JSONContent): string {
           case 'link':
             text = `[${text}](${mark.attrs?.href ?? ''})`;
             break;
+          case 'strike':
+            text = `~~${text}~~`;
+            break;
+          case 'highlight':
+            text = `==${text}==`;
+            break;
+          case 'subscript':
+            text = `~${text}~`;
+            break;
+          case 'superscript':
+            text = `^${text}^`;
+            break;
+          case 'underline':
+            text = `<u>${text}</u>`;
+            break;
         }
       }
     }
@@ -127,6 +142,29 @@ function serializeNode(node: JSONContent): string {
       const url = node.attrs?.url ?? '';
       return `[embed](${url})\n\n`;
     }
+
+    case 'table': {
+      const rows = node.content ?? [];
+      const lines: string[] = [];
+      rows.forEach((row, rowIndex) => {
+        const cells = (row.content ?? []).map((cell) => {
+          const inner = (cell.content ?? [])
+            .map((p) => (p.content ?? []).map(serializeInline).join(''))
+            .join(' ');
+          return inner || ' ';
+        });
+        lines.push('| ' + cells.join(' | ') + ' |');
+        if (rowIndex === 0) {
+          lines.push('| ' + cells.map(() => '---').join(' | ') + ' |');
+        }
+      });
+      return lines.join('\n') + '\n\n';
+    }
+
+    case 'tableRow':
+    case 'tableCell':
+    case 'tableHeader':
+      return serializeChildren(node.content);
 
     case 'hardBreak':
       return '  \n';

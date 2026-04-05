@@ -3,6 +3,18 @@ import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
 import TaskList from '@tiptap/extension-task-list';
 import TaskItem from '@tiptap/extension-task-item';
 import Link from '@tiptap/extension-link';
+import { Table } from '@tiptap/extension-table';
+import Highlight from '@tiptap/extension-highlight';
+import Subscript from '@tiptap/extension-subscript';
+import Superscript from '@tiptap/extension-superscript';
+import TextAlign from '@tiptap/extension-text-align';
+import Typography from '@tiptap/extension-typography';
+import { TextStyle } from '@tiptap/extension-text-style';
+import Color from '@tiptap/extension-color';
+import Underline from '@tiptap/extension-underline';
+import CharacterCount from '@tiptap/extension-character-count';
+import Mathematics from '@tiptap/extension-mathematics';
+import Focus from '@tiptap/extension-focus';
 import { ResizableImage } from './resizable-image.js';
 import Placeholder from '@tiptap/extension-placeholder';
 import { createLowlight, common } from 'lowlight';
@@ -47,6 +59,45 @@ export function createEditorExtensions(
       openOnClick: false,
       autolink: true,
     }),
+
+    // Tables
+    Table.configure({
+      resizable: true,
+      handleWidth: 5,
+      cellMinWidth: 80,
+    }),
+
+    // Text formatting
+    Highlight.configure({
+      multicolor: true,
+    }),
+    Subscript,
+    Superscript,
+    Underline,
+    TextStyle,
+    Color,
+
+    // Alignment
+    TextAlign.configure({
+      types: ['heading', 'paragraph'],
+    }),
+
+    // Typography (smart quotes, dashes, ellipsis)
+    Typography,
+
+    // Math (LaTeX)
+    Mathematics,
+
+    // Character count
+    CharacterCount,
+
+    // Focus styling
+    Focus.configure({
+      className: 'has-focus',
+      mode: 'deepest',
+    }),
+
+    // Custom extensions
     ResizableImage,
     Placeholder.configure({
       placeholder,

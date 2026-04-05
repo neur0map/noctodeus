@@ -1,4 +1,10 @@
 import MarkdownIt from 'markdown-it';
+// @ts-ignore — no type declarations available
+import markdownItMark from 'markdown-it-mark';
+// @ts-ignore — no type declarations available
+import markdownItSub from 'markdown-it-sub';
+// @ts-ignore — no type declarations available
+import markdownItSup from 'markdown-it-sup';
 
 function wikiLinkPlugin(md: MarkdownIt) {
   md.inline.ruler.after('link', 'wiki_link', (state, silent) => {
@@ -143,6 +149,9 @@ const md = new MarkdownIt('default', { html: false, linkify: true, typographer: 
 md.use(wikiLinkPlugin);
 md.use(taskListPlugin);
 md.use(mediaBlockPlugin);
+md.use(markdownItMark);
+md.use(markdownItSub);
+md.use(markdownItSup);
 
 const FRONTMATTER_RE = /^---\r?\n[\s\S]*?\r?\n---\r?\n?/;
 

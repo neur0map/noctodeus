@@ -359,6 +359,122 @@
 }
 
 /* --------------------------------------------------------------------------
+   Tables
+   -------------------------------------------------------------------------- */
+.ProseMirror table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 16px 0;
+  overflow: hidden;
+  table-layout: fixed;
+}
+
+.ProseMirror th,
+.ProseMirror td {
+  border: 1px solid var(--color-border);
+  padding: 8px 12px;
+  vertical-align: top;
+  position: relative;
+  min-width: 80px;
+}
+
+.ProseMirror th {
+  background: var(--color-card);
+  font-weight: 600;
+  text-align: left;
+}
+
+.ProseMirror td {
+  background: transparent;
+}
+
+.ProseMirror .selectedCell {
+  background: rgba(99, 102, 241, 0.08);
+}
+
+.ProseMirror .column-resize-handle {
+  position: absolute;
+  right: -2px;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--color-accent);
+  cursor: col-resize;
+  z-index: 10;
+}
+
+.ProseMirror.resize-cursor {
+  cursor: col-resize;
+}
+
+/* --------------------------------------------------------------------------
+   Highlight
+   -------------------------------------------------------------------------- */
+.ProseMirror mark {
+  background: rgba(250, 204, 21, 0.3);
+  border-radius: 2px;
+  padding: 1px 2px;
+}
+
+/* --------------------------------------------------------------------------
+   Subscript & Superscript
+   -------------------------------------------------------------------------- */
+.ProseMirror sub {
+  font-size: 0.75em;
+  vertical-align: sub;
+}
+
+.ProseMirror sup {
+  font-size: 0.75em;
+  vertical-align: super;
+}
+
+/* --------------------------------------------------------------------------
+   Underline
+   -------------------------------------------------------------------------- */
+.ProseMirror u {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* --------------------------------------------------------------------------
+   Text Align
+   -------------------------------------------------------------------------- */
+.ProseMirror [style*="text-align: center"] { text-align: center; }
+.ProseMirror [style*="text-align: right"] { text-align: right; }
+.ProseMirror [style*="text-align: justify"] { text-align: justify; }
+
+/* --------------------------------------------------------------------------
+   Mathematics (KaTeX)
+   -------------------------------------------------------------------------- */
+.ProseMirror .Tiptap-mathematics-editor {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  padding: 4px 8px;
+  color: var(--color-foreground);
+}
+
+.ProseMirror .Tiptap-mathematics-render {
+  padding: 2px 4px;
+  cursor: pointer;
+}
+
+.ProseMirror .Tiptap-mathematics-editor--active {
+  border-color: var(--color-accent);
+}
+
+/* --------------------------------------------------------------------------
+   Focus Node
+   -------------------------------------------------------------------------- */
+.ProseMirror .has-focus {
+  border-radius: 2px;
+  box-shadow: none;
+}
+
+/* --------------------------------------------------------------------------
    Reduced Motion
    -------------------------------------------------------------------------- */
 @media (prefers-reduced-motion: reduce) {

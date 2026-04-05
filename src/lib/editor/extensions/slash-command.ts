@@ -126,6 +126,41 @@ const COMMANDS: SlashCommandItem[] = [
     },
   },
 
+  // --- Advanced blocks ---
+  {
+    id: 'table',
+    label: 'Table',
+    icon: '⊞',
+    description: 'Insert a table',
+    group: 'Advanced',
+    command: (editor, range) => {
+      editor.chain().focus().deleteRange(range)
+        .insertTable({ rows: 3, cols: 3, withHeaderRow: true })
+        .run();
+    },
+  },
+  {
+    id: 'math-block',
+    label: 'Math block',
+    icon: 'Σ',
+    description: 'LaTeX math formula',
+    group: 'Advanced',
+    command: (editor, range) => {
+      editor.chain().focus().deleteRange(range).run();
+      (editor.commands as any).setMathematics?.();
+    },
+  },
+  {
+    id: 'highlight',
+    label: 'Highlight',
+    icon: '🖍',
+    description: 'Highlight selected text',
+    group: 'Advanced',
+    command: (editor, range) => {
+      editor.chain().focus().deleteRange(range).toggleHighlight().run();
+    },
+  },
+
   // --- Media ---
   {
     id: 'image',
