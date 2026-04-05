@@ -66,7 +66,8 @@
   .id-backdrop {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.4);
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(8px);
     z-index: 399;
   }
 
@@ -77,11 +78,10 @@
     transform: translate(-50%, -50%);
     z-index: 400;
     width: 320px;
-    background: rgba(20, 21, 27, 0.98);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--color-popover);
+    border: 1px solid var(--color-border);
     border-radius: 12px;
-    box-shadow: 0 16px 64px rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(20px);
+    box-shadow: var(--shadow-float);
     padding: 20px;
     display: flex;
     flex-direction: column;
@@ -107,8 +107,8 @@
     font-family: var(--font-mono);
     font-size: 13px;
     color: var(--color-foreground);
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--color-hover);
+    border: 1px solid var(--color-border);
     border-radius: 8px;
     outline: none;
   }
@@ -134,7 +134,7 @@
 
   .id__btn--cancel {
     background: transparent;
-    color: rgba(255, 255, 255, 0.5);
+    color: var(--color-placeholder);
   }
 
   .id__btn--cancel:hover {

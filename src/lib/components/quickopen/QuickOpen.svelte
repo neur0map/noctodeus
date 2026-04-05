@@ -96,6 +96,7 @@
     justify-content: center;
     padding-top: 20vh;
     background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(8px);
     z-index: 100;
     animation: fade-in 150ms var(--ease-expo-out) both;
   }

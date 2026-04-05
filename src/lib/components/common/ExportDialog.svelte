@@ -79,7 +79,8 @@
   .export-backdrop {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.4);
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(8px);
     z-index: 399;
   }
 
@@ -90,11 +91,10 @@
     transform: translate(-50%, -50%);
     z-index: 400;
     width: 360px;
-    background: rgba(20, 21, 27, 0.98);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--color-popover);
+    border: 1px solid var(--color-border);
     border-radius: 12px;
-    box-shadow: 0 16px 64px rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(20px);
+    box-shadow: var(--shadow-float);
     padding: 20px;
     display: flex;
     flex-direction: column;
@@ -117,7 +117,7 @@
   .export-dialog__file {
     font-family: var(--font-mono);
     font-size: 11px;
-    color: rgba(255, 255, 255, 0.4);
+    color: var(--color-placeholder);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -133,7 +133,7 @@
   .export-dialog__label {
     font-family: var(--font-mono);
     font-size: 10px;
-    color: rgba(255, 255, 255, 0.4);
+    color: var(--color-placeholder);
     text-transform: uppercase;
     letter-spacing: 0.05em;
   }
@@ -151,9 +151,9 @@
     padding: 7px 0;
     font-family: var(--font-mono);
     font-size: 11px;
-    color: rgba(255, 255, 255, 0.5);
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: var(--color-muted-foreground);
+    background: var(--color-hover);
+    border: 1px solid var(--color-border);
     border-radius: 6px;
     cursor: pointer;
     transition: all 150ms var(--ease-expo-out);
@@ -162,7 +162,7 @@
   .export-dialog__radio input { display: none; }
 
   .export-dialog__radio:hover {
-    border-color: rgba(255, 255, 255, 0.14);
+    border-color: var(--color-muted-foreground);
     color: var(--color-foreground);
   }
 
@@ -195,7 +195,7 @@
     display: block;
     width: 32px;
     height: 18px;
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--color-hover);
     border-radius: 9px;
     transition: background 150ms var(--ease-expo-out);
     position: relative;
@@ -208,7 +208,7 @@
     left: 2px;
     width: 14px;
     height: 14px;
-    background: rgba(255, 255, 255, 0.6);
+    background: var(--color-muted-foreground);
     border-radius: 50%;
     transition: transform 150ms var(--ease-expo-out);
   }
@@ -225,7 +225,7 @@
   .export-dialog__hint {
     font-family: var(--font-sans);
     font-size: 11px;
-    color: rgba(255, 255, 255, 0.3);
+    color: var(--color-placeholder);
     line-height: 1.4;
   }
 
@@ -247,7 +247,7 @@
 
   .export-dialog__btn--cancel {
     background: transparent;
-    color: rgba(255, 255, 255, 0.5);
+    color: var(--color-placeholder);
   }
 
   .export-dialog__btn--cancel:hover {

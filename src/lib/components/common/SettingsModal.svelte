@@ -251,6 +251,7 @@
     position: fixed;
     inset: 0;
     background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(8px);
     z-index: 500;
     display: flex;
     align-items: center;
@@ -267,11 +268,10 @@
     display: flex;
     width: min(860px, 90vw);
     height: min(580px, 80vh);
-    background: rgba(16, 17, 22, 0.98);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: var(--color-popover);
+    border: 1px solid var(--color-border);
     border-radius: 14px;
-    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(24px);
+    box-shadow: var(--shadow-float);
     overflow: hidden;
     animation: settings-in 150ms var(--ease-expo-out) both;
   }
@@ -286,7 +286,7 @@
     width: 200px;
     flex-shrink: 0;
     padding: 16px 12px;
-    border-right: 1px solid rgba(255, 255, 255, 0.06);
+    border-right: 1px solid var(--color-border);
     overflow-y: auto;
     scrollbar-width: none;
   }
@@ -301,7 +301,7 @@
   .settings__nav-heading {
     font-family: var(--font-mono);
     font-size: 10px;
-    color: rgba(255, 255, 255, 0.32);
+    color: var(--color-placeholder);
     text-transform: uppercase;
     letter-spacing: 0.06em;
     padding: 0 8px;
@@ -316,7 +316,7 @@
     padding: 7px 8px;
     font-family: var(--font-sans);
     font-size: 13px;
-    color: rgba(255, 255, 255, 0.6);
+    color: var(--color-muted-foreground);
     background: transparent;
     border: none;
     border-radius: 6px;
@@ -329,7 +329,7 @@
 
   .settings__nav-item:hover {
     color: var(--color-foreground);
-    background: rgba(255, 255, 255, 0.04);
+    background: var(--color-hover);
   }
 
   .settings__nav-item--active {
@@ -358,7 +358,7 @@
     align-items: center;
     justify-content: space-between;
     padding: 20px 24px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    border-bottom: 1px solid var(--color-border);
     flex-shrink: 0;
   }
 
@@ -379,7 +379,7 @@
     border: none;
     border-radius: 6px;
     background: transparent;
-    color: rgba(255, 255, 255, 0.4);
+    color: var(--color-placeholder);
     font-size: 14px;
     cursor: pointer;
     transition:
@@ -389,7 +389,7 @@
 
   .settings__close:hover {
     color: var(--color-foreground);
-    background: rgba(255, 255, 255, 0.06);
+    background: var(--color-hover);
   }
 
   .settings__body {
@@ -412,7 +412,7 @@
     justify-content: space-between;
     gap: 16px;
     padding: 16px 0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);  /* intentionally subtle */
   }
 
   .settings__row:last-child {
@@ -436,7 +436,7 @@
   .settings__row-desc {
     font-family: var(--font-sans);
     font-size: 12px;
-    color: rgba(255, 255, 255, 0.4);
+    color: var(--color-placeholder);
     line-height: 1.4;
   }
 
@@ -458,7 +458,7 @@
     display: block;
     width: 36px;
     height: 20px;
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--color-hover);
     border-radius: 10px;
     transition: background 150ms var(--ease-expo-out);
     position: relative;
@@ -471,7 +471,7 @@
     left: 2px;
     width: 16px;
     height: 16px;
-    background: rgba(255, 255, 255, 0.6);
+    background: var(--color-muted-foreground);
     border-radius: 50%;
     transition: transform 150ms var(--ease-expo-out);
   }
@@ -491,8 +491,8 @@
     font-family: var(--font-mono);
     font-size: 12px;
     color: var(--color-foreground);
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--color-hover);
+    border: 1px solid var(--color-border);
     border-radius: 6px;
     outline: none;
     cursor: pointer;
@@ -506,7 +506,7 @@
   }
 
   .settings__select:hover {
-    border-color: rgba(255, 255, 255, 0.18);
+    border-color: var(--color-muted-foreground);
   }
 
   .settings__select:focus {
@@ -522,9 +522,9 @@
   .settings__kbd {
     font-family: var(--font-mono);
     font-size: 11px;
-    color: rgba(255, 255, 255, 0.56);
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: var(--color-muted-foreground);
+    background: var(--color-hover);
+    border: 1px solid var(--color-border);
     border-radius: 5px;
     padding: 3px 8px;
     white-space: nowrap;
