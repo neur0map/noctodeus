@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onDestroy } from 'svelte';
   import type { Editor } from '@tiptap/core';
 
   let {
@@ -15,14 +16,11 @@
   }
 
   let headings = $state<HeadingItem[]>([]);
-  let tick = $state(0);
+  let cleanup: (() => void) | null = null;
 
-  // Re-extract headings when editor content changes
-  $effect(() => {
-    void tick;
-    if (!editor) { headings = []; return; }
+  function extractHeadings(ed: Editor) {
     const items: HeadingItem[] = [];
-    editor.state.doc.descendants((node, pos) => {
+    ed.state.doc.descendants((node, pos) => {
       if (node.type.name === 'heading') {
         items.push({
           id: `h-${pos}`,
@@ -33,21 +31,34 @@
       }
     });
     headings = items;
+  }
+
+  // Watch for editor changes and subscribe to updates
+  $effect(() => {
+    // Clean up previous listener
+    cleanup?.();
+    cleanup = null;
+
+    if (!editor) {
+      headings = [];
+      return;
+    }
+
+    // Extract immediately
+    extractHeadings(editor);
+
+    // Listen for future updates
+    const ed = editor;
+    const handler = () => extractHeadings(ed);
+    ed.on('update', handler);
+    cleanup = () => ed.off('update', handler);
   });
 
-  // Listen for editor updates
-  $effect(() => {
-    if (!editor) return;
-    const handler = () => { tick++; };
-    editor.on('update', handler);
-    handler(); // Initial
-    return () => { editor!.off('update', handler); };
-  });
+  onDestroy(() => { cleanup?.(); });
 
   function scrollToHeading(pos: number) {
     if (!editor) return;
     editor.chain().focus().setTextSelection(pos).run();
-    // Scroll the node into view
     const dom = editor.view.domAtPos(pos);
     if (dom.node instanceof HTMLElement) {
       dom.node.scrollIntoView({ behavior: 'smooth', block: 'center' });
