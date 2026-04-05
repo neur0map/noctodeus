@@ -22,116 +22,89 @@
   } = $props();
 </script>
 
-<div class="app-shell__canvas">
-  <div
-    class="app-shell"
-    class:sidebar-collapsed={!sidebarVisible}
-    class:utility-rail-hidden={!utilityRailVisible}
-    class:right-panel-open={rightPanelVisible}
-  >
-    <aside class="app-shell__sidebar" class:collapsed={!sidebarVisible} class:compact={sidebarCollapsed}>
+<div
+  class="app-shell"
+  class:app-shell--sidebar-hidden={!sidebarVisible}
+  class:app-shell--sidebar-collapsed={sidebarCollapsed}
+  class:app-shell--right-panel-open={rightPanelVisible}
+>
+  {#if sidebarVisible}
+    <aside class="app-shell__sidebar">
       {@render sidebar()}
     </aside>
+  {/if}
 
-    <main class="app-shell__content">
-      {@render content()}
-    </main>
+  <main class="app-shell__content">
+    {@render content()}
+  </main>
 
-    {#if utilityRail}
-      <aside class="app-shell__utility-rail" class:hidden={!utilityRailVisible}>
-        {@render utilityRail()}
-      </aside>
-    {/if}
+  {#if utilityRail && utilityRailVisible}
+    <div class="app-shell__rail">
+      {@render utilityRail()}
+    </div>
+  {/if}
 
-    {#if rightPanel}
-      <aside class="app-shell__right-panel" class:open={rightPanelVisible}>
-        {@render rightPanel()}
-      </aside>
-    {/if}
-  </div>
+  {#if rightPanel && rightPanelVisible}
+    <aside class="app-shell__right">
+      {@render rightPanel()}
+    </aside>
+  {/if}
 </div>
 
-<style>
-  .app-shell__canvas {
+<style lang="scss">
+  .app-shell {
+    display: grid;
+    grid-template-columns: 276px 1fr 48px;
     height: 100vh;
-    padding: 8px;
-    background: linear-gradient(180deg, #07080b 0%, #0a0b10 100%);
-    position: relative;
+    background: var(--color-background);
     overflow: hidden;
   }
 
-  .app-shell {
-    display: grid;
-    grid-template-columns: auto 1fr auto auto;
-    height: 100%;
-    background:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.018), transparent 12%),
-      rgba(15, 16, 21, 0.94);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 8px;
-    box-shadow: none;
-    overflow: hidden;
-    position: relative;
-    backdrop-filter: blur(16px);
-    z-index: 1;
+  .app-shell--sidebar-hidden {
+    grid-template-columns: 0 1fr 48px;
+  }
+
+  .app-shell--sidebar-collapsed {
+    grid-template-columns: 48px 1fr 48px;
+  }
+
+  .app-shell--right-panel-open {
+    grid-template-columns: 276px 1fr 48px 320px;
+  }
+
+  .app-shell--right-panel-open.app-shell--sidebar-collapsed {
+    grid-template-columns: 48px 1fr 48px 320px;
+  }
+
+  .app-shell--right-panel-open.app-shell--sidebar-hidden {
+    grid-template-columns: 0 1fr 48px 320px;
   }
 
   .app-shell__sidebar {
-    width: 276px;
-    min-width: 200px;
     overflow: hidden;
-    transition:
-      width 150ms var(--ease-expo-out),
-      min-width 150ms var(--ease-expo-out);
-    will-change: width, min-width;
-  }
-
-  .app-shell__sidebar.collapsed {
-    width: 0;
-    min-width: 0;
-  }
-
-  .app-shell__sidebar.compact {
-    width: 48px;
-    min-width: 48px;
+    border-right: 1px solid var(--color-border);
+    background: var(--color-card);
+    transition: width 150ms var(--ease-expo-out);
   }
 
   .app-shell__content {
+    display: flex;
+    flex-direction: column;
     min-width: 0;
     overflow: hidden;
-    position: relative;
   }
 
-  .app-shell__utility-rail {
-    width: 54px;
-    border-left: 1px solid rgba(255, 255, 255, 0.04);
-    background: linear-gradient(
-      180deg,
-      rgba(255, 255, 255, 0.015),
-      transparent 22%
-    );
-    transition:
-      width 150ms var(--ease-expo-out),
-      opacity 150ms var(--ease-expo-out);
+  .app-shell__rail {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    border-left: 1px solid var(--color-border);
+    background: var(--color-background);
   }
 
-  .app-shell__utility-rail.hidden {
-    width: 0;
-    opacity: 0;
-    border-left: none;
+  .app-shell__right {
+    border-left: 1px solid var(--color-border);
+    background: var(--color-card);
     overflow: hidden;
-  }
-
-  .app-shell__right-panel {
-    width: 0;
-    overflow: hidden;
-    transition: width 150ms var(--ease-expo-out);
-    will-change: width;
-    border-left: 1px solid transparent;
-  }
-
-  .app-shell__right-panel.open {
-    width: 380px;
-    border-left-color: rgba(255, 255, 255, 0.05);
   }
 </style>
