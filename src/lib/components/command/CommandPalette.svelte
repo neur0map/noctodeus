@@ -122,7 +122,12 @@
     background: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(8px);
     z-index: 100;
-    animation: fade-in 150ms var(--ease-expo-out) both;
+    animation: cmd-backdrop-in 200ms ease both;
+  }
+
+  @keyframes cmd-backdrop-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
   }
 
   .command-palette {
@@ -134,17 +139,17 @@
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    animation: command-palette-enter 150ms var(--ease-expo-out) both;
+    animation: command-palette-enter 250ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
   @keyframes command-palette-enter {
     from {
       opacity: 0;
-      transform: scale(0.98);
+      transform: scale(0.95) translateY(8px);
     }
     to {
       opacity: 1;
-      transform: scale(1);
+      transform: scale(1) translateY(0);
     }
   }
 
@@ -197,5 +202,12 @@
     background: var(--color-hover);
     padding: 2px 8px;
     border-radius: 4px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .command-palette__backdrop,
+    .command-palette {
+      animation: none;
+    }
   }
 </style>

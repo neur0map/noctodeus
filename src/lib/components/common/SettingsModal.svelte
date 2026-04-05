@@ -256,7 +256,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    animation: backdrop-in 150ms var(--ease-expo-out) both;
+    animation: backdrop-in 200ms ease both;
   }
 
   @keyframes backdrop-in {
@@ -273,12 +273,12 @@
     border-radius: 14px;
     box-shadow: var(--shadow-float);
     overflow: hidden;
-    animation: settings-in 150ms var(--ease-expo-out) both;
+    animation: settings-in 250ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
   @keyframes settings-in {
-    from { opacity: 0; transform: scale(0.97); }
-    to { opacity: 1; transform: scale(1); }
+    from { opacity: 0; transform: scale(0.95) translateY(8px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
   }
 
   /* ── Nav sidebar ── */

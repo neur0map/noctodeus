@@ -58,6 +58,7 @@
     height: 100vh;
     background: var(--color-background);
     overflow: hidden;
+    transition: grid-template-columns 250ms cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .app-shell--sidebar-hidden {
@@ -106,5 +107,11 @@
     border-left: 1px solid var(--color-border);
     background: var(--color-card);
     overflow: hidden;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .app-shell {
+      transition: none;
+    }
   }
 </style>

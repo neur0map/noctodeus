@@ -123,6 +123,12 @@
     max-height: 240px;
     overflow-y: auto;
     margin-top: 4px;
+    animation: dropdown-in 150ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  @keyframes dropdown-in {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 
   .search-bar__result {
@@ -167,5 +173,11 @@
     color: var(--color-foreground);
     border-radius: 2px;
     padding: 0 1px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .search-bar__results {
+      animation: none;
+    }
   }
 </style>

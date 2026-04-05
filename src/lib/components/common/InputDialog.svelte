@@ -69,6 +69,12 @@
     background: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(8px);
     z-index: 399;
+    animation: id-backdrop-in 200ms ease both;
+  }
+
+  @keyframes id-backdrop-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
   }
 
   .id {
@@ -86,11 +92,11 @@
     display: flex;
     flex-direction: column;
     gap: 16px;
-    animation: id-in 150ms var(--ease-expo-out) both;
+    animation: id-in 250ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
   @keyframes id-in {
-    from { opacity: 0; transform: translate(-50%, -48%) scale(0.96); }
+    from { opacity: 0; transform: translate(-50%, -48%) scale(0.95); }
     to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
   }
 
@@ -152,6 +158,7 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
+    .id-backdrop,
     .id { animation: none; }
   }
 </style>

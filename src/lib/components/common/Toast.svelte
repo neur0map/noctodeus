@@ -58,33 +58,33 @@
     border: 1px solid var(--color-border);
     border-radius: 8px;
     box-shadow: var(--shadow-float);
-    animation: toast-enter 150ms var(--ease-expo-out) both;
+    animation: toast-enter 300ms cubic-bezier(0.16, 1, 0.3, 1) both;
     max-width: 360px;
   }
 
   .toast--exiting {
-    animation: toast-exit 150ms var(--ease-expo-out) both;
+    animation: toast-exit 200ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
   @keyframes toast-enter {
     from {
       opacity: 0;
-      transform: translateY(8px);
+      transform: translateX(20px);
     }
     to {
       opacity: 1;
-      transform: translateY(0);
+      transform: translateX(0);
     }
   }
 
   @keyframes toast-exit {
     from {
       opacity: 1;
-      transform: translateY(0);
+      transform: translateX(0);
     }
     to {
       opacity: 0;
-      transform: translateY(4px);
+      transform: translateX(20px);
     }
   }
 
@@ -125,5 +125,12 @@
   .toast__dismiss:hover {
     color: var(--color-foreground);
     background: var(--color-hover);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .toast,
+    .toast--exiting {
+      animation: none;
+    }
   }
 </style>

@@ -98,7 +98,12 @@
     background: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(8px);
     z-index: 100;
-    animation: fade-in 150ms var(--ease-expo-out) both;
+    animation: quick-open-backdrop-in 200ms ease both;
+  }
+
+  @keyframes quick-open-backdrop-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
   }
 
   .quick-open {
@@ -110,17 +115,24 @@
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    animation: quick-open-enter 150ms var(--ease-expo-out) both;
+    animation: quick-open-enter 250ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
   @keyframes quick-open-enter {
     from {
       opacity: 0;
-      transform: scale(0.98);
+      transform: scale(0.95) translateY(8px);
     }
     to {
       opacity: 1;
-      transform: scale(1);
+      transform: scale(1) translateY(0);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .quick-open__backdrop,
+    .quick-open {
+      animation: none;
     }
   }
 </style>

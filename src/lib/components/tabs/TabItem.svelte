@@ -100,15 +100,17 @@
     transition:
       background 150ms ease,
       color 150ms ease;
-    animation: tab-enter 150ms ease both;
+    animation: tab-enter 200ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
   @keyframes tab-enter {
     from {
       opacity: 0;
+      transform: translateX(-8px);
     }
     to {
       opacity: 1;
+      transform: translateX(0);
     }
   }
 
@@ -173,5 +175,11 @@
 
   .tab-item__close:hover {
     color: var(--color-foreground);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .tab-item {
+      animation: none;
+    }
   }
 </style>
