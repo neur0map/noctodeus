@@ -90,13 +90,10 @@
     position: fixed;
     z-index: 200;
     width: 260px;
-    background: rgba(18, 19, 24, 0.98);
-    border: 1px solid rgba(255, 255, 255, 0.09);
+    background: var(--color-popover);
+    border: 1px solid var(--color-border);
     border-radius: 10px;
-    box-shadow:
-      0 6px 32px rgba(0, 0, 0, 0.5),
-      0 0 0 1px rgba(255, 255, 255, 0.03);
-    backdrop-filter: blur(20px);
+    box-shadow: var(--shadow-float);
     overflow: hidden;
     animation: mp-in 150ms var(--ease-expo-out) both;
   }
@@ -108,7 +105,7 @@
 
   .mp__tabs {
     display: flex;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    border-bottom: 1px solid var(--color-border);
   }
 
   .mp__tab {
@@ -117,7 +114,7 @@
     font-family: var(--font-mono);
     font-size: 11px;
     font-weight: 500;
-    color: rgba(255, 255, 255, 0.32);
+    color: var(--color-placeholder);
     background: transparent;
     border: none;
     border-bottom: 2px solid transparent;
@@ -126,7 +123,7 @@
     transition: color 150ms var(--ease-expo-out);
   }
 
-  .mp__tab:hover { color: rgba(255, 255, 255, 0.56); }
+  .mp__tab:hover { color: var(--color-foreground); }
 
   .mp__tab--active {
     color: var(--color-foreground);
@@ -144,8 +141,8 @@
     gap: 8px;
     width: 100%;
     padding: 12px 16px;
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: var(--color-hover);
+    border: 1px solid var(--color-border);
     border-radius: 8px;
     cursor: pointer;
     transition:
@@ -154,19 +151,19 @@
   }
 
   .mp__upload-btn:hover {
-    background: rgba(255, 255, 255, 0.07);
-    border-color: rgba(255, 255, 255, 0.14);
+    background: var(--color-popover);
+    border-color: var(--color-muted-foreground);
   }
 
   .mp__upload-icon {
     font-size: 14px;
-    color: rgba(255, 255, 255, 0.4);
+    color: var(--color-placeholder);
   }
 
   .mp__upload-label {
     font-family: var(--font-sans);
     font-size: 13px;
-    color: rgba(255, 255, 255, 0.64);
+    color: var(--color-muted-foreground);
   }
 
   .mp__link {
@@ -182,15 +179,15 @@
     font-family: var(--font-mono);
     font-size: 12px;
     color: var(--color-foreground);
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: var(--color-hover);
+    border: 1px solid var(--color-border);
     border-radius: 6px;
     outline: none;
     transition: border-color 150ms var(--ease-expo-out);
   }
 
   .mp__link-input:focus { border-color: var(--color-accent); }
-  .mp__link-input::placeholder { color: rgba(255, 255, 255, 0.22); }
+  .mp__link-input::placeholder { color: var(--color-placeholder); }
 
   .mp__link-btn {
     padding: 6px 12px;

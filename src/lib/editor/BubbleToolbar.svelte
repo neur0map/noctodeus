@@ -163,13 +163,10 @@
   .bt {
     position: fixed;
     z-index: 200;
-    background: rgba(18, 19, 24, 0.98);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--color-popover);
+    border: 1px solid var(--color-border);
     border-radius: 10px;
-    box-shadow:
-      0 6px 32px rgba(0, 0, 0, 0.5),
-      0 0 0 1px rgba(255, 255, 255, 0.03);
-    backdrop-filter: blur(20px);
+    box-shadow: var(--shadow-float);
     padding: 3px;
     animation: bt-in 150ms var(--ease-expo-out) both;
     user-select: none;
@@ -189,7 +186,7 @@
   .bt__sep {
     width: 1px;
     height: 18px;
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--color-border);
     margin: 0 2px;
   }
 
@@ -204,7 +201,7 @@
     border: none;
     border-radius: 6px;
     background: transparent;
-    color: rgba(255, 255, 255, 0.56);
+    color: var(--color-muted-foreground);
     font-family: var(--font-mono);
     font-size: 12px;
     font-weight: 600;
@@ -215,13 +212,13 @@
   }
 
   .bt__btn:hover {
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--color-hover);
     color: var(--color-foreground);
   }
 
   .bt__btn--active {
-    background: rgba(122, 141, 255, 0.15);
-    color: var(--color-accent-hover);
+    background: rgba(99, 102, 241, 0.15);
+    color: var(--color-accent);
   }
 
   .bt__btn--type {
@@ -241,7 +238,7 @@
 
   /* Block type dropdown */
   .bt__menu {
-    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    border-top: 1px solid var(--color-border);
     margin-top: 3px;
     padding: 3px 0 0;
     display: flex;
@@ -259,7 +256,7 @@
     border: none;
     border-radius: 6px;
     background: transparent;
-    color: rgba(255, 255, 255, 0.6);
+    color: var(--color-muted-foreground);
     font-family: var(--font-sans);
     font-size: 13px;
     cursor: pointer;
@@ -268,7 +265,7 @@
   }
 
   .bt__menu-item:hover {
-    background: rgba(255, 255, 255, 0.06);
+    background: var(--color-hover);
     color: var(--color-foreground);
   }
 
@@ -282,7 +279,7 @@
     font-weight: 600;
     width: 22px;
     flex-shrink: 0;
-    color: rgba(255, 255, 255, 0.3);
+    color: var(--color-placeholder);
   }
 
   .bt__menu-item--active .bt__menu-icon {

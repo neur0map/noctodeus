@@ -124,25 +124,24 @@
   .mm__bar {
     height: 2.5px;
     border-radius: 1px;
-    background: rgba(255, 255, 255, 0.2);
+    background: var(--color-muted-foreground);
+    opacity: 0.3;
     transition: background 150ms var(--ease-expo-out);
   }
 
-  .mm__bar--h1 { width: 22px; background: rgba(255, 255, 255, 0.32); }
+  .mm__bar--h1 { width: 22px; opacity: 0.45; }
   .mm__bar--h2 { width: 16px; }
-  .mm__bar--h3 { width: 11px; background: rgba(255, 255, 255, 0.14); }
+  .mm__bar--h3 { width: 11px; opacity: 0.2; }
 
   /* Expanded popup */
   .mm__popup {
     position: absolute;
     top: 0;
     right: 0;
-    background: rgba(18, 19, 24, 0.96);
-    border: 1px solid rgba(255, 255, 255, 0.09);
+    background: var(--color-popover);
+    border: 1px solid var(--color-border);
     border-radius: 10px;
-    box-shadow:
-      0 8px 32px rgba(0, 0, 0, 0.45),
-      0 0 0 1px rgba(255, 255, 255, 0.03);
+    box-shadow: var(--shadow-float);
     backdrop-filter: blur(16px);
     padding: 8px;
     min-width: 160px;
@@ -173,7 +172,7 @@
     padding: 5px 10px;
     font-family: var(--font-sans);
     font-size: 12px;
-    color: rgba(255, 255, 255, 0.56);
+    color: var(--color-muted-foreground);
     background: transparent;
     border: none;
     border-radius: 5px;
@@ -188,7 +187,7 @@
   .mm__item--h1 {
     font-weight: 600;
     font-size: 13px;
-    color: rgba(255, 255, 255, 0.74);
+    color: var(--color-foreground);
   }
 
   .mm__item--h2 {
@@ -203,7 +202,7 @@
   .mm__item:hover,
   .mm__item--active {
     color: var(--color-accent);
-    background: rgba(255, 255, 255, 0.04);
+    background: var(--color-hover);
   }
 
   @media (prefers-reduced-motion: reduce) {

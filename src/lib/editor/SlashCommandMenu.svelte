@@ -89,14 +89,11 @@
     width: 280px;
     max-height: 380px;
     overflow-y: auto;
-    background: rgba(20, 21, 27, 0.97);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: var(--color-popover);
+    border: 1px solid var(--color-border);
     border-radius: 10px;
-    box-shadow:
-      0 8px 40px rgba(0, 0, 0, 0.5),
-      0 0 0 1px rgba(255, 255, 255, 0.04);
+    box-shadow: var(--shadow-float);
     padding: 4px;
-    backdrop-filter: blur(16px);
     animation: slash-enter 150ms var(--ease-expo-out) both;
     scrollbar-width: none;
   }
@@ -120,7 +117,7 @@
     padding: 8px 12px 4px;
     font-family: var(--font-mono);
     font-size: 10px;
-    color: rgba(255, 255, 255, 0.26);
+    color: var(--color-placeholder);
     text-transform: uppercase;
     letter-spacing: 0.04em;
     user-select: none;
@@ -128,7 +125,7 @@
 
   .slash-menu__divider {
     height: 1px;
-    background: rgba(255, 255, 255, 0.06);
+    background: var(--color-border);
     margin: 4px 8px;
   }
 
@@ -148,7 +145,7 @@
 
   .slash-menu__item:hover,
   .slash-menu__item--selected {
-    background: rgba(255, 255, 255, 0.06);
+    background: var(--color-hover);
   }
 
   .slash-menu__icon {
@@ -159,12 +156,12 @@
     height: 28px;
     flex-shrink: 0;
     border-radius: 6px;
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    background: var(--color-hover);
+    border: 1px solid var(--color-border);
     font-family: var(--font-mono);
     font-size: 11px;
     font-weight: 600;
-    color: rgba(255, 255, 255, 0.64);
+    color: var(--color-muted-foreground);
   }
 
   .slash-menu__text {
@@ -185,14 +182,14 @@
   .slash-menu__desc {
     font-family: var(--font-mono);
     font-size: 10px;
-    color: rgba(255, 255, 255, 0.3);
+    color: var(--color-placeholder);
     line-height: 1.3;
   }
 
   .slash-menu__shortcut {
     font-family: var(--font-mono);
     font-size: 10px;
-    color: rgba(255, 255, 255, 0.22);
+    color: var(--color-placeholder);
     flex-shrink: 0;
     margin-left: auto;
   }
@@ -203,10 +200,10 @@
     justify-content: space-between;
     padding: 8px 12px;
     margin-top: 4px;
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    border-top: 1px solid var(--color-border);
     font-family: var(--font-mono);
     font-size: 10px;
-    color: rgba(255, 255, 255, 0.22);
+    color: var(--color-placeholder);
   }
 
   @media (prefers-reduced-motion: reduce) {
