@@ -4,21 +4,16 @@
   import Check from '@lucide/svelte/icons/check';
   import ChevronsUpDown from '@lucide/svelte/icons/chevrons-up-down';
   import FolderOpen from '@lucide/svelte/icons/folder-open';
-  import Plus from '@lucide/svelte/icons/plus';
-  import Trash2 from '@lucide/svelte/icons/trash-2';
-  import { open as openDialog } from '@tauri-apps/plugin-dialog';
   import { toast } from '../../stores/toast.svelte';
   import { logger } from '../../logger';
 
   let {
     activeCore = null,
     onswitch,
-    oncreate,
     onopen,
   }: {
     activeCore: CoreInfo | null;
     onswitch: (core: CoreInfo) => void;
-    oncreate: () => void;
     onopen: () => void;
   } = $props();
 
@@ -84,13 +79,9 @@
 
       <div class="core-switcher__divider"></div>
 
-      <button class="core-switcher__item" onclick={() => { open = false; oncreate(); }}>
-        <Plus size={14} />
-        <span>Create new core</span>
-      </button>
       <button class="core-switcher__item" onclick={() => { open = false; onopen(); }}>
         <FolderOpen size={14} />
-        <span>Open folder as core</span>
+        <span>Open core</span>
       </button>
     </div>
   {/if}

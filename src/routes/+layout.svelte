@@ -112,8 +112,6 @@
   let sidebarMenuPosition = $state({ top: 0, left: 0 });
 
   const sidebarMenuItems: MenuItem[] = [
-    { id: 'open-core', label: 'Open Core' },
-    { id: 'sep0', label: '', separator: true },
     { id: 'new-file', label: 'New File' },
     { id: 'new-folder', label: 'New Folder' },
     { id: 'sep1', label: '', separator: true },
@@ -126,10 +124,6 @@
   async function handleSidebarMenu(id: string) {
     sidebarMenuVisible = false;
     switch (id) {
-      case 'open-core': {
-        window.dispatchEvent(new CustomEvent('noctodeus-open-core'));
-        break;
-      }
       case 'new-file': {
         const rawName = await showInputDialog('New file name', 'untitled');
         if (!rawName) return;
@@ -653,7 +647,6 @@
           <CoreSwitcher
             activeCore={core.activeCore}
             onswitch={(c) => window.dispatchEvent(new CustomEvent('noctodeus-switch-core', { detail: c.path }))}
-            oncreate={() => window.dispatchEvent(new CustomEvent('noctodeus-create-core'))}
             onopen={() => window.dispatchEvent(new CustomEvent('noctodeus-open-core'))}
           />
           <button
