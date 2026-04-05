@@ -19,6 +19,7 @@
   import {
     readFile,
     createFile,
+    renameFile,
     openCore,
     createCore,
     scanCore,
@@ -51,6 +52,62 @@
   );
   const pinned = getPinnedState();
   let editorRef: EditorComponent | undefined = $state();
+
+  // Inline title editing
+  let inlineTitle = $state('');
+  let titleInputEl: HTMLInputElement | undefined = $state();
+
+  // Sync inline title when file changes
+  $effect(() => {
+    if (currentMetadata) {
+      inlineTitle = currentMetadata.title || currentMetadata.name.replace(/\.(md|markdown)$/i, '');
+    }
+  });
+
+  async function handleTitleRename() {
+    if (!currentFilePath || !currentMetadata) return;
+    const newName = inlineTitle.trim();
+    if (!newName) {
+      // Revert to original
+      inlineTitle = currentMetadata.title || currentMetadata.name.replace(/\.(md|markdown)$/i, '');
+      return;
+    }
+
+    // Build new filename (preserve extension)
+    const ext = currentMetadata.extension ? `.${currentMetadata.extension}` : '.md';
+    const cleanName = newName.replace(/[<>:"|?*\\/]/g, '').replace(/\s+/g, '-');
+    const newFileName = cleanName.endsWith(ext) ? cleanName : `${cleanName}${ext}`;
+
+    if (newFileName === currentMetadata.name) return;
+
+    const parentDir = currentFilePath.includes('/')
+      ? currentFilePath.slice(0, currentFilePath.lastIndexOf('/'))
+      : '';
+    const newPath = parentDir ? `${parentDir}/${newFileName}` : newFileName;
+
+    try {
+      const updated = await renameFile(currentFilePath, newPath);
+      files.renameFile(currentFilePath, newPath, updated);
+      tabsState.updateFileTab(currentFilePath, updated);
+      currentFilePath = newPath;
+      currentMetadata = updated;
+    } catch (err) {
+      toast.error(`Rename failed: ${err}`);
+      inlineTitle = currentMetadata.title || currentMetadata.name.replace(/\.(md|markdown)$/i, '');
+    }
+  }
+
+  function handleTitleKeydown(e: KeyboardEvent) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      (e.target as HTMLInputElement).blur();
+    }
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      inlineTitle = currentMetadata?.title || currentMetadata?.name.replace(/\.(md|markdown)$/i, '') || '';
+      (e.target as HTMLInputElement).blur();
+    }
+  }
 
   let isMarkdown = $derived(
     currentFilePath?.endsWith(".md") || currentFilePath?.endsWith(".markdown"),
@@ -311,6 +368,19 @@
 {#if currentFilePath && currentContent !== null}
   {#if isMarkdown}
     <Worksurface flush={true}>
+      {#snippet toolbar()}
+        <div class="inline-title-bar">
+          <input
+            class="inline-title"
+            type="text"
+            bind:this={titleInputEl}
+            bind:value={inlineTitle}
+            onblur={handleTitleRename}
+            onkeydown={handleTitleKeydown}
+            spellcheck="false"
+          />
+        </div>
+      {/snippet}
       {#key viewKey}
         <div class="view-enter">
           <EditorComponent
@@ -382,6 +452,37 @@
 />
 
 <style>
+  .inline-title-bar {
+    padding: 20px 28px 0;
+    max-width: 780px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  .inline-title {
+    width: 100%;
+    font-family: var(--font-sans);
+    font-size: clamp(1.6rem, 2.5vw, 2.2rem);
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    color: var(--color-foreground);
+    background: transparent;
+    border: none;
+    outline: none;
+    padding: 0;
+    caret-color: var(--color-accent);
+  }
+
+  .inline-title::placeholder {
+    color: var(--color-placeholder);
+  }
+
+  .inline-title:focus {
+    border-bottom: 1px solid var(--color-border);
+    padding-bottom: 4px;
+    margin-bottom: -5px;
+  }
+
   .view-enter {
     height: 100%;
     display: flex;
