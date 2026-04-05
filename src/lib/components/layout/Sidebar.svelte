@@ -1,5 +1,7 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
+  import ChevronLeft from "@lucide/svelte/icons/chevron-left";
+  import PanelLeftOpen from "@lucide/svelte/icons/panel-left-open";
 
   let {
     header,
@@ -16,26 +18,22 @@
   } = $props();
 </script>
 
-<div class="sidebar" class:sidebar--collapsed={collapsed}>
-  {#if collapsed}
-    <div class="sidebar__rail">
-      <button class="rail-button" onclick={ontogglecollapse} title="Expand sidebar">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <path d="M6 3L11 8L6 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      </button>
-    </div>
-  {:else}
+{#if collapsed}
+  <div class="sidebar sidebar--collapsed">
+    <button class="sidebar__expand" onclick={ontogglecollapse} title="Expand sidebar">
+      <PanelLeftOpen size={16} />
+    </button>
+  </div>
+{:else}
+  <div class="sidebar">
     {#if header}
       <div class="sidebar__header">
         <div class="sidebar__header-content">
           {@render header()}
         </div>
         {#if ontogglecollapse}
-          <button class="collapse-button" onclick={ontogglecollapse} title="Collapse sidebar">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M10 3L5 8L10 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
+          <button class="sidebar__collapse" onclick={ontogglecollapse} title="Collapse sidebar">
+            <ChevronLeft size={14} />
           </button>
         {/if}
       </div>
@@ -50,34 +48,47 @@
         {@render footer()}
       </div>
     {/if}
-  {/if}
-</div>
+  </div>
+{/if}
 
-<style>
+<style lang="scss">
   .sidebar {
     display: flex;
     flex-direction: column;
     height: 100%;
-    background:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent 16%),
-      rgba(10, 11, 15, 0.86);
-    border-right: 1px solid rgba(255, 255, 255, 0.05);
-    overflow: hidden;
+    background: var(--color-card);
   }
 
   .sidebar--collapsed {
     align-items: center;
+    padding-top: 12px;
+  }
+
+  .sidebar__expand {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--color-muted-foreground);
+    cursor: pointer;
+    transition: color 150ms var(--ease-expo-out), background 150ms var(--ease-expo-out);
+  }
+
+  .sidebar__expand:hover {
+    color: var(--color-foreground);
+    background: var(--color-hover);
   }
 
   .sidebar__header {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    gap: 4px;
+    padding: 12px 12px 0;
     flex-shrink: 0;
-    padding: 12px
-      16px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    width: 100%;
   }
 
   .sidebar__header-content {
@@ -85,80 +96,39 @@
     min-width: 0;
   }
 
-  .sidebar__body {
-    flex: 1;
-    overflow-y: auto;
-    overflow-x: hidden;
-  }
-
-  .sidebar__footer {
-    flex-shrink: 0;
-    padding: 8px
-      16px;
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
-  }
-
-  .sidebar__rail {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding-top: 12px;
-    gap: 8px;
-    height: 100%;
-  }
-
-  .rail-button {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
-    background: transparent;
-    border: none;
-    color: rgba(255, 255, 255, 0.46);
-    cursor: pointer;
-    transition:
-      color 150ms var(--ease-expo-out),
-      background 150ms var(--ease-expo-out);
-    animation: rail-icon-enter 150ms var(--ease-expo-out) both;
-  }
-
-  .rail-button:hover {
-    color: var(--color-foreground);
-    background: rgba(255, 255, 255, 0.06);
-  }
-
-  @keyframes rail-icon-enter {
-    from {
-      opacity: 0;
-      transform: scale(0.9);
-    }
-    to {
-      opacity: 1;
-      transform: scale(1);
-    }
-  }
-
-  .collapse-button {
+  .sidebar__collapse {
     display: flex;
     align-items: center;
     justify-content: center;
     width: 24px;
     height: 24px;
-    border-radius: 6px;
-    background: transparent;
     border: none;
-    color: rgba(255, 255, 255, 0.36);
+    border-radius: 4px;
+    background: transparent;
+    color: var(--color-placeholder);
     cursor: pointer;
     flex-shrink: 0;
-    transition:
-      color 150ms var(--ease-expo-out),
-      background 150ms var(--ease-expo-out);
+    transition: color 150ms var(--ease-expo-out), background 150ms var(--ease-expo-out);
   }
 
-  .collapse-button:hover {
+  .sidebar__collapse:hover {
     color: var(--color-foreground);
-    background: rgba(255, 255, 255, 0.06);
+    background: var(--color-hover);
+  }
+
+  .sidebar__body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 4px 0;
+    scrollbar-width: none;
+  }
+  .sidebar__body::-webkit-scrollbar { display: none; }
+
+  .sidebar__footer {
+    flex-shrink: 0;
+    padding: 8px 12px;
+    border-top: 1px solid var(--color-border);
   }
 </style>
