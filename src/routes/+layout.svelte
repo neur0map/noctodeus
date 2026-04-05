@@ -545,9 +545,9 @@
           <span class="sidebar-footer__count">
             {files.fileMap.size} files
           </span>
-          {#if activeEditorState.editor}
+          {#if activeEditorState.wordCount > 0}
             <span class="sidebar-footer__words">
-              {activeEditorState.editor.storage.characterCount?.words?.() ?? activeEditorState.editor.state.doc.textContent.trim().split(/\s+/).filter(Boolean).length}w
+              {activeEditorState.wordCount}w
             </span>
           {/if}
         </div>
