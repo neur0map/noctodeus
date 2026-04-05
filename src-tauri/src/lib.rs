@@ -7,6 +7,13 @@ pub mod indexer;
 pub mod logging;
 pub mod watcher;
 
+/// Normalize a path string to always use forward slashes.
+/// Ensures consistent paths across macOS, Windows, and Linux
+/// since the frontend expects `/` as the separator.
+pub fn normalize_path(p: &str) -> String {
+    p.replace('\\', "/")
+}
+
 use crate::core::state::AppState;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]

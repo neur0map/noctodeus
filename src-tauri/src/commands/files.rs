@@ -4,6 +4,8 @@ use std::sync::{Arc, Mutex};
 use rusqlite::Connection;
 use serde::{Deserialize, Serialize};
 
+use crate::normalize_path;
+
 use crate::core::state::AppState;
 use crate::db::mutations;
 use crate::db::queries::FileInfo;
@@ -50,11 +52,10 @@ async fn resolve_path(
 /// Build a basic FileInfo from filesystem metadata.
 /// Used as a return value after file operations (before the watcher indexes it).
 fn file_info_from_path(abs_path: &Path, core_root: &Path) -> Result<FileInfo, NoctoError> {
-    let relative = abs_path
+    let relative = normalize_path(&abs_path
         .strip_prefix(core_root)
         .unwrap_or(abs_path)
-        .to_string_lossy()
-        .to_string();
+        .to_string_lossy());
 
     let name = abs_path
         .file_name()
@@ -68,11 +69,9 @@ fn file_info_from_path(abs_path: &Path, core_root: &Path) -> Result<FileInfo, No
     let parent = abs_path
         .parent()
         .map(|p| {
-            let rel = p.strip_prefix(core_root)
+            let rel = normalize_path(&p.strip_prefix(core_root)
                 .unwrap_or(p)
-                .to_string_lossy()
-                .to_string();
-            // Normalize: use "." for root level to match scanner convention
+                .to_string_lossy());
             if rel.is_empty() { ".".to_string() } else { rel }
         })
         .unwrap_or_else(|| ".".to_string());

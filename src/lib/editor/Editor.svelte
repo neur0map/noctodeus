@@ -8,6 +8,7 @@
   import { getCoreState } from "../stores/core.svelte";
   import { getGraphState } from "../stores/graph.svelte";
   import { getActiveEditorState } from "../stores/active-editor.svelte";
+  import { getSettings } from "../stores/settings.svelte";
   import { writeFile, readFile } from "../bridge/commands";
   import { convertFileSrc } from "@tauri-apps/api/core";
   import { logger } from "../logger";
@@ -38,6 +39,7 @@
   const coreState = getCoreState();
   const graphState = getGraphState();
   const activeEditorState = getActiveEditorState();
+  const appSettings = getSettings();
 
   let editorElement: HTMLDivElement | undefined = $state();
   let editor: Editor | undefined = $state();
@@ -267,6 +269,7 @@
   }
 
   function scheduleAutoSave() {
+    if (!appSettings.autoSave) return;
     if (debounceTimer) clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => { save(); }, 400);
   }
@@ -410,6 +413,13 @@
       editor?.destroy();
       editor = undefined;
     };
+  });
+
+  // ── Font size ──
+  $effect(() => {
+    if (!editor) return;
+    const el = editor.view.dom as HTMLElement;
+    el.style.fontSize = `${appSettings.fontSize}px`;
   });
 
   export function getEditor(): Editor | undefined {

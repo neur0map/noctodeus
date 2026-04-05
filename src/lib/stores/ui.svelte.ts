@@ -3,6 +3,7 @@ let rightPanelVisible = $state(false);
 let quickOpenVisible = $state(false);
 let commandPaletteVisible = $state(false);
 let sidebarCollapsed = $state(false);
+let settingsVisible = $state(false);
 
 export function getUiState() {
   return {
@@ -20,6 +21,9 @@ export function getUiState() {
     },
     get sidebarCollapsed() {
       return sidebarCollapsed;
+    },
+    get settingsVisible() {
+      return settingsVisible;
     },
 
     toggleSidebar() {
@@ -45,9 +49,18 @@ export function getUiState() {
     hideCommandPalette() {
       commandPaletteVisible = false;
     },
+    showSettings() {
+      settingsVisible = true;
+      quickOpenVisible = false;
+      commandPaletteVisible = false;
+    },
+    hideSettings() {
+      settingsVisible = false;
+    },
     closeAllOverlays() {
       quickOpenVisible = false;
       commandPaletteVisible = false;
+      settingsVisible = false;
     },
 
     reset() {
@@ -56,6 +69,7 @@ export function getUiState() {
       quickOpenVisible = false;
       commandPaletteVisible = false;
       sidebarCollapsed = false;
+      settingsVisible = false;
     },
   };
 }

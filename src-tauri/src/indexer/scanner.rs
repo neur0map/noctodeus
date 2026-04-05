@@ -6,6 +6,7 @@ use walkdir::WalkDir;
 
 use crate::db::queries::FileInfo;
 use crate::errors::NoctoError;
+use crate::normalize_path;
 
 /// Maximum file size for content hashing (10 MB).
 const MAX_HASH_SIZE: u64 = 10 * 1024 * 1024;
@@ -35,19 +36,17 @@ pub fn scan_directory(core_path: &Path) -> Result<Vec<FileInfo>, NoctoError> {
             continue;
         }
 
-        let rel_path = entry_path
+        let rel_path = normalize_path(&entry_path
             .strip_prefix(core_path)
             .unwrap_or(entry_path)
-            .to_string_lossy()
-            .to_string();
+            .to_string_lossy());
 
         let parent_dir = entry_path
             .parent()
             .map(|p| {
-                p.strip_prefix(core_path)
+                normalize_path(&p.strip_prefix(core_path)
                     .unwrap_or(p)
-                    .to_string_lossy()
-                    .to_string()
+                    .to_string_lossy())
             })
             .unwrap_or_default();
 
@@ -128,20 +127,18 @@ pub fn scan_directory(core_path: &Path) -> Result<Vec<FileInfo>, NoctoError> {
 /// Core root. Used by the incremental indexer when processing individual
 /// file change events.
 pub fn scan_single_file(core_path: &Path, abs_path: &Path) -> Result<FileInfo, NoctoError> {
-    let rel_path = abs_path
+    let rel_path = normalize_path(&abs_path
         .strip_prefix(core_path)
         .unwrap_or(abs_path)
-        .to_string_lossy()
-        .to_string();
+        .to_string_lossy());
 
     let parent_dir = abs_path
         .parent()
         .map(|p| {
-            let rel = p
+            let rel = normalize_path(&p
                 .strip_prefix(core_path)
                 .unwrap_or(p)
-                .to_string_lossy()
-                .to_string();
+                .to_string_lossy());
             if rel.is_empty() { ".".to_string() } else { rel }
         })
         .unwrap_or_else(|| ".".to_string());

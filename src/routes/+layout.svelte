@@ -20,10 +20,13 @@
   import KeyboardManager from "../lib/components/common/KeyboardManager.svelte";
   import ToastContainer from "../lib/components/common/ToastContainer.svelte";
   import SaveIndicator from "../lib/editor/SaveIndicator.svelte";
+  import SettingsModal from "../lib/components/common/SettingsModal.svelte";
+  import ExportDialog from "../lib/components/common/ExportDialog.svelte";
   import GraphView from "../lib/components/graph/GraphView.svelte";
   import BacklinksPanel from "../lib/components/panels/BacklinksPanel.svelte";
   import OutlinePanel from "../lib/components/panels/OutlinePanel.svelte";
   import { getActiveEditorState } from "../lib/stores/active-editor.svelte";
+  import { getSettings } from "../lib/stores/settings.svelte";
 
   import { getUiState } from "../lib/stores/ui.svelte";
   import { getCoreState } from "../lib/stores/core.svelte";
@@ -54,6 +57,7 @@
   const tabsState = getTabsState();
   const graphState = getGraphState();
   const activeEditorState = getActiveEditorState();
+  const appSettings = getSettings();
 
   let unlisteners: UnlistenFn[] = [];
   let overlayOpen = $derived(ui.quickOpenVisible || ui.commandPaletteVisible);
@@ -87,6 +91,10 @@
     inputDialogVisible = false;
     inputDialogCallback = null;
   }
+
+  // Export dialog state
+  let exportDialogVisible = $state(false);
+  let exportDialogPath = $state('');
 
   // Search state
   let searchResults = $state<SearchHit[]>([]);
@@ -143,15 +151,27 @@
     // Filter the file tree instantly as user types
     files.setFilterQuery(query);
 
-    // Try FTS5 backend first (with prefix matching)
+    if (!query.trim()) {
+      searchResults = [];
+      return;
+    }
+
+    // Sanitize query for FTS5: strip characters that break MATCH syntax
+    const sanitized = query.replace(/['"()\-{}[\]:^~@!]/g, ' ').trim();
+    if (!sanitized) {
+      searchResults = [];
+      return;
+    }
+
+    // Try FTS5 backend — searches across path, title, AND content
     try {
-      const ftsQuery = query.split(/\s+/).map(w => `${w}*`).join(' ');
+      const ftsQuery = sanitized.split(/\s+/).filter(Boolean).map(w => `${w}*`).join(' ');
       searchResults = await searchQuery(ftsQuery);
     } catch {
       searchResults = [];
     }
 
-    // Fallback: client-side fuzzy search across file names and titles
+    // Fallback: client-side search across file names and titles
     if (searchResults.length === 0) {
       const q = query.toLowerCase();
       searchResults = Array.from(files.fileMap.values())
@@ -189,7 +209,7 @@
       { id: 'pin', label: pinnedPaths.has(path) ? 'Unpin' : 'Pin', icon: pinnedPaths.has(path) ? '★' : '☆' },
       { id: 'rename', label: 'Rename', icon: '✎' },
       { id: 'duplicate', label: 'Duplicate', icon: '⊕' },
-      { id: 'export-html', label: 'Export HTML', icon: '↗' },
+      { id: 'export', label: 'Export...', icon: '↗' },
       { id: 'sep1', label: '', separator: true },
       { id: 'delete', label: 'Delete', icon: '✕', danger: true },
     ];
@@ -201,9 +221,9 @@
     let clean = name.trim().replace(/\s+/g, '-');
     // Remove unsafe characters
     clean = clean.replace(/[<>:"|?*\\]/g, '');
-    // Ensure .md extension for files (not directories)
+    // Ensure default extension for files (not directories)
     if (!isDir && !clean.includes('.')) {
-      clean += '.md';
+      clean += appSettings.defaultExtension;
     }
     return clean;
   }
@@ -213,30 +233,9 @@
     if (!ctxTargetPath) return;
 
     switch (id) {
-      case 'export-html': {
-        try {
-          const { readFile } = await import('../lib/bridge/commands');
-          const { content } = await readFile(ctxTargetPath);
-          const { parseMarkdown } = await import('../lib/editor/serializer');
-          const html = parseMarkdown(content);
-          const defaultName = ctxTargetPath.split('/').pop()?.replace(/\.(md|markdown)$/i, '.html') ?? 'export.html';
-          const fullHtml = `<!DOCTYPE html>\n<html>\n<head>\n<meta charset="utf-8">\n<title>${defaultName}</title>\n<style>body{font-family:system-ui,-apple-system,sans-serif;max-width:720px;margin:2rem auto;padding:0 1rem;color:#e0e0e0;background:#1a1a2e;line-height:1.7;}a{color:#6366f1;}pre{background:#111;padding:1rem;border-radius:8px;overflow-x:auto;}code{font-family:monospace;font-size:0.9em;}img{max-width:100%;border-radius:8px;}blockquote{border-left:3px solid #444;padding-left:1rem;color:#aaa;}h1,h2,h3{font-weight:600;letter-spacing:-0.02em;}</style>\n</head>\n<body>\n${html}\n</body>\n</html>`;
-
-          // Use Tauri save dialog
-          const { save: saveDialog } = await import('@tauri-apps/plugin-dialog');
-          const savePath = await saveDialog({
-            defaultPath: defaultName,
-            filters: [{ name: 'HTML', extensions: ['html'] }],
-          });
-          if (savePath) {
-            const { writeFile: tauriWrite } = await import('@tauri-apps/plugin-fs');
-            await tauriWrite(savePath, new TextEncoder().encode(fullHtml));
-            const { toast } = await import('../lib/stores/toast.svelte');
-            toast.success(`Exported to ${savePath.split('/').pop()}`);
-          }
-        } catch (err) {
-          logger.error(`Export failed: ${err}`);
-        }
+      case 'export': {
+        exportDialogPath = ctxTargetPath;
+        exportDialogVisible = true;
         break;
       }
       case 'pin': {
@@ -284,8 +283,10 @@
         break;
       }
       case 'delete': {
-        const confirmed = await tauriAsk(`Move "${ctxTargetPath.split('/').pop()}" to trash?`, { title: 'Delete', kind: 'warning' });
-        if (!confirmed) return;
+        if (appSettings.confirmBeforeDelete) {
+          const confirmed = await tauriAsk(`Move "${ctxTargetPath.split('/').pop()}" to trash?`, { title: 'Delete', kind: 'warning' });
+          if (!confirmed) return;
+        }
         try {
           await deleteFile(ctxTargetPath);
           files.removeFile(ctxTargetPath);
@@ -401,7 +402,8 @@
     ui.closeAllOverlays();
     try {
       const now = new Date();
-      const name = `untitled-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}-${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}${String(now.getSeconds()).padStart(2, "0")}.md`;
+      const ext = appSettings.defaultExtension;
+      const name = `untitled-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}-${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}${String(now.getSeconds()).padStart(2, "0")}${ext}`;
       const node = await createFile(name, "");
       files.addFile(node);
       files.setActiveFile(node.path);
@@ -457,9 +459,11 @@
   async function handleDeleteFile() {
     const path = files.activeFilePath;
     if (!path) return;
-    const name = path.split('/').pop() ?? path;
-    const confirmed = await tauriAsk(`Move "${name}" to trash?`, { title: 'Delete', kind: 'warning' });
-    if (!confirmed) return;
+    if (appSettings.confirmBeforeDelete) {
+      const name = path.split('/').pop() ?? path;
+      const confirmed = await tauriAsk(`Move "${name}" to trash?`, { title: 'Delete', kind: 'warning' });
+      if (!confirmed) return;
+    }
     try {
       await deleteFile(path);
       files.removeFile(path);
@@ -467,6 +471,129 @@
       files.setActiveFile(null);
     } catch (err) {
       logger.error(`Delete failed: ${err}`);
+    }
+  }
+
+  const EXPORT_CSS = `body{font-family:system-ui,-apple-system,sans-serif;max-width:720px;margin:2rem auto;padding:0 1rem;color:#e0e0e0;background:#1a1a2e;line-height:1.7;}a{color:#6366f1;}pre{background:#111;padding:1rem;border-radius:8px;overflow-x:auto;}code{font-family:monospace;font-size:0.9em;}img{max-width:100%;border-radius:8px;}blockquote{border-left:3px solid #444;padding-left:1rem;color:#aaa;}h1,h2,h3{font-weight:600;letter-spacing:-0.02em;}`;
+
+  function stripMediaFromMarkdown(md: string): string {
+    // Remove image/video/audio lines: ![...](...)
+    return md.replace(/^!\[.*?\]\(.*?\).*$/gm, '').replace(/\n{3,}/g, '\n\n');
+  }
+
+  function escapeCsvField(field: string): string {
+    if (field.includes(',') || field.includes('"') || field.includes('\n')) {
+      return `"${field.replace(/"/g, '""')}"`;
+    }
+    return field;
+  }
+
+  async function handleExport(format: string, includeMedia: boolean) {
+    exportDialogVisible = false;
+    const targetPath = exportDialogPath;
+    if (!targetPath) return;
+
+    const { readFile } = await import('../lib/bridge/commands');
+    const { save: saveDialog } = await import('@tauri-apps/plugin-dialog');
+    const { writeFile: tauriWrite } = await import('@tauri-apps/plugin-fs');
+    const { toast } = await import('../lib/stores/toast.svelte');
+
+    try {
+      const baseName = targetPath.split('/').pop()?.replace(/\.(md|markdown)$/i, '') ?? 'export';
+
+      if (format === 'markdown') {
+        const { content } = await readFile(targetPath);
+        const output = includeMedia ? content : stripMediaFromMarkdown(content);
+        const savePath = await saveDialog({
+          defaultPath: `${baseName}.md`,
+          filters: [{ name: 'Markdown', extensions: ['md'] }],
+        });
+        if (!savePath) return;
+        await tauriWrite(savePath, new TextEncoder().encode(output));
+
+        if (includeMedia) {
+          await copyMediaForExport(content, savePath);
+        }
+        toast.success(`Exported ${baseName}.md`);
+
+      } else if (format === 'html') {
+        const { content } = await readFile(targetPath);
+        const md = includeMedia ? content : stripMediaFromMarkdown(content);
+        const { parseMarkdown } = await import('../lib/editor/serializer');
+        const html = parseMarkdown(md);
+        const fullHtml = `<!DOCTYPE html>\n<html>\n<head>\n<meta charset="utf-8">\n<title>${baseName}</title>\n<style>${EXPORT_CSS}</style>\n</head>\n<body>\n${html}\n</body>\n</html>`;
+        const savePath = await saveDialog({
+          defaultPath: `${baseName}.html`,
+          filters: [{ name: 'HTML', extensions: ['html'] }],
+        });
+        if (!savePath) return;
+        await tauriWrite(savePath, new TextEncoder().encode(fullHtml));
+
+        if (includeMedia) {
+          await copyMediaForExport(content, savePath);
+        }
+        toast.success(`Exported ${baseName}.html`);
+
+      } else if (format === 'csv') {
+        // Export ALL markdown files as CSV
+        const allFiles = Array.from(files.fileMap.values()).filter(f => !f.is_directory && (f.extension === 'md' || f.extension === 'markdown'));
+        const rows: string[] = ['path,title,content'];
+        for (const file of allFiles) {
+          try {
+            const { content } = await readFile(file.path);
+            const md = includeMedia ? content : stripMediaFromMarkdown(content);
+            rows.push(`${escapeCsvField(file.path)},${escapeCsvField(file.title ?? '')},${escapeCsvField(md)}`);
+          } catch {
+            rows.push(`${escapeCsvField(file.path)},${escapeCsvField(file.title ?? '')},""`);
+          }
+        }
+        const csvContent = rows.join('\n');
+        const savePath = await saveDialog({
+          defaultPath: `${core.activeCore?.name ?? 'noctodeus'}-export.csv`,
+          filters: [{ name: 'CSV', extensions: ['csv'] }],
+        });
+        if (!savePath) return;
+        await tauriWrite(savePath, new TextEncoder().encode(csvContent));
+        toast.success(`Exported ${allFiles.length} files to CSV`);
+      }
+    } catch (err) {
+      logger.error(`Export failed: ${err}`);
+      const { toast } = await import('../lib/stores/toast.svelte');
+      toast.error(`Export failed: ${err}`);
+    }
+  }
+
+  async function copyMediaForExport(content: string, exportPath: string) {
+    // Find all media references in the markdown
+    const mediaRefs = [...content.matchAll(/!\[.*?\]\((.*?)\)/g)]
+      .map(m => m[1])
+      .filter(src => src && !src.startsWith('http'));
+
+    if (mediaRefs.length === 0) return;
+
+    const corePath = core.activeCore?.path;
+    if (!corePath) return;
+
+    const { mkdir, copyFile } = await import('@tauri-apps/plugin-fs');
+    const exportDir = exportPath.substring(0, exportPath.lastIndexOf('/'));
+    const mediaDir = `${exportDir}/media`;
+
+    try {
+      await mkdir(mediaDir, { recursive: true });
+    } catch {
+      // may already exist
+    }
+
+    for (const ref of mediaRefs) {
+      try {
+        const srcPath = `${corePath}/${ref}`;
+        const destPath = `${exportDir}/${ref}`;
+        const destDir = destPath.substring(0, destPath.lastIndexOf('/'));
+        try { await mkdir(destDir, { recursive: true }); } catch {}
+        await copyFile(srcPath, destPath);
+      } catch {
+        // skip files that can't be copied
+      }
     }
   }
 </script>
@@ -544,12 +671,20 @@
         <div class="sidebar-footer">
           <span class="sidebar-footer__count">
             {files.fileMap.size} files
+            {#if appSettings.showCharCount && activeEditorState.charCount > 0}
+              <span class="sidebar-footer__chars">{activeEditorState.charCount}c</span>
+            {/if}
           </span>
-          {#if activeEditorState.charCount > 0}
-            <span class="sidebar-footer__words">
-              {activeEditorState.charCount}c
-            </span>
-          {/if}
+          <button
+            class="sidebar-footer__settings"
+            onclick={() => ui.showSettings()}
+            title="Settings"
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
+            </svg>
+          </button>
         </div>
       {/snippet}
     </Sidebar>
@@ -579,14 +714,6 @@
 
   {#snippet utilityRail()}
     <div class="utility-rail">
-      <button
-        class="utility-rail__button"
-        class:utility-rail__button--active={ui.quickOpenVisible}
-        onclick={() => ui.showQuickOpen()}
-        title="Quick open"
-      >
-        ⌕
-      </button>
       <button
         class="utility-rail__button"
         class:utility-rail__button--active={ui.commandPaletteVisible}
@@ -669,6 +796,18 @@
   value={inputDialogValue}
   onsubmit={(val) => inputDialogCallback?.(val)}
   oncancel={cancelInputDialog}
+/>
+
+<SettingsModal
+  visible={ui.settingsVisible}
+  onclose={() => ui.hideSettings()}
+/>
+
+<ExportDialog
+  visible={exportDialogVisible}
+  filePath={exportDialogPath}
+  onexport={handleExport}
+  oncancel={() => exportDialogVisible = false}
 />
 
 <style>
@@ -774,12 +913,39 @@
     height: 24px;
   }
 
-  .sidebar-footer__count,
-  .sidebar-footer__words {
+  .sidebar-footer__count {
     font-family: var(--font-mono);
     font-size: var(--text-xs);
     line-height: var(--text-xs-leading);
     color: rgba(255, 255, 255, 0.36);
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .sidebar-footer__chars {
+    opacity: 0.7;
+  }
+
+  .sidebar-footer__settings {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border: none;
+    border-radius: 5px;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.32);
+    cursor: pointer;
+    transition:
+      color var(--duration-fast) var(--ease-out),
+      background var(--duration-fast) var(--ease-out);
+  }
+
+  .sidebar-footer__settings:hover {
+    color: rgba(255, 255, 255, 0.72);
+    background: rgba(255, 255, 255, 0.06);
   }
 
   .utility-rail {

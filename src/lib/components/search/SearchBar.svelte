@@ -54,7 +54,7 @@
   <input
     class="search-bar__input"
     type="text"
-    placeholder="Search files..."
+    placeholder="Search files & content..."
     bind:value={query}
     oninput={handleInput}
     onfocus={() => focused = true}
@@ -72,7 +72,7 @@
         >
           <span class="search-bar__result-title">{hit.title || hit.path.split('/').pop()}</span>
           {#if hit.snippet}
-            <span class="search-bar__result-snippet">{hit.snippet}</span>
+            <span class="search-bar__result-snippet">{@html hit.snippet}</span>
           {/if}
         </button>
       {/each}
@@ -160,5 +160,12 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  .search-bar__result-snippet :global(mark) {
+    background: rgba(99, 102, 241, 0.25);
+    color: var(--color-text-primary);
+    border-radius: 2px;
+    padding: 0 1px;
   }
 </style>

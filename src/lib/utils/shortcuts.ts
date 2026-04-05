@@ -8,29 +8,28 @@ export interface AppShortcuts {
   delete_file: string;
 }
 
+const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad|iPod/.test(navigator.platform ?? '');
+
+/** Primary modifier: Cmd on macOS, Ctrl on Windows/Linux */
+const MOD = isMac ? "Meta" : "Ctrl";
+
 export const APP_SHORTCUTS: AppShortcuts = {
-  quick_open: "Meta+P",
-  command_palette: "Meta+Shift+P",
-  new_note: "Meta+N",
-  toggle_sidebar: "Meta+B",
-  toggle_right_panel: "Meta+\\",
-  collapse_sidebar: "Meta+Shift+B",
-  delete_file: "Meta+Backspace",
+  quick_open: `${MOD}+P`,
+  command_palette: `${MOD}+Shift+P`,
+  new_note: `${MOD}+N`,
+  toggle_sidebar: `${MOD}+B`,
+  toggle_right_panel: `${MOD}+\\`,
+  collapse_sidebar: `${MOD}+Shift+B`,
+  delete_file: `${MOD}+Backspace`,
 };
 
-const DISPLAY_PARTS: Record<string, string> = {
+const MAC_DISPLAY: Record<string, string> = {
   meta: "\u2318",
-  cmd: "\u2318",
-  command: "\u2318",
   ctrl: "\u2303",
-  control: "\u2303",
   shift: "\u21e7",
   alt: "\u2325",
-  option: "\u2325",
   enter: "\u23ce",
-  return: "\u23ce",
   escape: "Esc",
-  esc: "Esc",
   backspace: "\u232b",
   delete: "Del",
   tab: "\u21e5",
@@ -41,13 +40,32 @@ const DISPLAY_PARTS: Record<string, string> = {
   right: "\u2192",
 };
 
+const PC_DISPLAY: Record<string, string> = {
+  ctrl: "Ctrl",
+  shift: "Shift",
+  alt: "Alt",
+  meta: "Win",
+  enter: "Enter",
+  escape: "Esc",
+  backspace: "Backspace",
+  delete: "Del",
+  tab: "Tab",
+  space: "Space",
+  up: "\u2191",
+  down: "\u2193",
+  left: "\u2190",
+  right: "\u2192",
+};
+
 export function formatShortcutLabel(shortcut: string): string {
-  return shortcut
+  const display = isMac ? MAC_DISPLAY : PC_DISPLAY;
+  const parts = shortcut
     .split("+")
     .map((part) => part.trim())
     .filter(Boolean)
-    .map((part) => DISPLAY_PARTS[part.toLowerCase()] ?? part.toUpperCase())
-    .join("");
+    .map((part) => display[part.toLowerCase()] ?? part.toUpperCase());
+
+  return isMac ? parts.join("") : parts.join("+");
 }
 
 export function matchesShortcut(

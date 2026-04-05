@@ -4,6 +4,8 @@ use std::fs;
 use std::path::Path;
 use tracing::{debug, error};
 
+use crate::normalize_path;
+
 use crate::db::mutations;
 use crate::db::queries::FileInfo;
 use crate::errors::NoctoError;
@@ -145,11 +147,10 @@ fn handle_deleted(
     core_path: &Path,
     abs_path: &Path,
 ) -> Result<FileEvent, NoctoError> {
-    let rel_path = abs_path
+    let rel_path = normalize_path(&abs_path
         .strip_prefix(core_path)
         .unwrap_or(abs_path)
-        .to_string_lossy()
-        .to_string();
+        .to_string_lossy());
 
     // Remove from all tables.
     mutations::delete_file(conn, &rel_path)?;
@@ -167,11 +168,10 @@ fn handle_renamed(
     from_abs: &Path,
     to_abs: &Path,
 ) -> Result<FileEvent, NoctoError> {
-    let old_rel = from_abs
+    let old_rel = normalize_path(&from_abs
         .strip_prefix(core_path)
         .unwrap_or(from_abs)
-        .to_string_lossy()
-        .to_string();
+        .to_string_lossy());
 
     // Scan the new path to get full metadata.
     let file_info = scan_single_file(core_path, to_abs)?;
