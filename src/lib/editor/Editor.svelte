@@ -3,6 +3,7 @@
   import { Editor } from "@tiptap/core";
   import { createEditorExtensions } from "./extensions";
   import { parseMarkdown, serializeMarkdown, extractFrontmatter } from "./serializer";
+  import FindReplaceBar from "./FindReplaceBar.svelte";
   import { getEditorState } from "../stores/editor.svelte";
   import { getFilesState } from "../stores/files.svelte";
   import { getCoreState } from "../stores/core.svelte";
@@ -42,6 +43,7 @@
   const appSettings = getSettings();
 
   let editorElement: HTMLDivElement | undefined = $state();
+  let findBarVisible = $state(false);
   let editor: Editor | undefined = $state();
   let debounceTimer: ReturnType<typeof setTimeout> | undefined;
   let savedFrontmatter: string | null = extractFrontmatter(initialContent);
@@ -406,7 +408,21 @@
     };
     editorElement.addEventListener("wiki-link-click", handleWikiLinkClick);
 
+    const handleFindShortcut = (e: KeyboardEvent) => {
+      const mod = navigator.platform?.includes('Mac') ? e.metaKey : e.ctrlKey;
+      if (mod && e.key === 'f') {
+        e.preventDefault();
+        findBarVisible = true;
+      }
+      if (mod && e.key === 'h') {
+        e.preventDefault();
+        findBarVisible = true;
+      }
+    };
+    document.addEventListener('keydown', handleFindShortcut);
+
     return () => {
+      document.removeEventListener('keydown', handleFindShortcut);
       editorElement?.removeEventListener("wiki-link-click", handleWikiLinkClick);
       if (debounceTimer) clearTimeout(debounceTimer);
       activeEditorState.set(null);
@@ -426,6 +442,12 @@
     return editor;
   }
 </script>
+
+<FindReplaceBar
+  editor={editor ?? null}
+  visible={findBarVisible}
+  onclose={() => { findBarVisible = false; (editor?.commands as any)?.clearSearch?.(); editor?.chain().focus().run(); }}
+/>
 
 <div class="editor-container" bind:this={editorElement}>
   <EditorMinimap {editor} />
