@@ -63,7 +63,7 @@
     class:tree-node__row--active={isActive}
     class:tree-node__row--dragged={isDragged}
     class:tree-node__row--drop-target={isDropTarget}
-    style:padding-left="{depth * 16 + 8}px"
+    style:padding-left="{8}px"
     onclick={handleClick}
     onkeydown={handleKeydown}
     oncontextmenu={(e) => { e.preventDefault(); oncontextmenu?.(node.path, node.is_directory, e); }}
@@ -191,7 +191,15 @@
 
   .tree-node__children {
     overflow: hidden;
+    margin-left: 7px;
+    padding-left: 9px;
+    border-left: 1px solid rgba(255, 255, 255, 0.06);
     animation: expand var(--duration-fast) var(--ease-out);
+    transition: border-color var(--duration-normal) var(--ease-out);
+  }
+
+  .tree-node__children:hover {
+    border-left-color: rgba(255, 255, 255, 0.14);
   }
 
   @keyframes expand {
