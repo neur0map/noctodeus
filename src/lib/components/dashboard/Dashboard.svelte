@@ -147,6 +147,7 @@
     color: var(--color-foreground);
     font-weight: 600;
     letter-spacing: -0.03em;
+    opacity: 0;
   }
 
   /* Stats */
@@ -162,6 +163,7 @@
     display: flex;
     flex-direction: column;
     gap: 2px;
+    opacity: 0;
   }
 
   .stat__value {
@@ -219,6 +221,7 @@
     cursor: pointer;
     text-align: left;
     transition: background 150ms ease;
+    opacity: 0;
   }
 
   .dashboard__row:hover {

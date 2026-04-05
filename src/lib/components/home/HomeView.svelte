@@ -146,6 +146,7 @@
     color: var(--color-foreground);
     font-weight: 600;
     letter-spacing: -0.03em;
+    opacity: 0;
   }
 
   .home-view__section {
@@ -177,6 +178,7 @@
     width: calc(100% + 16px);
     border-radius: 4px;
     border: none;
+    opacity: 0;
     text-align: left;
     transition: background 150ms ease;
   }
@@ -232,6 +234,7 @@
     color: var(--color-muted-foreground);
     background: transparent;
     border: 1px solid var(--color-border);
+    opacity: 0;
     border-radius: 6px;
     cursor: pointer;
     transition:
