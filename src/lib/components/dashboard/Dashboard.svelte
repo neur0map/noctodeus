@@ -1,7 +1,8 @@
 <script lang="ts">
-  import { onDestroy } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
   import type { FileNode } from '../../types/core';
   import type { GraphStats } from '../../stores/graph.svelte';
+  import { presets, stagger, animate } from '../../utils/motion';
 
   let {
     coreName = 'Noctodeus',
@@ -41,9 +42,31 @@
   function displayName(file: FileNode): string {
     return file.title || file.name;
   }
+
+  let dashboardEl: HTMLDivElement | undefined = $state();
+
+  onMount(() => {
+    if (!dashboardEl) return;
+
+    // Animate title
+    const title = dashboardEl.querySelector('.dashboard__name');
+    if (title) presets.fadeInUp(title, { duration: 400 });
+
+    // Stagger stats
+    const stats = dashboardEl.querySelectorAll('.stat');
+    if (stats.length) {
+      presets.staggerIn(Array.from(stats), { delay: 100, staggerDelay: 60 });
+    }
+
+    // Stagger section rows
+    const rows = dashboardEl.querySelectorAll('.dashboard__row');
+    if (rows.length) {
+      presets.staggerIn(Array.from(rows), { delay: 200, staggerDelay: 25 });
+    }
+  });
 </script>
 
-<div class="dashboard">
+<div class="dashboard" bind:this={dashboardEl}>
   <h1 class="dashboard__name">{coreName}</h1>
 
   <div class="dashboard__stats">

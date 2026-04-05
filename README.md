@@ -23,6 +23,12 @@ A creative IDE for thought. Local-first, privacy-focused note-taking and knowled
 | [lowlight](https://github.com/wooorm/lowlight) | Syntax highlighting for code blocks |
 | [markdown-it](https://github.com/markdown-it/markdown-it) | Markdown parsing and HTML rendering |
 
+### Animation
+
+| Library | Purpose |
+|---------|---------|
+| [anime.js v4](https://animejs.com) | Page transitions, micro-interactions, staggered list entry, ambient motion |
+
 TipTap Extensions: Starter Kit, Code Block Lowlight, Image, Link, Placeholder, Task List, Task Item, Suggestion
 
 ### Data

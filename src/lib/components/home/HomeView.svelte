@@ -1,5 +1,7 @@
 <script lang="ts">
+  import { onMount } from "svelte";
   import type { FileNode } from "../../types/core";
+  import { presets } from "../../utils/motion";
 
   let {
     coreName = "Noctodeus",
@@ -37,9 +39,23 @@
   function getDisplayName(file: FileNode): string {
     return file.title || file.name;
   }
+
+  let viewEl: HTMLDivElement | undefined = $state();
+
+  onMount(() => {
+    if (!viewEl) return;
+    const title = viewEl.querySelector('.home-view__title');
+    if (title) presets.fadeInUp(title, { duration: 400 });
+
+    const files = viewEl.querySelectorAll('.home-view__file');
+    if (files.length) presets.staggerIn(Array.from(files), { delay: 150, staggerDelay: 30 });
+
+    const actions = viewEl.querySelectorAll('.home-view__action');
+    if (actions.length) presets.staggerIn(Array.from(actions), { delay: 250, staggerDelay: 50 });
+  });
 </script>
 
-<div class="home-view">
+<div class="home-view" bind:this={viewEl}>
   <div class="home-view__content">
     <h1 class="home-view__title">{coreName}</h1>
 
