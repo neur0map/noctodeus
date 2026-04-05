@@ -15,11 +15,16 @@
 
   let backlinks = $derived(() => {
     if (!currentPath) return [];
-    // Find all edges that point TO this file
     const inbound = edges.filter(e => e.target === currentPath);
+    // Deduplicate by source path (a file may link multiple times)
+    const seen = new Set<string>();
     return inbound
       .map(e => nodes.find(n => n.id === e.source))
-      .filter((n): n is GraphNode => !!n);
+      .filter((n): n is GraphNode => {
+        if (!n || seen.has(n.id)) return false;
+        seen.add(n.id);
+        return true;
+      });
   });
 </script>
 

@@ -14,6 +14,7 @@
   import SlashCommandMenu from "./SlashCommandMenu.svelte";
   import MediaPanel from "./MediaPanel.svelte";
   import BubbleToolbar from "./BubbleToolbar.svelte";
+  import EditorMinimap from "./EditorMinimap.svelte";
   import type { SlashCommandItem } from "./extensions/slash-command";
   import { detectEmbed } from "./extensions/embed-block";
   import type { WikiSuggestItem } from "./extensions/wiki-link-suggest";
@@ -416,7 +417,9 @@
   }
 </script>
 
-<div class="editor-container" bind:this={editorElement}></div>
+<div class="editor-container" bind:this={editorElement}>
+  <EditorMinimap {editor} />
+</div>
 
 <SlashCommandMenu
   items={slashItems}
@@ -456,6 +459,7 @@
 
 <style>
   .editor-container {
+    position: relative;
     flex: 1;
     min-height: 0;
     overflow-y: auto;
