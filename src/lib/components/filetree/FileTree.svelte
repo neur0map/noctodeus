@@ -191,7 +191,7 @@
     font-size: 11px;
     color: var(--color-foreground);
     background: rgba(20, 21, 27, 0.95);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border: 1px solid var(--color-border);
     border-radius: 6px;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
     pointer-events: none;

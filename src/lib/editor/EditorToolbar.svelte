@@ -214,7 +214,7 @@
     height: 42px;
     padding: 0 12px;
     background: transparent;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid var(--color-border);
     gap: 2px;
     flex-shrink: 0;
     overflow-x: auto;
@@ -230,7 +230,7 @@
     border: none;
     border-radius: 4px;
     background: transparent;
-    color: rgba(255, 255, 255, 0.6);
+    color: var(--color-muted-foreground);
     font-family: var(--font-mono);
     font-size: 12px;
     line-height: 1;
@@ -242,7 +242,7 @@
   }
 
   .toolbar-btn:hover {
-    background: rgba(255, 255, 255, 0.06);
+    background: var(--color-hover);
     color: var(--color-foreground);
   }
 
@@ -258,7 +258,7 @@
   .toolbar-sep {
     width: 1px;
     height: 16px;
-    background: rgba(255, 255, 255, 0.06);
+    background: var(--color-hover);
     margin: 0 4px;
     flex-shrink: 0;
   }
@@ -273,7 +273,7 @@
     left: 0;
     z-index: 10;
     background: rgba(11, 13, 18, 0.98);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--color-border);
     border-radius: 6px;
     padding: 4px;
     box-shadow: var(--shadow-float);

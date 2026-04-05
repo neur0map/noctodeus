@@ -69,9 +69,9 @@
           font-size: 12px;
           color: var(--color-foreground);
           background: rgba(25, 26, 35, 0.95);
-          border: 1px solid rgba(255, 255, 255, 0.12);
+          border: 1px solid var(--color-border);
           border-radius: 8px;
-          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.06);
+          box-shadow: var(--shadow-float);
           pointer-events: none;
           z-index: 9999;
           transform: scale(1.04);

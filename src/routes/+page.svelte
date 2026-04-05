@@ -423,7 +423,7 @@
     width: 96px;
     font-family: var(--font-mono);
     font-size: 12px;
-    color: rgba(255, 255, 255, 0.46);
+    color: var(--color-muted-foreground);
     text-transform: uppercase;
     letter-spacing: 0.05em;
   }
