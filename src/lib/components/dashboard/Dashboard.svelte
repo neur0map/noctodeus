@@ -46,134 +46,93 @@
 <div class="dashboard">
   <h1 class="dashboard__name">{coreName}</h1>
 
-  <div class="dashboard__columns">
-    <div class="dashboard__left">
-      <div class="dashboard__stats">
-        <div class="stat">
-          <span class="stat__value" class:stat__value--scanning={graphScanning}>
-            {graphScanning ? '--' : graphStats.totalLinks}
-          </span>
-          <span class="stat__label">links</span>
-        </div>
-        <div class="stat">
-          <span class="stat__value" class:stat__value--scanning={graphScanning}>
-            {graphScanning ? '--' : graphStats.avgLinksPerNote}
-          </span>
-          <span class="stat__label">avg / note</span>
-        </div>
-        <div class="stat">
-          <span class="stat__value" class:stat__value--scanning={graphScanning}>
-            {graphScanning ? '--' : graphStats.orphanCount}
-          </span>
-          <span class="stat__label">orphans</span>
-        </div>
-        <div class="stat">
-          <span class="stat__value">{totalNotes}</span>
-          <span class="stat__label">notes</span>
-        </div>
-      </div>
-
-      {#if graphStats.mostConnected.some(n => n.count > 0)}
-        <div class="dashboard__list">
-          {#each graphStats.mostConnected.filter(n => n.count > 0) as node (node.path)}
-            <button class="row" onclick={() => onfileopen(node.path)}>
-              <span class="row__name">{node.title}</span>
-              <span class="row__badge">{node.count}</span>
-            </button>
-          {/each}
-        </div>
-      {/if}
+  <div class="dashboard__stats">
+    <div class="stat">
+      <span class="stat__value" class:stat__value--scanning={graphScanning}>
+        {graphScanning ? '--' : graphStats.totalLinks}
+      </span>
+      <span class="stat__label">links</span>
     </div>
-
-    <div class="dashboard__divider"></div>
-
-    <div class="dashboard__right">
-      {#if recentFiles.length > 0}
-        <div class="dashboard__list">
-          {#each recentFiles.slice(0, 10) as file (file.path)}
-            <button class="row" onclick={() => onfileopen(file.path)}>
-              <span class="row__name">{displayName(file)}</span>
-              <span class="row__meta">{formatRelativeTime(file.modified_at, tick)}</span>
-            </button>
-          {/each}
-        </div>
-      {/if}
-
-      {#if pinnedFiles.length > 0}
-        <div class="dashboard__list dashboard__list--pinned">
-          {#each pinnedFiles as file (file.path)}
-            <button class="row" onclick={() => onfileopen(file.path)}>
-              <span class="row__name">{displayName(file)}</span>
-            </button>
-          {/each}
-        </div>
-      {/if}
+    <div class="stat">
+      <span class="stat__value" class:stat__value--scanning={graphScanning}>
+        {graphScanning ? '--' : graphStats.avgLinksPerNote}
+      </span>
+      <span class="stat__label">avg / note</span>
+    </div>
+    <div class="stat">
+      <span class="stat__value" class:stat__value--scanning={graphScanning}>
+        {graphScanning ? '--' : graphStats.orphanCount}
+      </span>
+      <span class="stat__label">orphans</span>
+    </div>
+    <div class="stat">
+      <span class="stat__value">{totalNotes}</span>
+      <span class="stat__label">notes</span>
     </div>
   </div>
+
+  {#if graphStats.mostConnected.some(n => n.count > 0)}
+    <div class="dashboard__section">
+      <h2 class="dashboard__section-title">Most Linked</h2>
+      {#each graphStats.mostConnected.filter(n => n.count > 0) as node (node.path)}
+        <button class="dashboard__row" onclick={() => onfileopen(node.path)}>
+          <span class="dashboard__row-name">{node.title}</span>
+          <span class="dashboard__row-meta">{node.count}</span>
+        </button>
+      {/each}
+    </div>
+  {/if}
+
+  {#if recentFiles.length > 0}
+    <div class="dashboard__section">
+      <h2 class="dashboard__section-title">Recent</h2>
+      {#each recentFiles.slice(0, 10) as file (file.path)}
+        <button class="dashboard__row" onclick={() => onfileopen(file.path)}>
+          <span class="dashboard__row-name">{displayName(file)}</span>
+          <span class="dashboard__row-meta">{formatRelativeTime(file.modified_at, tick)}</span>
+        </button>
+      {/each}
+    </div>
+  {/if}
+
+  {#if pinnedFiles.length > 0}
+    <div class="dashboard__section">
+      <h2 class="dashboard__section-title">Pinned</h2>
+      {#each pinnedFiles as file (file.path)}
+        <button class="dashboard__row" onclick={() => onfileopen(file.path)}>
+          <span class="dashboard__row-name">{displayName(file)}</span>
+        </button>
+      {/each}
+    </div>
+  {/if}
 </div>
 
 <style>
   .dashboard {
     display: flex;
     flex-direction: column;
-    height: 100%;
-    padding: 32px;
-    padding-top: 40px;
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 40px 28px;
     overflow-y: auto;
-    overflow-x: hidden;
-    animation: fade-up 150ms var(--ease-expo-out) both;
-  }
-
-  @keyframes fade-up {
-    from {
-      opacity: 0;
-      transform: translateY(6px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
+    gap: 32px;
   }
 
   .dashboard__name {
     font-family: var(--font-sans);
-    font-size: clamp(1.6rem, 2.4vw, 2.2rem);
+    font-size: clamp(1.8rem, 2.5vw, 2.4rem);
     color: var(--color-foreground);
     font-weight: 600;
-    letter-spacing: -0.035em;
-    margin-bottom: 32px;
-  }
-
-  .dashboard__columns {
-    display: grid;
-    grid-template-columns: 1.4fr 1px 1fr;
-    gap: 32px;
-    flex: 1;
-    min-height: 0;
-  }
-
-  .dashboard__divider {
-    background: rgba(255, 255, 255, 0.04);
-  }
-
-  .dashboard__left {
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
-    min-width: 0;
-  }
-
-  .dashboard__right {
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
-    min-width: 0;
+    letter-spacing: -0.03em;
   }
 
   /* Stats */
   .dashboard__stats {
     display: flex;
-    gap: 28px;
+    flex-direction: row;
+    gap: 24px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--color-border);
   }
 
   .stat {
@@ -184,16 +143,15 @@
 
   .stat__value {
     font-family: var(--font-mono);
-    font-size: 24px;
+    font-size: 20px;
     font-weight: 600;
     color: var(--color-foreground);
-    letter-spacing: -0.03em;
     line-height: 1;
   }
 
   .stat__value--scanning {
     animation: stat-pulse 1.5s ease-in-out infinite;
-    color: rgba(255, 255, 255, 0.3);
+    color: var(--color-placeholder);
   }
 
   @keyframes stat-pulse {
@@ -204,68 +162,59 @@
   .stat__label {
     font-family: var(--font-mono);
     font-size: 10px;
-    color: rgba(255, 255, 255, 0.28);
-    letter-spacing: 0.02em;
+    color: var(--color-placeholder);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
   }
 
-  /* Lists */
-  .dashboard__list {
+  /* Sections */
+  .dashboard__section {
     display: flex;
     flex-direction: column;
+    gap: 0;
   }
 
-  .dashboard__list--pinned {
-    padding-top: 8px;
-    border-top: 1px solid rgba(255, 255, 255, 0.04);
+  .dashboard__section-title {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--color-placeholder);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 8px;
   }
 
   /* Rows */
-  .row {
+  .dashboard__row {
     display: flex;
-    align-items: center;
     justify-content: space-between;
-    gap: 12px;
-    padding: 6px 8px;
-    border-radius: 4px;
-    text-align: left;
-    background: transparent;
+    align-items: center;
+    width: 100%;
+    padding: 8px 8px;
     border: none;
+    background: transparent;
+    border-radius: 4px;
     cursor: pointer;
-    transition: background 150ms var(--ease-expo-out);
+    text-align: left;
+    transition: background 150ms ease;
   }
 
-  .row:hover {
-    background: rgba(255, 255, 255, 0.04);
+  .dashboard__row:hover {
+    background: var(--color-hover);
   }
 
-  .row__name {
+  .dashboard__row-name {
     font-family: var(--font-mono);
     font-size: 13px;
-    color: rgba(255, 255, 255, 0.72);
+    color: var(--color-foreground);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    transition: color 150ms var(--ease-expo-out);
   }
 
-  .row:hover .row__name {
-    color: var(--color-foreground);
-  }
-
-  .row__meta {
+  .dashboard__row-meta {
     font-family: var(--font-mono);
-    font-size: 10px;
-    color: rgba(255, 255, 255, 0.22);
-    flex-shrink: 0;
-  }
-
-  .row__badge {
-    font-family: var(--font-mono);
-    font-size: 10px;
-    color: var(--color-accent);
-    background: rgba(122, 141, 255, 0.08);
-    padding: 1px 5px;
-    border-radius: 6px;
+    font-size: 11px;
+    color: var(--color-placeholder);
     flex-shrink: 0;
   }
 </style>
