@@ -525,11 +525,11 @@
         </div>
       </div>
 
-      <div class="right-panel__section">
+      <div class="right-panel__section right-panel__section--scroll">
         <OutlinePanel editor={activeEditorState.editor} />
       </div>
 
-      <div class="right-panel__section">
+      <div class="right-panel__section right-panel__section--scroll">
         <BacklinksPanel
           currentPath={files.activeFilePath}
           nodes={graphState.nodes}
@@ -690,20 +690,28 @@
     flex-direction: column;
     height: 100%;
     background: rgba(10, 12, 16, 0.72);
+    overflow: hidden;
+  }
+
+  .right-panel__section {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  }
+
+  .right-panel__section--graph {
+    flex: 1;
+    min-height: 140px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .right-panel__section--scroll {
+    flex-shrink: 0;
+    max-height: 35%;
     overflow-y: auto;
     scrollbar-width: none;
   }
 
-  .right-panel::-webkit-scrollbar { display: none; }
-
-  .right-panel__section {
-    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-    padding-bottom: var(--space-2);
-  }
-
-  .right-panel__section--graph {
-    flex-shrink: 0;
-  }
+  .right-panel__section--scroll::-webkit-scrollbar { display: none; }
 
   .right-panel__section-header {
     padding: var(--space-2) var(--space-3);
@@ -718,7 +726,8 @@
   }
 
   .right-panel__graph-body {
-    height: 220px;
+    flex: 1;
+    min-height: 0;
     padding: 0 var(--space-2) var(--space-2);
   }
 </style>
