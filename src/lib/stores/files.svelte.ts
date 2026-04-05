@@ -6,20 +6,25 @@ let fileMap = $state<Map<string, FileNode>>(new Map());
 let expandedDirs = $state<Set<string>>(new Set());
 let activeFilePath = $state<string | null>(null);
 let sortMode = $state<SortMode>('name-asc');
+let filterQuery = $state('');
 
 // Derived tree structure from flat map
 let tree = $derived.by(() => {
-  return buildTree(fileMap, expandedDirs, sortMode);
+  return buildTree(fileMap, expandedDirs, sortMode, filterQuery);
 });
 
 const HIDDEN_FILES = new Set(['.DS_Store', '.noctodeus', 'Thumbs.db', '.git', '.gitignore', 'media']);
 
-function buildTree(files: Map<string, FileNode>, expanded: Set<string>, sort: SortMode): TreeNode[] {
+function buildTree(files: Map<string, FileNode>, expanded: Set<string>, sort: SortMode, filter: string): TreeNode[] {
   const childMap = new Map<string, TreeNode[]>();
 
-  // Group files by parent_dir, skipping hidden/system files
+  const q = filter.toLowerCase();
+
+  // Group files by parent_dir, skipping hidden/system files and applying filter
   for (const file of files.values()) {
     if (HIDDEN_FILES.has(file.name) || file.name.startsWith('.')) continue;
+    // If filter is active, skip non-matching files (but always include directories for structure)
+    if (q && !file.is_directory && !file.name.toLowerCase().includes(q) && !(file.title ?? '').toLowerCase().includes(q)) continue;
     const parent = file.parent_dir || '';
     if (!childMap.has(parent)) childMap.set(parent, []);
     childMap.get(parent)!.push({
@@ -77,9 +82,15 @@ export function getFilesState() {
     get sortMode() {
       return sortMode;
     },
+    get filterQuery() {
+      return filterQuery;
+    },
 
     setSortMode(mode: SortMode) {
       sortMode = mode;
+    },
+    setFilterQuery(query: string) {
+      filterQuery = query;
     },
     setFiles(files: FileNode[]) {
       const map = new Map<string, FileNode>();

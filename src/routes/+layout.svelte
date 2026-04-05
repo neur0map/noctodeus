@@ -21,6 +21,9 @@
   import ToastContainer from "../lib/components/common/ToastContainer.svelte";
   import SaveIndicator from "../lib/editor/SaveIndicator.svelte";
   import GraphView from "../lib/components/graph/GraphView.svelte";
+  import BacklinksPanel from "../lib/components/panels/BacklinksPanel.svelte";
+  import OutlinePanel from "../lib/components/panels/OutlinePanel.svelte";
+  import { getActiveEditorState } from "../lib/stores/active-editor.svelte";
 
   import { getUiState } from "../lib/stores/ui.svelte";
   import { getCoreState } from "../lib/stores/core.svelte";
@@ -50,6 +53,7 @@
   const editor = getEditorState();
   const tabsState = getTabsState();
   const graphState = getGraphState();
+  const activeEditorState = getActiveEditorState();
 
   let unlisteners: UnlistenFn[] = [];
   let overlayOpen = $derived(ui.quickOpenVisible || ui.commandPaletteVisible);
@@ -88,6 +92,9 @@
   let searchResults = $state<SearchHit[]>([]);
 
   async function handleSearch(query: string) {
+    // Filter the file tree instantly as user types
+    files.setFilterQuery(query);
+
     // Try FTS5 backend first (with prefix matching)
     try {
       const ftsQuery = query.split(/\s+/).map(w => `${w}*`).join(' ');
@@ -326,6 +333,22 @@
     }
   }
 
+  async function handleInlineRename(oldPath: string, rawNewName: string) {
+    const isDir = files.fileMap.get(oldPath)?.is_directory ?? false;
+    const newName = sanitizeFileName(rawNewName, isDir);
+    if (newName === oldPath.split('/').pop()) return;
+    const parentDir = oldPath.includes('/') ? oldPath.slice(0, oldPath.lastIndexOf('/')) : '';
+    const newPath = parentDir ? `${parentDir}/${newName}` : newName;
+    try {
+      const updated = await renameFile(oldPath, newPath);
+      files.renameFile(oldPath, newPath, updated);
+      tabsState.updateFileTab(oldPath, updated);
+      if (files.activeFilePath === oldPath) files.setActiveFile(newPath);
+    } catch (err) {
+      logger.error(`Rename failed: ${err}`);
+    }
+  }
+
   async function handleFileMove(sourcePath: string, targetDir: string) {
     try {
       const { moveFile } = await import('../lib/bridge/commands');
@@ -405,6 +428,7 @@
         oncontextmenu={handleTreeContextMenu}
         ondelete={handleDeleteFile}
         onmove={handleFileMove}
+        onrename={handleInlineRename}
       />
 
       {#snippet footer()}
@@ -486,15 +510,30 @@
   {/snippet}
 
   {#snippet rightPanel()}
-    <div class="right-panel-graph">
-      <div class="right-panel-graph__header">
-        <span class="right-panel-graph__label">Graph</span>
+    <div class="right-panel">
+      <div class="right-panel__section right-panel__section--graph">
+        <div class="right-panel__section-header">
+          <span class="right-panel__section-label">Graph</span>
+        </div>
+        <div class="right-panel__graph-body">
+          <GraphView
+            nodes={graphState.nodes}
+            edges={graphState.edges}
+            activeFilePath={files.activeFilePath}
+            onselect={handleFileSelect}
+          />
+        </div>
       </div>
-      <div class="right-panel-graph__body">
-        <GraphView
+
+      <div class="right-panel__section">
+        <OutlinePanel editor={activeEditorState.editor} />
+      </div>
+
+      <div class="right-panel__section">
+        <BacklinksPanel
+          currentPath={files.activeFilePath}
           nodes={graphState.nodes}
           edges={graphState.edges}
-          activeFilePath={files.activeFilePath}
           onselect={handleFileSelect}
         />
       </div>
@@ -646,30 +685,40 @@
     border-color: rgba(255, 255, 255, 0.13);
   }
 
-  .right-panel-graph {
+  .right-panel {
     display: flex;
     flex-direction: column;
     height: 100%;
     background: rgba(10, 12, 16, 0.72);
+    overflow-y: auto;
+    scrollbar-width: none;
   }
 
-  .right-panel-graph__header {
+  .right-panel::-webkit-scrollbar { display: none; }
+
+  .right-panel__section {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    padding-bottom: var(--space-2);
+  }
+
+  .right-panel__section--graph {
     flex-shrink: 0;
-    padding: var(--space-3) var(--space-4);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   }
 
-  .right-panel-graph__label {
+  .right-panel__section-header {
+    padding: var(--space-2) var(--space-3);
+  }
+
+  .right-panel__section-label {
     font-family: var(--font-mono);
-    font-size: var(--text-xs);
-    color: rgba(255, 255, 255, 0.4);
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.36);
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.04em;
   }
 
-  .right-panel-graph__body {
-    flex: 1;
-    min-height: 0;
-    padding: var(--space-2);
+  .right-panel__graph-body {
+    height: 220px;
+    padding: 0 var(--space-2) var(--space-2);
   }
 </style>

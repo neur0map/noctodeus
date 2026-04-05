@@ -20,6 +20,7 @@
     if (debounceTimer) clearTimeout(debounceTimer);
     if (!query.trim()) {
       results = [];
+      onsearch('');
       return;
     }
     debounceTimer = setTimeout(() => {

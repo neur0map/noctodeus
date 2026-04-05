@@ -7,6 +7,7 @@
   import { getFilesState } from "../stores/files.svelte";
   import { getCoreState } from "../stores/core.svelte";
   import { getGraphState } from "../stores/graph.svelte";
+  import { getActiveEditorState } from "../stores/active-editor.svelte";
   import { writeFile, readFile } from "../bridge/commands";
   import { convertFileSrc } from "@tauri-apps/api/core";
   import { logger } from "../logger";
@@ -35,6 +36,7 @@
   const filesState = getFilesState();
   const coreState = getCoreState();
   const graphState = getGraphState();
+  const activeEditorState = getActiveEditorState();
 
   let editorElement: HTMLDivElement | undefined = $state();
   let editor: Editor | undefined = $state();
@@ -392,6 +394,7 @@
 
     requestAnimationFrame(() => { mounted = true; });
     editorState.setPath(path);
+    activeEditorState.set(editor);
 
     const handleWikiLinkClick = (e: Event) => {
       const detail = (e as CustomEvent).detail;
@@ -402,6 +405,7 @@
     return () => {
       editorElement?.removeEventListener("wiki-link-click", handleWikiLinkClick);
       if (debounceTimer) clearTimeout(debounceTimer);
+      activeEditorState.set(null);
       editor?.destroy();
       editor = undefined;
     };

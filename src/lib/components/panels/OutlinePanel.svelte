@@ -1,0 +1,136 @@
+<script lang="ts">
+  import type { Editor } from '@tiptap/core';
+
+  let {
+    editor = null,
+  }: {
+    editor?: Editor | null;
+  } = $props();
+
+  interface HeadingItem {
+    id: string;
+    level: number;
+    text: string;
+    pos: number;
+  }
+
+  let headings = $state<HeadingItem[]>([]);
+  let tick = $state(0);
+
+  // Re-extract headings when editor content changes
+  $effect(() => {
+    void tick;
+    if (!editor) { headings = []; return; }
+    const items: HeadingItem[] = [];
+    editor.state.doc.descendants((node, pos) => {
+      if (node.type.name === 'heading') {
+        items.push({
+          id: `h-${pos}`,
+          level: node.attrs.level as number,
+          text: node.textContent,
+          pos,
+        });
+      }
+    });
+    headings = items;
+  });
+
+  // Listen for editor updates
+  $effect(() => {
+    if (!editor) return;
+    const handler = () => { tick++; };
+    editor.on('update', handler);
+    handler(); // Initial
+    return () => { editor!.off('update', handler); };
+  });
+
+  function scrollToHeading(pos: number) {
+    if (!editor) return;
+    editor.chain().focus().setTextSelection(pos).run();
+    // Scroll the node into view
+    const dom = editor.view.domAtPos(pos);
+    if (dom.node instanceof HTMLElement) {
+      dom.node.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    } else if (dom.node.parentElement) {
+      dom.node.parentElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }
+</script>
+
+<div class="outline">
+  <div class="outline__header">
+    <span class="outline__label">Outline</span>
+  </div>
+  {#if headings.length > 0}
+    <div class="outline__list">
+      {#each headings as h (h.id)}
+        <button
+          class="outline__item outline__item--h{h.level}"
+          onclick={() => scrollToHeading(h.pos)}
+        >
+          {h.text || 'Untitled'}
+        </button>
+      {/each}
+    </div>
+  {:else}
+    <div class="outline__empty">No headings</div>
+  {/if}
+</div>
+
+<style>
+  .outline {
+    padding: 0 var(--space-3);
+  }
+
+  .outline__header {
+    padding: var(--space-2) 0;
+  }
+
+  .outline__label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.36);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .outline__list {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+
+  .outline__item {
+    display: block;
+    width: 100%;
+    padding: 3px 6px;
+    font-family: var(--font-sans);
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.56);
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    text-align: left;
+    cursor: pointer;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    transition: background var(--duration-fast) var(--ease-out);
+  }
+
+  .outline__item:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--color-text-primary);
+  }
+
+  .outline__item--h1 { padding-left: 6px; font-weight: 600; color: rgba(255, 255, 255, 0.72); }
+  .outline__item--h2 { padding-left: 18px; }
+  .outline__item--h3 { padding-left: 30px; font-size: 11px; }
+
+  .outline__empty {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.18);
+    padding: var(--space-1) 0;
+  }
+</style>

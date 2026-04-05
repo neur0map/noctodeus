@@ -9,6 +9,7 @@
     onselect,
     ontoggle,
     oncontextmenu,
+    onrename,
     dragState,
   }: {
     node: TreeNode;
@@ -17,12 +18,16 @@
     onselect: (path: string) => void;
     ontoggle: (path: string) => void;
     oncontextmenu?: (path: string, isDir: boolean, e: MouseEvent) => void;
+    onrename?: (oldPath: string, newName: string) => void;
     dragState?: { dragging: string | null; overDir: string | null };
   } = $props();
 
   let isActive = $derived(node.path === activeFilePath);
   let isDragged = $derived(dragState?.dragging === node.path);
   let isDropTarget = $derived(node.is_directory && dragState?.overDir === node.path && dragState?.dragging !== node.path);
+  let editing = $state(false);
+  let editValue = $state('');
+  let editInput: HTMLInputElement | undefined = $state();
 
   function handleClick() {
     if (node.is_directory) {
@@ -30,6 +35,29 @@
     } else {
       onselect(node.path);
     }
+  }
+
+  function handleDblClick(e: MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    editing = true;
+    editValue = node.name;
+    requestAnimationFrame(() => {
+      editInput?.focus();
+      editInput?.select();
+    });
+  }
+
+  function commitRename() {
+    editing = false;
+    const newName = editValue.trim();
+    if (newName && newName !== node.name) {
+      onrename?.(node.path, newName);
+    }
+  }
+
+  function cancelRename() {
+    editing = false;
   }
 
   function handleKeydown(e: KeyboardEvent) {
@@ -85,7 +113,23 @@
     {:else}
       <span class="tree-node__icon">{getFileIcon(node.extension)}</span>
     {/if}
-    <span class="tree-node__name">{node.name}</span>
+    {#if editing}
+      <input
+        class="tree-node__rename"
+        type="text"
+        bind:this={editInput}
+        bind:value={editValue}
+        onblur={commitRename}
+        onkeydown={(e) => {
+          if (e.key === 'Enter') { e.preventDefault(); commitRename(); }
+          if (e.key === 'Escape') { e.preventDefault(); cancelRename(); }
+          e.stopPropagation();
+        }}
+        onclick={(e) => e.stopPropagation()}
+      />
+    {:else}
+      <span class="tree-node__name" ondblclick={handleDblClick}>{node.name}</span>
+    {/if}
   </button>
 
   {#if node.is_directory && node.expanded && node.children.length > 0}
@@ -98,6 +142,7 @@
           {onselect}
           {ontoggle}
           {oncontextmenu}
+          {onrename}
           {dragState}
         />
       {/each}
@@ -187,6 +232,19 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  .tree-node__rename {
+    flex: 1;
+    min-width: 0;
+    padding: 0 4px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--color-text-primary);
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--color-accent);
+    border-radius: 3px;
+    outline: none;
   }
 
   .tree-node__children {

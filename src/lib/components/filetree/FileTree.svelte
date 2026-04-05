@@ -10,6 +10,7 @@
     oncontextmenu,
     ondelete,
     onmove,
+    onrename,
   }: {
     tree?: TreeNode[];
     activeFilePath?: string | null;
@@ -18,6 +19,7 @@
     oncontextmenu?: (path: string, isDir: boolean, e: MouseEvent) => void;
     ondelete?: () => void;
     onmove?: (sourcePath: string, targetDir: string) => void;
+    onrename?: (oldPath: string, newName: string) => void;
   } = $props();
 
   let container: HTMLElement | undefined = $state();
@@ -159,6 +161,7 @@
         {onselect}
         {ontoggle}
         {oncontextmenu}
+        {onrename}
         {dragState}
       />
     {/each}
