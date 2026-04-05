@@ -6,7 +6,9 @@ let cleanup: (() => void) | null = null;
 
 function countWords(ed: Editor) {
   const text = ed.state.doc.textContent.trim();
-  wordCount = text ? text.split(/\s+/).length : 0;
+  // Only count sequences of 2+ word characters as words
+  const matches = text.match(/\b\w{2,}\b/g);
+  wordCount = matches ? matches.length : 0;
 }
 
 export function getActiveEditorState() {
