@@ -1,14 +1,40 @@
 # TODO
 
-## Features — Priority Order
+## Current Stack (can build now with what we have)
 
 - [ ] Light theme (Dark / Light / System toggle in settings)
 - [ ] Note details panel (word count, timestamps, clickable TOC in right panel)
 - [ ] Edit/View mode toggle (rendered markdown preview)
 - [ ] Task extraction (consolidated task view across all notes)
-- [ ] Keyboard navigation enhancements (arrow keys in file tree, Tab between zones, vim bindings)
-- [ ] Spellcheck — research proper implementation for Tauri/WKWebView
-- [ ] Daily notes / journal (date-based entries, calendar sidebar)
+- [ ] Keyboard navigation (arrow keys in file tree, Tab between zones, vim bindings)
+- [ ] Daily / periodic notes with calendar view
+- [ ] Properties panel (GUI for YAML frontmatter — typed fields: date, checkbox, number, list)
+- [ ] Aliases (multiple names per note, link resolution)
+- [ ] Unlinked mentions detection (find text matching a note title that isn't linked yet)
+- [ ] Custom CSS themes (user-created themes, font/color customization beyond settings)
+- [ ] Version history / file recovery (automatic snapshots, restore previous versions)
+- [ ] Quick capture (global hotkey to capture a thought without opening the full app)
+- [ ] Queryable database views (filter, sort, group notes by metadata — table/kanban/calendar)
+- [ ] Task management across vault (inline tasks with due dates, filtered/queried, kanban view)
+
+## Needs 3rd Party Libraries or Plugins
+
+- [ ] Canvas / infinite whiteboard (tldraw or excalidraw integration)
+- [ ] Spaced repetition / flashcards (SM-2 algorithm, review scheduler)
+- [ ] PDF annotation linked to graph (PDF.js viewer, highlights → linked notes)
+- [ ] Web clipper (browser extension to capture pages/highlights into vault)
+- [ ] Excalidraw / visual sketching (embedded hand-drawn diagrams)
+- [ ] AI integration — context-aware (semantic search, summarize, Q&A across vault)
+- [ ] Sync across devices (E2E encrypted, conflict resolution)
+- [ ] Spellcheck (research proper implementation for Tauri/WKWebView)
+
+## Needs Custom Architecture / Major Engineering
+
+- [ ] Block-level references & embeds (stable block IDs, transclusion, live propagation)
+- [ ] Plugin / extension API (sandboxed API for community extensions)
+- [ ] Publish / digital garden (select notes → public website)
+- [ ] Real-time collaboration (CRDT-based multiplayer editing)
+- [ ] Formulas / computed properties (expression evaluator for metadata fields)
 
 ## Completed
 
