@@ -155,21 +155,22 @@ md.use(markdownItMark);
 md.use(markdownItSub);
 md.use(markdownItSup);
 md.use(markdownItTexmath, {
-  engine: {
-    renderToString: (tex: string) => `<span data-type="inline-math" data-latex="${tex.replace(/"/g, '&quot;')}"></span>`,
-  },
+  engine: { renderToString: (t: string) => t },
   delimiters: 'dollars',
 });
 
-// Override block math rendering
-const defaultFenceRenderer = md.renderer.rules.fence;
-md.renderer.rules.math_block = (tokens: any[], idx: number) => {
-  const tex = tokens[idx].content.trim();
-  return `<div data-type="block-math" data-latex="${tex.replace(/"/g, '&quot;')}"></div>`;
-};
+// Override texmath renderers to output TipTap-compatible HTML
 md.renderer.rules.math_inline = (tokens: any[], idx: number) => {
   const tex = tokens[idx].content.trim();
   return `<span data-type="inline-math" data-latex="${tex.replace(/"/g, '&quot;')}"></span>`;
+};
+md.renderer.rules.math_inline_double = (tokens: any[], idx: number) => {
+  const tex = tokens[idx].content.trim();
+  return `<div data-type="block-math" data-latex="${tex.replace(/"/g, '&quot;')}"></div>`;
+};
+md.renderer.rules.math_block = (tokens: any[], idx: number) => {
+  const tex = tokens[idx].content.trim();
+  return `<div data-type="block-math" data-latex="${tex.replace(/"/g, '&quot;')}"></div>`;
 };
 
 const FRONTMATTER_RE = /^---\r?\n[\s\S]*?\r?\n---\r?\n?/;
