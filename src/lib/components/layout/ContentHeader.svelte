@@ -40,42 +40,27 @@
   .content-header {
     display: flex;
     align-items: center;
-    height: 52px;
-    padding: 0 4px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.045);
-    background: transparent;
+    height: 40px;
+    padding: 0 12px;
+    border-bottom: 1px solid var(--color-border);
     flex-shrink: 0;
   }
 
   .breadcrumb {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     font-family: var(--font-mono);
     font-size: 12px;
-    line-height: 1.5;
-    color: rgba(255, 255, 255, 0.52);
+    color: var(--color-placeholder);
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
-    padding: 0 8px 0 0;
-    min-height: auto;
-    border-radius: 0;
-    background: none;
-    border: none;
-    letter-spacing: 0.03em;
-  }
-
-  .breadcrumb::before {
-    content: "";
-    width: 20px;
-    height: 1px;
-    background: rgba(255, 255, 255, 0.15);
-    flex-shrink: 0;
   }
 
   .breadcrumb__separator {
-    color: rgba(255, 255, 255, 0.24);
+    color: var(--color-placeholder);
+    opacity: 0.5;
     user-select: none;
   }
 
