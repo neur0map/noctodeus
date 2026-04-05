@@ -21,7 +21,6 @@
 
 - [ ] Canvas / infinite whiteboard (tldraw or excalidraw integration)
 - [ ] Spaced repetition / flashcards (SM-2 algorithm, review scheduler)
-- [ ] PDF annotation linked to graph (PDF.js viewer, highlights → linked notes)
 - [ ] Web clipper (browser extension to capture pages/highlights into vault)
 - [ ] Excalidraw / visual sketching (embedded hand-drawn diagrams)
 - [ ] AI integration — context-aware (semantic search, summarize, Q&A across vault)
