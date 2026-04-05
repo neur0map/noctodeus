@@ -22,10 +22,82 @@
 
   let container: HTMLElement | undefined = $state();
 
+  // Drag state shared with all tree nodes
+  let dragState = $state<{ dragging: string | null; overDir: string | null }>({
+    dragging: null,
+    overDir: null,
+  });
+
+  let ghost: HTMLDivElement | null = null;
+
+  function handlePointerDown(e: PointerEvent) {
+    const row = (e.target as HTMLElement).closest<HTMLElement>('.tree-node__row');
+    if (!row) return;
+    const path = row.dataset.path;
+    const isDir = row.dataset.isDir === 'true';
+    const name = row.dataset.name ?? '';
+    if (!path || isDir) return; // Only files are draggable
+
+    const startX = e.clientX;
+    const startY = e.clientY;
+    let started = false;
+
+    function onMove(ev: PointerEvent) {
+      const dx = Math.abs(ev.clientX - startX);
+      const dy = Math.abs(ev.clientY - startY);
+
+      if (!started && dx + dy < 6) return;
+
+      if (!started) {
+        started = true;
+        dragState = { dragging: path!, overDir: null };
+
+        // Create ghost
+        ghost = document.createElement('div');
+        ghost.className = 'file-drag-ghost';
+        ghost.textContent = name;
+        document.body.appendChild(ghost);
+      }
+
+      // Move ghost
+      if (ghost) {
+        ghost.style.left = `${ev.clientX + 12}px`;
+        ghost.style.top = `${ev.clientY - 10}px`;
+      }
+
+      // Hit-test for drop target
+      const el = document.elementFromPoint(ev.clientX, ev.clientY)?.closest<HTMLElement>('.tree-node__row');
+      if (el && el.dataset.isDir === 'true' && el.dataset.path !== path) {
+        dragState = { ...dragState, overDir: el.dataset.path! };
+      } else if (container?.contains(document.elementFromPoint(ev.clientX, ev.clientY) ?? null)) {
+        // Over the tree but not on a folder — root drop
+        dragState = { ...dragState, overDir: '.' };
+      } else {
+        dragState = { ...dragState, overDir: null };
+      }
+    }
+
+    function onUp() {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+
+      if (started && dragState.dragging && dragState.overDir) {
+        onmove?.(dragState.dragging, dragState.overDir);
+      }
+
+      // Cleanup
+      ghost?.remove();
+      ghost = null;
+      dragState = { dragging: null, overDir: null };
+    }
+
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+  }
+
   function handleKeydown(e: KeyboardEvent) {
     if (!container) return;
 
-    // Cmd+Backspace = delete file (works when sidebar is focused)
     if ((e.metaKey || e.ctrlKey) && e.key === 'Backspace') {
       e.preventDefault();
       ondelete?.();
@@ -65,6 +137,7 @@
   }
 </script>
 
+<!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
   class="file-tree"
   role="tree"
@@ -72,20 +145,7 @@
   aria-label="File tree"
   bind:this={container}
   onkeydown={handleKeydown}
-  ondragover={(e) => {
-    if (e.dataTransfer?.types.includes('application/x-noctodeus-path')) {
-      e.preventDefault();
-      e.dataTransfer.dropEffect = 'move';
-    }
-  }}
-  ondrop={(e) => {
-    if (!e.dataTransfer) return;
-    const sourcePath = e.dataTransfer.getData('application/x-noctodeus-path');
-    if (sourcePath) {
-      e.preventDefault();
-      onmove?.(sourcePath, '.');
-    }
-  }}
+  onpointerdown={handlePointerDown}
 >
   {#if tree.length === 0}
     <div class="file-tree__empty">
@@ -99,7 +159,7 @@
         {onselect}
         {ontoggle}
         {oncontextmenu}
-        {onmove}
+        {dragState}
       />
     {/each}
   {/if}
@@ -118,5 +178,21 @@
     font-family: var(--font-mono);
     font-size: var(--text-sm);
     color: var(--color-text-muted);
+  }
+
+  :global(.file-drag-ghost) {
+    position: fixed;
+    z-index: 9999;
+    padding: 4px 10px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--color-text-primary);
+    background: rgba(20, 21, 27, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 6px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    pointer-events: none;
+    white-space: nowrap;
+    backdrop-filter: blur(12px);
   }
 </style>

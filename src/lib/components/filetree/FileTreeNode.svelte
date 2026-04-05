@@ -9,7 +9,7 @@
     onselect,
     ontoggle,
     oncontextmenu,
-    onmove,
+    dragState,
   }: {
     node: TreeNode;
     depth?: number;
@@ -17,11 +17,12 @@
     onselect: (path: string) => void;
     ontoggle: (path: string) => void;
     oncontextmenu?: (path: string, isDir: boolean, e: MouseEvent) => void;
-    onmove?: (sourcePath: string, targetDir: string) => void;
+    dragState?: { dragging: string | null; overDir: string | null };
   } = $props();
 
   let isActive = $derived(node.path === activeFilePath);
-  let dropOver = $state(false);
+  let isDragged = $derived(dragState?.dragging === node.path);
+  let isDropTarget = $derived(node.is_directory && dragState?.overDir === node.path && dragState?.dragging !== node.path);
 
   function handleClick() {
     if (node.is_directory) {
@@ -36,36 +37,6 @@
       e.preventDefault();
       handleClick();
     }
-  }
-
-  function handleDragStart(e: DragEvent) {
-    if (!e.dataTransfer) return;
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', node.path);
-    e.dataTransfer.setData('application/x-noctodeus-path', node.path);
-  }
-
-  function handleDragOver(e: DragEvent) {
-    if (!node.is_directory) return;
-    if (!e.dataTransfer?.types.includes('application/x-noctodeus-path')) return;
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    dropOver = true;
-  }
-
-  function handleDragLeave() {
-    dropOver = false;
-  }
-
-  function handleDrop(e: DragEvent) {
-    dropOver = false;
-    if (!node.is_directory || !e.dataTransfer) return;
-    e.preventDefault();
-    const sourcePath = e.dataTransfer.getData('application/x-noctodeus-path');
-    if (!sourcePath || sourcePath === node.path) return;
-    // Don't allow dropping into itself or its own parent
-    if (sourcePath.startsWith(node.path + '/')) return;
-    onmove?.(sourcePath, node.path);
   }
 
   function getFileIcon(ext: string | null): string {
@@ -90,16 +61,15 @@
   <button
     class="tree-node__row"
     class:tree-node__row--active={isActive}
-    class:tree-node__row--drop-over={dropOver}
+    class:tree-node__row--dragged={isDragged}
+    class:tree-node__row--drop-target={isDropTarget}
     style:padding-left="{depth * 16 + 8}px"
     onclick={handleClick}
     onkeydown={handleKeydown}
     oncontextmenu={(e) => { e.preventDefault(); oncontextmenu?.(node.path, node.is_directory, e); }}
-    draggable={!node.is_directory}
-    ondragstart={handleDragStart}
-    ondragover={handleDragOver}
-    ondragleave={handleDragLeave}
-    ondrop={handleDrop}
+    data-path={node.path}
+    data-is-dir={node.is_directory}
+    data-name={node.name}
     tabindex={0}
     aria-label={node.name}
   >
@@ -109,13 +79,7 @@
         class:tree-node__chevron--expanded={node.expanded}
       >
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-          <path
-            d="M4.5 2.5L8 6L4.5 9.5"
-            stroke="currentColor"
-            stroke-width="1.5"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          />
+          <path d="M4.5 2.5L8 6L4.5 9.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </span>
     {:else}
@@ -134,7 +98,7 @@
           {onselect}
           {ontoggle}
           {oncontextmenu}
-          {onmove}
+          {dragState}
         />
       {/each}
     </div>
@@ -163,7 +127,8 @@
     transition:
       background var(--duration-fast) var(--ease-out),
       color var(--duration-fast) var(--ease-out),
-      border-color var(--duration-fast) var(--ease-out);
+      border-color var(--duration-fast) var(--ease-out),
+      opacity var(--duration-fast) var(--ease-out);
   }
 
   .tree-node__row:hover {
@@ -177,19 +142,19 @@
   }
 
   .tree-node__row--active {
-    background: linear-gradient(
-      90deg,
-      rgba(122, 141, 255, 0.12),
-      rgba(122, 141, 255, 0.03)
-    );
+    background: linear-gradient(90deg, rgba(122, 141, 255, 0.12), rgba(122, 141, 255, 0.03));
     color: var(--color-text-primary);
     border-left-color: var(--color-accent);
   }
 
-  .tree-node__row--drop-over {
-    background: rgba(122, 141, 255, 0.12);
+  .tree-node__row--dragged {
+    opacity: 0.3;
+  }
+
+  .tree-node__row--drop-target {
+    background: rgba(122, 141, 255, 0.14);
     border-left-color: var(--color-accent);
-    box-shadow: inset 0 0 8px rgba(99, 102, 241, 0.1);
+    color: var(--color-text-primary);
   }
 
   .tree-node__chevron {
@@ -230,13 +195,7 @@
   }
 
   @keyframes expand {
-    from {
-      opacity: 0;
-      max-height: 0;
-    }
-    to {
-      opacity: 1;
-      max-height: 500px;
-    }
+    from { opacity: 0; max-height: 0; }
+    to { opacity: 1; max-height: 500px; }
   }
 </style>
