@@ -105,7 +105,7 @@
   @keyframes slash-enter {
     from {
       opacity: 0;
-      transform: translateY(-4px) scale(0.98);
+      transform: translateY(-8px) scale(0.96);
     }
     to {
       opacity: 1;

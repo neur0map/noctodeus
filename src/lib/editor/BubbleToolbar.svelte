@@ -173,7 +173,7 @@
   }
 
   @keyframes bt-in {
-    from { opacity: 0; transform: translateY(4px) scale(0.97); }
+    from { opacity: 0; transform: translateY(8px) scale(0.95); }
     to { opacity: 1; transform: translateY(0) scale(1); }
   }
 
