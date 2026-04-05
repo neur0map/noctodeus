@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { Badge } from "$lib/components/ui/badge";
+
   let {
     status = 'saved',
   }: {
@@ -8,48 +10,43 @@
   const label = $derived(
     status === 'saved' ? 'Saved' : status === 'saving' ? 'Saving...' : 'Unsaved',
   );
+
+  const variant = $derived<"outline" | "secondary" | "default">(
+    status === 'unsaved' ? 'default' : 'outline',
+  );
 </script>
 
-<div class="save-indicator" data-status={status}>
-  <span class="save-indicator__dot"></span>
-  <span class="save-indicator__label">{label}</span>
-</div>
+<Badge {variant} class="save-indicator {status === 'saving' ? 'save-indicator--saving' : ''}">
+  <span class="save-indicator__dot" data-status={status}></span>
+  {label}
+</Badge>
 
 <style>
-  .save-indicator {
-    display: flex;
-    align-items: center;
-    gap: 4px;
+  :global(.save-indicator) {
     font-family: var(--font-mono);
-    font-size: 12px;
-    line-height: 1.4;
-    color: var(--color-placeholder);
-    transition: color 150ms var(--ease-expo-out);
+    font-size: 11px;
+    gap: 6px;
+    user-select: none;
   }
 
   .save-indicator__dot {
-    width: 6px;
-    height: 6px;
+    width: 5px;
+    height: 5px;
     border-radius: 50%;
     flex-shrink: 0;
-    transition: background-color 150ms var(--ease-expo-out);
   }
 
-  [data-status='saved'] .save-indicator__dot {
+  .save-indicator__dot[data-status='saved'] {
     background-color: var(--color-placeholder);
   }
 
-  [data-status='saving'] .save-indicator__dot {
+  .save-indicator__dot[data-status='saving'] {
     background-color: var(--color-placeholder);
     animation: pulse 1.2s ease-in-out infinite;
   }
 
-  [data-status='unsaved'] .save-indicator__dot {
+  .save-indicator__dot[data-status='unsaved'] {
     background-color: var(--color-accent);
-  }
-
-  .save-indicator__label {
-    user-select: none;
   }
 
   @keyframes pulse {
@@ -58,7 +55,7 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    [data-status='saving'] .save-indicator__dot {
+    .save-indicator__dot[data-status='saving'] {
       animation: none;
     }
   }

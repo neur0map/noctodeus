@@ -2,6 +2,10 @@
   import type { TreeNode } from "../../types/core";
   import FileTreeNode from "./FileTreeNode.svelte";
   import ChevronRight from "@lucide/svelte/icons/chevron-right";
+  import FileTextIcon from "@lucide/svelte/icons/file-text";
+  import FileIcon from "@lucide/svelte/icons/file";
+  import FolderIcon from "@lucide/svelte/icons/folder";
+  import FolderOpenIcon from "@lucide/svelte/icons/folder-open";
 
   let {
     node,
@@ -68,17 +72,6 @@
     }
   }
 
-  function getFileIcon(ext: string | null): string {
-    if (!ext) return "\u25CB";
-    switch (ext.toLowerCase()) {
-      case "md": return "\u25A0";
-      case "txt": return "\u25A1";
-      case "json": return "\u25C6";
-      case "yaml": case "yml": return "\u25C7";
-      case "toml": return "\u25C8";
-      default: return "\u25CB";
-    }
-  }
 </script>
 
 <div
@@ -109,8 +102,21 @@
       >
         <ChevronRight size={12} />
       </span>
+      <span class="tree-node__icon">
+        {#if node.expanded}
+          <FolderOpenIcon size={14} />
+        {:else}
+          <FolderIcon size={14} />
+        {/if}
+      </span>
     {:else}
-      <span class="tree-node__icon">{getFileIcon(node.extension)}</span>
+      <span class="tree-node__icon">
+        {#if node.extension === 'md' || node.extension === 'markdown' || node.extension === 'mdx'}
+          <FileTextIcon size={14} />
+        {:else}
+          <FileIcon size={14} />
+        {/if}
+      </span>
     {/if}
     {#if editing}
       <input
@@ -155,40 +161,33 @@
     align-items: center;
     gap: 4px;
     width: 100%;
-    height: 30px;
+    height: 28px;
     padding-right: 8px;
     font-family: var(--font-mono);
     font-size: 12px;
-    line-height: 1.5;
-    color: rgba(255, 255, 255, 0.56);
+    color: var(--color-muted-foreground);
     background: transparent;
     border: none;
-    border-left: 2px solid transparent;
-    border-radius: 0 6px 6px 0;
+    border-radius: 4px;
     cursor: pointer;
     user-select: none;
     text-align: left;
-    transition:
-      background 150ms var(--ease-expo-out),
-      color 150ms var(--ease-expo-out),
-      border-color 150ms var(--ease-expo-out),
-      opacity 150ms var(--ease-expo-out);
+    transition: background 150ms var(--ease-expo-out), color 150ms var(--ease-expo-out);
   }
 
   .tree-node__row:hover {
-    background: rgba(255, 255, 255, calc(0.03 * var(--hover-softness)));
-    color: rgba(255, 255, 255, 0.84);
+    background: var(--color-hover);
+    color: var(--color-foreground);
   }
 
   .tree-node__row:focus-visible {
-    outline: calc(1px * var(--focus-ring-strength)) solid var(--color-accent);
-    outline-offset: -1px;
+    outline: 2px solid var(--color-accent);
+    outline-offset: -2px;
   }
 
   .tree-node__row--active {
-    background: linear-gradient(90deg, rgba(122, 141, 255, 0.12), rgba(122, 141, 255, 0.03));
+    background: rgba(99, 102, 241, 0.1);
     color: var(--color-foreground);
-    border-left-color: var(--color-accent);
   }
 
   .tree-node__row--dragged {
@@ -196,8 +195,7 @@
   }
 
   .tree-node__row--drop-target {
-    background: rgba(122, 141, 255, 0.14);
-    border-left-color: var(--color-accent);
+    background: rgba(99, 102, 241, 0.12);
     color: var(--color-foreground);
   }
 
@@ -223,8 +221,7 @@
     width: 16px;
     height: 16px;
     flex-shrink: 0;
-    font-size: 8px;
-    color: rgba(255, 255, 255, 0.38);
+    color: var(--color-placeholder);
   }
 
   .tree-node__name {
@@ -240,27 +237,15 @@
     font-family: var(--font-mono);
     font-size: 12px;
     color: var(--color-foreground);
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--color-hover);
     border: 1px solid var(--color-accent);
-    border-radius: 3px;
+    border-radius: 4px;
     outline: none;
   }
 
   .tree-node__children {
-    overflow: hidden;
-    margin-left: 7px;
-    padding-left: 9px;
-    border-left: 1px solid rgba(255, 255, 255, 0.06);
-    animation: expand 150ms var(--ease-expo-out);
-    transition: border-color 150ms var(--ease-expo-out);
-  }
-
-  .tree-node__children:hover {
-    border-left-color: rgba(255, 255, 255, 0.14);
-  }
-
-  @keyframes expand {
-    from { opacity: 0; max-height: 0; }
-    to { opacity: 1; max-height: 500px; }
+    margin-left: 8px;
+    padding-left: 8px;
+    border-left: 1px solid var(--color-border);
   }
 </style>
