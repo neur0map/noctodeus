@@ -1,0 +1,22 @@
+@use "layouts/shell";
+@use "layouts/sidebar";
+@use "layouts/tabs";
+@use "layouts/filetree";
+@use "layouts/panels";
+@use "layouts/editor";
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0ms !important;
+    transition-duration: 0ms !important;
+  }
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+
+  &:hover {
+    scrollbar-color: rgba(255, 255, 255, 0.08) transparent;
+  }
+}
