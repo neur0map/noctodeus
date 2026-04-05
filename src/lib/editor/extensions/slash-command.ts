@@ -1,5 +1,6 @@
 import { Extension } from '@tiptap/core';
 import Suggestion from '@tiptap/suggestion';
+import { PluginKey } from '@tiptap/pm/state';
 import type { Editor, Range } from '@tiptap/core';
 import { detectEmbed } from './embed-block.js';
 
@@ -228,6 +229,7 @@ export function createSlashCommand(createPopup: CreatePopup) {
       return [
         Suggestion({
           editor: this.editor,
+          pluginKey: new PluginKey('slashCommandSuggestion'),
           ...this.options.suggestion,
         }),
       ];

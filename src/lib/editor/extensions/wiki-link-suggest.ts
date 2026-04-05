@@ -1,5 +1,6 @@
 import { Extension } from '@tiptap/core';
 import Suggestion from '@tiptap/suggestion';
+import { PluginKey } from '@tiptap/pm/state';
 import type { Editor, Range } from '@tiptap/core';
 
 export interface WikiSuggestItem {
@@ -54,6 +55,7 @@ export function createWikiLinkSuggest(createPopup: CreateWikiPopup, getItems: ()
       return [
         Suggestion({
           editor: this.editor,
+          pluginKey: new PluginKey('wikiLinkSuggestion'),
           ...this.options.suggestion,
         }),
       ];
