@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { ToastType } from '../../stores/toast.svelte';
+  import X from "@lucide/svelte/icons/x";
 
   let {
     id,
@@ -43,9 +44,7 @@
     onclick={handleDismiss}
     aria-label="Dismiss notification"
   >
-    <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-      <path d="M2.5 2.5L9.5 9.5M9.5 2.5L2.5 9.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-    </svg>
+    <X size={12} />
   </button>
 </div>
 

@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { Editor } from '@tiptap/core';
+  import ChevronDown from "@lucide/svelte/icons/chevron-down";
 
   let {
     editor,
@@ -116,9 +117,7 @@
         title="Block type"
       >
         {currentBlockLabel()}
-        <svg class="bt__chevron" width="8" height="5" viewBox="0 0 8 5" fill="currentColor">
-          <path d="M.7.7L4 4 7.3.7" stroke="currentColor" stroke-width="1.2" fill="none" stroke-linecap="round"/>
-        </svg>
+        <ChevronDown size={10} class="bt__chevron" />
       </button>
 
       <span class="bt__sep"></span>
@@ -235,7 +234,7 @@
     font-family: var(--font-content);
   }
 
-  .bt__chevron {
+  .bt__btn--type :global(.bt__chevron) {
     opacity: 0.4;
     margin-left: 1px;
   }

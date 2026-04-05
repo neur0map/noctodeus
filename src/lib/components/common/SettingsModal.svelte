@@ -1,6 +1,12 @@
 <script lang="ts">
   import { getSettings } from '../../stores/settings.svelte';
   import { APP_SHORTCUTS, formatShortcutLabel } from '../../utils/shortcuts';
+  import SettingsIcon from "@lucide/svelte/icons/settings";
+  import PencilLine from "@lucide/svelte/icons/pencil-line";
+  import Palette from "@lucide/svelte/icons/palette";
+  import FileText from "@lucide/svelte/icons/file-text";
+  import Keyboard from "@lucide/svelte/icons/keyboard";
+  import X from "@lucide/svelte/icons/x";
 
   let {
     visible = false,
@@ -16,12 +22,12 @@
 
   let activeSection = $state<Section>('general');
 
-  const sections: { id: Section; label: string; icon: string }[] = [
-    { id: 'general', label: 'General', icon: '⚙' },
-    { id: 'editor', label: 'Editor', icon: '✎' },
-    { id: 'appearance', label: 'Appearance', icon: '◐' },
-    { id: 'files', label: 'Files & Links', icon: '◫' },
-    { id: 'hotkeys', label: 'Hotkeys', icon: '⌘' },
+  const sections: { id: Section; label: string }[] = [
+    { id: 'general', label: 'General' },
+    { id: 'editor', label: 'Editor' },
+    { id: 'appearance', label: 'Appearance' },
+    { id: 'files', label: 'Files & Links' },
+    { id: 'hotkeys', label: 'Hotkeys' },
   ];
 
   function handleKeydown(e: KeyboardEvent) {
@@ -51,7 +57,14 @@
               class:settings__nav-item--active={activeSection === section.id}
               onclick={() => activeSection = section.id}
             >
-              <span class="settings__nav-icon">{section.icon}</span>
+              <span class="settings__nav-icon">
+                {#if section.id === 'general'}<SettingsIcon size={14} />
+                {:else if section.id === 'editor'}<PencilLine size={14} />
+                {:else if section.id === 'appearance'}<Palette size={14} />
+                {:else if section.id === 'files'}<FileText size={14} />
+                {:else if section.id === 'hotkeys'}<Keyboard size={14} />
+                {/if}
+              </span>
               <span>{section.label}</span>
             </button>
           {/each}
@@ -64,7 +77,7 @@
           <h2 class="settings__title">
             {sections.find(s => s.id === activeSection)?.label}
           </h2>
-          <button class="settings__close" onclick={onclose} title="Close">✕</button>
+          <button class="settings__close" onclick={onclose} title="Close"><X size={14} /></button>
         </div>
 
         <div class="settings__body">
@@ -325,9 +338,10 @@
   }
 
   .settings__nav-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     width: 18px;
-    text-align: center;
-    font-size: 13px;
     flex-shrink: 0;
   }
 

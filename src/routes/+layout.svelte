@@ -46,6 +46,13 @@
   import { logger } from "../lib/logger";
   import { APP_SHORTCUTS } from "../lib/utils/shortcuts";
 
+  import Ellipsis from "@lucide/svelte/icons/ellipsis";
+  import Star from "@lucide/svelte/icons/star";
+  import Menu from "@lucide/svelte/icons/menu";
+  import PanelRight from "@lucide/svelte/icons/panel-right";
+  import Plus from "@lucide/svelte/icons/plus";
+  import Settings from "@lucide/svelte/icons/settings";
+
   let { children }: { children: Snippet } = $props();
 
   const ui = getUiState();
@@ -102,13 +109,13 @@
   let sidebarMenuPosition = $state({ top: 0, left: 0 });
 
   const sidebarMenuItems: MenuItem[] = [
-    { id: 'new-file', label: 'New File', icon: '＋' },
-    { id: 'new-folder', label: 'New Folder', icon: '▸' },
+    { id: 'new-file', label: 'New File' },
+    { id: 'new-folder', label: 'New Folder' },
     { id: 'sep1', label: '', separator: true },
-    { id: 'sort-name-asc', label: 'Sort A → Z', icon: '↑' },
-    { id: 'sort-name-desc', label: 'Sort Z → A', icon: '↓' },
-    { id: 'sort-modified-new', label: 'Sort Newest', icon: '◷' },
-    { id: 'sort-modified-old', label: 'Sort Oldest', icon: '◶' },
+    { id: 'sort-name-asc', label: 'Sort A \u2192 Z' },
+    { id: 'sort-name-desc', label: 'Sort Z \u2192 A' },
+    { id: 'sort-modified-new', label: 'Sort Newest' },
+    { id: 'sort-modified-old', label: 'Sort Oldest' },
   ];
 
   async function handleSidebarMenu(id: string) {
@@ -197,19 +204,19 @@
       left: Math.min(e.clientX, window.innerWidth - 200),
     };
     ctxItems = isDir ? [
-      { id: 'new-file', label: 'New File', icon: '＋' },
-      { id: 'new-folder', label: 'New Folder', icon: '▸' },
+      { id: 'new-file', label: 'New File' },
+      { id: 'new-folder', label: 'New Folder' },
       { id: 'sep1', label: '', separator: true },
-      { id: 'rename', label: 'Rename', icon: '✎' },
+      { id: 'rename', label: 'Rename' },
       { id: 'sep2', label: '', separator: true },
-      { id: 'delete', label: 'Delete', icon: '✕', danger: true },
+      { id: 'delete', label: 'Delete', danger: true },
     ] : [
-      { id: 'pin', label: pinnedPaths.has(path) ? 'Unpin' : 'Pin', icon: pinnedPaths.has(path) ? '★' : '☆' },
-      { id: 'rename', label: 'Rename', icon: '✎' },
-      { id: 'duplicate', label: 'Duplicate', icon: '⊕' },
-      { id: 'export', label: 'Export...', icon: '↗' },
+      { id: 'pin', label: pinnedPaths.has(path) ? 'Unpin' : 'Pin' },
+      { id: 'rename', label: 'Rename' },
+      { id: 'duplicate', label: 'Duplicate' },
+      { id: 'export', label: 'Export...' },
       { id: 'sep1', label: '', separator: true },
-      { id: 'delete', label: 'Delete', icon: '✕', danger: true },
+      { id: 'delete', label: 'Delete', danger: true },
     ];
     ctxVisible = true;
   }
@@ -625,7 +632,7 @@
             sidebarMenuPosition = { top: e.clientY + 4, left: e.clientX - 140 };
             sidebarMenuVisible = true;
           }} title="Actions">
-            ⋯
+            <Ellipsis size={14} />
           </button>
         </div>
       {/snippet}
@@ -640,7 +647,7 @@
                 class:sidebar-pinned__item--active={files.activeFilePath === path}
                 onclick={() => handleFileSelect(path)}
               >
-                <span class="sidebar-pinned__star">★</span>
+                <Star size={10} class="sidebar-pinned__star" />
                 <span class="sidebar-pinned__name">{file.title || file.name}</span>
               </button>
             {/if}
@@ -678,10 +685,7 @@
             onclick={() => ui.showSettings()}
             title="Settings"
           >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="3"/>
-              <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
-            </svg>
+            <Settings size={15} />
           </button>
         </div>
       {/snippet}
@@ -718,7 +722,7 @@
         onclick={() => ui.showCommandPalette()}
         title="Command palette"
       >
-        ≡
+        <Menu size={16} />
       </button>
       <button
         class="utility-rail__button"
@@ -726,14 +730,14 @@
         onclick={() => ui.toggleRightPanel()}
         title="Toggle detail rail"
       >
-        ◎
+        <PanelRight size={16} />
       </button>
       <button
         class="utility-rail__button"
         onclick={handleNewNote}
         title="New note"
       >
-        ＋
+        <Plus size={16} />
       </button>
     </div>
   {/snippet}
@@ -894,9 +898,8 @@
     background: rgba(99, 102, 241, 0.08);
   }
 
-  .sidebar-pinned__star {
+  .sidebar-pinned :global(.sidebar-pinned__star) {
     color: rgba(255, 200, 50, 0.6);
-    font-size: 9px;
     flex-shrink: 0;
   }
 
@@ -956,14 +959,15 @@
   }
 
   .utility-rail__button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     width: 34px;
     height: 34px;
     border-radius: 6px;
     border: none;
     background: transparent;
     color: var(--color-placeholder);
-    font-family: var(--font-mono);
-    font-size: 13px;
     cursor: pointer;
     transition: color 150ms var(--ease-expo-out), background 150ms var(--ease-expo-out);
   }
