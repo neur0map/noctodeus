@@ -103,6 +103,17 @@
     </div>
   </div>
 
+  {#if pinnedFiles.length > 0}
+    <div class="dashboard__section">
+      <h2 class="dashboard__section-title">Pinned</h2>
+      {#each pinnedFiles as file (file.path)}
+        <button class="dashboard__row" onclick={() => onfileopen(file.path)}>
+          <span class="dashboard__row-name">{displayName(file)}</span>
+        </button>
+      {/each}
+    </div>
+  {/if}
+
   {#if graphStats.mostConnected.some(n => n.count > 0)}
     <div class="dashboard__section">
       <h2 class="dashboard__section-title">Most Linked</h2>
@@ -127,16 +138,6 @@
     </div>
   {/if}
 
-  {#if pinnedFiles.length > 0}
-    <div class="dashboard__section">
-      <h2 class="dashboard__section-title">Pinned</h2>
-      {#each pinnedFiles as file (file.path)}
-        <button class="dashboard__row" onclick={() => onfileopen(file.path)}>
-          <span class="dashboard__row-name">{displayName(file)}</span>
-        </button>
-      {/each}
-    </div>
-  {/if}
 </div>
 
 <style>
