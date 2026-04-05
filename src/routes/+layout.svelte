@@ -613,9 +613,6 @@
     <Sidebar collapsed={ui.sidebarCollapsed} ontogglecollapse={() => ui.toggleSidebarCollapse()}>
       {#snippet header()}
         <div class="sidebar-header">
-          <span class="sidebar-header__name">
-            {core.activeCore?.name ?? "Noctodeus"}
-          </span>
           <button class="sidebar-header__btn" onclick={(e) => {
             sidebarMenuPosition = { top: e.clientY + 4, left: e.clientX - 140 };
             sidebarMenuVisible = true;
