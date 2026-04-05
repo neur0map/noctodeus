@@ -58,7 +58,7 @@
     height: 100vh;
     background: var(--color-background);
     overflow: hidden;
-    transition: grid-template-columns 250ms cubic-bezier(0.16, 1, 0.3, 1);
+    transition: grid-template-columns 400ms cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .app-shell--sidebar-hidden {

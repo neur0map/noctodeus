@@ -58,7 +58,7 @@
     border: 1px solid var(--color-border);
     border-radius: 8px;
     box-shadow: var(--shadow-float);
-    animation: toast-enter 300ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: toast-enter 400ms cubic-bezier(0.16, 1, 0.3, 1) both;
     max-width: 360px;
   }
 

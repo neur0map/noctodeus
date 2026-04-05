@@ -296,7 +296,7 @@
     margin-left: 8px;
     padding-left: 8px;
     border-left: 1px solid var(--color-border);
-    animation: tree-expand 200ms cubic-bezier(0.16, 1, 0.3, 1);
+    animation: tree-expand 400ms cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   @keyframes tree-expand {

@@ -95,7 +95,7 @@
     border-radius: 10px;
     box-shadow: var(--shadow-float);
     overflow: hidden;
-    animation: mp-in 150ms var(--ease-expo-out) both;
+    animation: mp-in 250ms var(--ease-expo-out) both;
   }
 
   @keyframes mp-in {

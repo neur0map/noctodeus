@@ -11,9 +11,9 @@ export const springs = {
 
 // Shared durations
 export const durations = {
-  fast: 150,
-  normal: 400,
-  slow: 600,
+  fast: 250,
+  normal: 600,
+  slow: 800,
 } as const;
 
 // Reusable animation presets — call these from $effect or onMount
@@ -47,7 +47,7 @@ export const presets = {
     return animate(targets, {
       opacity: [0, 1],
       translateY: [16, 0],
-      delay: stagger(opts?.staggerDelay ?? 40, { start: opts?.delay ?? 0 }),
+      delay: stagger(opts?.staggerDelay ?? 60, { start: opts?.delay ?? 0 }),
       duration: durations.normal,
       ease: 'outQuint',
     });

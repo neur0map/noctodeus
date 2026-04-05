@@ -98,7 +98,7 @@
     background: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(8px);
     z-index: 100;
-    animation: quick-open-backdrop-in 200ms ease both;
+    animation: quick-open-backdrop-in 300ms ease both;
   }
 
   @keyframes quick-open-backdrop-in {
@@ -115,7 +115,7 @@
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    animation: quick-open-enter 250ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: quick-open-enter 450ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
   @keyframes quick-open-enter {

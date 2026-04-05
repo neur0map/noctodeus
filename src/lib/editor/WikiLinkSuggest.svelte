@@ -106,7 +106,7 @@
     border-radius: 8px;
     box-shadow: var(--shadow-float);
     padding: 4px;
-    animation: slide-in 150ms var(--ease-expo-out) both;
+    animation: slide-in 250ms var(--ease-expo-out) both;
   }
 
   .wiki-suggest__item {

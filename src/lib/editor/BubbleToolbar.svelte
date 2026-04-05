@@ -168,7 +168,7 @@
     border-radius: 10px;
     box-shadow: var(--shadow-float);
     padding: 3px;
-    animation: bt-in 150ms var(--ease-expo-out) both;
+    animation: bt-in 250ms var(--ease-expo-out) both;
     user-select: none;
   }
 

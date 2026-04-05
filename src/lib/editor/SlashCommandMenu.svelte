@@ -94,7 +94,7 @@
     border-radius: 10px;
     box-shadow: var(--shadow-float);
     padding: 4px;
-    animation: slash-enter 150ms var(--ease-expo-out) both;
+    animation: slash-enter 250ms var(--ease-expo-out) both;
     scrollbar-width: none;
   }
 

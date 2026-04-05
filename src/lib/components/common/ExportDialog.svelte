@@ -82,7 +82,7 @@
     background: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(8px);
     z-index: 399;
-    animation: export-backdrop-in 200ms ease both;
+    animation: export-backdrop-in 300ms ease both;
   }
 
   @keyframes export-backdrop-in {
@@ -105,7 +105,7 @@
     display: flex;
     flex-direction: column;
     gap: 16px;
-    animation: export-in 250ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: export-in 450ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
   @keyframes export-in {

@@ -100,7 +100,7 @@
     transition:
       background 150ms ease,
       color 150ms ease;
-    animation: tab-enter 200ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: tab-enter 400ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
   @keyframes tab-enter {

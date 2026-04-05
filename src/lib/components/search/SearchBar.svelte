@@ -123,7 +123,7 @@
     max-height: 240px;
     overflow-y: auto;
     margin-top: 4px;
-    animation: dropdown-in 150ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: dropdown-in 250ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
   @keyframes dropdown-in {

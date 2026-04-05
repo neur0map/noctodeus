@@ -73,7 +73,7 @@
     box-shadow: var(--shadow-float);
     backdrop-filter: blur(12px);
     padding: 3px;
-    animation: ctx-in 150ms var(--ease-expo-out) both;
+    animation: ctx-in 250ms var(--ease-expo-out) both;
   }
 
   @keyframes ctx-in {

@@ -256,7 +256,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    animation: backdrop-in 200ms ease both;
+    animation: backdrop-in 300ms ease both;
   }
 
   @keyframes backdrop-in {
@@ -273,7 +273,7 @@
     border-radius: 14px;
     box-shadow: var(--shadow-float);
     overflow: hidden;
-    animation: settings-in 250ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: settings-in 450ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
   @keyframes settings-in {
