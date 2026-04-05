@@ -1,30 +1,18 @@
 import type { Editor } from '@tiptap/core';
 
 let activeEditor = $state<Editor | null>(null);
-let wordCount = $state(0);
+let charCount = $state(0);
 let cleanup: (() => void) | null = null;
 
-function countWords(ed: Editor) {
-  const text = ed.state.doc.textBetween(0, ed.state.doc.content.size, ' ', ' ').trim();
-  if (!text) { wordCount = 0; return; }
-
-  if (typeof Intl !== 'undefined' && Intl.Segmenter) {
-    const segmenter = new Intl.Segmenter('en', { granularity: 'word' });
-    let count = 0;
-    for (const segment of segmenter.segment(text)) {
-      if (segment.isWordLike) count++;
-    }
-    wordCount = count;
-  } else {
-    const matches = text.match(/\S+/g);
-    wordCount = matches ? matches.length : 0;
-  }
+function updateCharCount(ed: Editor) {
+  const text = ed.state.doc.textContent;
+  charCount = text.replace(/\s/g, '').length;
 }
 
 export function getActiveEditorState() {
   return {
     get editor() { return activeEditor; },
-    get wordCount() { return wordCount; },
+    get charCount() { return charCount; },
 
     set(editor: Editor | null) {
       cleanup?.();
@@ -32,12 +20,12 @@ export function getActiveEditorState() {
       activeEditor = editor;
 
       if (editor) {
-        countWords(editor);
-        const handler = () => countWords(editor);
+        updateCharCount(editor);
+        const handler = () => updateCharCount(editor);
         editor.on('update', handler);
         cleanup = () => editor.off('update', handler);
       } else {
-        wordCount = 0;
+        charCount = 0;
       }
     },
   };

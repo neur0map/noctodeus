@@ -545,9 +545,9 @@
           <span class="sidebar-footer__count">
             {files.fileMap.size} files
           </span>
-          {#if activeEditorState.wordCount > 0}
+          {#if activeEditorState.charCount > 0}
             <span class="sidebar-footer__words">
-              {activeEditorState.wordCount}w
+              {activeEditorState.charCount}c
             </span>
           {/if}
         </div>
