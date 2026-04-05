@@ -154,7 +154,23 @@ md.use(mediaBlockPlugin);
 md.use(markdownItMark);
 md.use(markdownItSub);
 md.use(markdownItSup);
-md.use(markdownItTexmath, { engine: { renderToString: (tex: string) => `<span data-latex="${tex.replace(/"/g, '&quot;')}">${tex}</span>` } });
+md.use(markdownItTexmath, {
+  engine: {
+    renderToString: (tex: string) => `<span data-type="inline-math" data-latex="${tex.replace(/"/g, '&quot;')}"></span>`,
+  },
+  delimiters: 'dollars',
+});
+
+// Override block math rendering
+const defaultFenceRenderer = md.renderer.rules.fence;
+md.renderer.rules.math_block = (tokens: any[], idx: number) => {
+  const tex = tokens[idx].content.trim();
+  return `<div data-type="block-math" data-latex="${tex.replace(/"/g, '&quot;')}"></div>`;
+};
+md.renderer.rules.math_inline = (tokens: any[], idx: number) => {
+  const tex = tokens[idx].content.trim();
+  return `<span data-type="inline-math" data-latex="${tex.replace(/"/g, '&quot;')}"></span>`;
+};
 
 const FRONTMATTER_RE = /^---\r?\n[\s\S]*?\r?\n---\r?\n?/;
 
