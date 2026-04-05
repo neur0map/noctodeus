@@ -6,6 +6,8 @@
   import FileIcon from "@lucide/svelte/icons/file";
   import FolderIcon from "@lucide/svelte/icons/folder";
   import FolderOpenIcon from "@lucide/svelte/icons/folder-open";
+  import StarIcon from "@lucide/svelte/icons/star";
+  import { getPinnedState } from "../../stores/pinned.svelte";
 
   let {
     node,
@@ -27,7 +29,9 @@
     dragState?: { dragging: string | null; overDir: string | null };
   } = $props();
 
+  const pinned = getPinnedState();
   let isActive = $derived(node.path === activeFilePath);
+  let isPinned = $derived(!node.is_directory && pinned.isPinned(node.path));
   let isDragged = $derived(dragState?.dragging === node.path);
   let isDropTarget = $derived(node.is_directory && dragState?.overDir === node.path && dragState?.dragging !== node.path);
   let editing = $state(false);
@@ -135,6 +139,16 @@
     {:else}
       <span class="tree-node__name" ondblclick={handleDblClick}>{node.name}</span>
     {/if}
+    {#if !node.is_directory}
+      <button
+        class="tree-node__star"
+        class:tree-node__star--pinned={isPinned}
+        onclick={(e) => { e.stopPropagation(); pinned.toggle(node.path); }}
+        title={isPinned ? 'Unpin' : 'Pin'}
+      >
+        <StarIcon size={11} />
+      </button>
+    {/if}
   </button>
 
   {#if node.is_directory && node.expanded && node.children.length > 0}
@@ -241,6 +255,41 @@
     border: 1px solid var(--color-accent);
     border-radius: 4px;
     outline: none;
+  }
+
+  .tree-node__star {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    margin-left: auto;
+    flex-shrink: 0;
+    border: none;
+    border-radius: 3px;
+    background: transparent;
+    color: var(--color-placeholder);
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 150ms var(--ease-expo-out), color 150ms var(--ease-expo-out);
+  }
+
+  .tree-node__row:hover .tree-node__star {
+    opacity: 0.6;
+  }
+
+  .tree-node__star:hover {
+    opacity: 1 !important;
+    color: var(--color-accent);
+  }
+
+  .tree-node__star--pinned {
+    opacity: 1;
+    color: #eab308;
+  }
+
+  .tree-node__star--pinned:hover {
+    color: #ca8a04;
   }
 
   .tree-node__children {
