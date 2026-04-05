@@ -16,6 +16,14 @@
   // Hide type menu when toolbar hides
   $effect(() => { if (!visible) showTypeMenu = false; });
 
+  // Portal to body to escape overflow:hidden containers
+  function portal(node: HTMLElement) {
+    document.body.appendChild(node);
+    return {
+      destroy() { node.remove(); }
+    };
+  }
+
   function toggle(cmd: string) {
     if (!editor) return;
     switch (cmd) {
@@ -99,7 +107,7 @@
 </script>
 
 {#if visible && editor}
-  <div class="bt" style="top: {position.top}px; left: {position.left}px;">
+  <div class="bt" style="top: {position.top}px; left: {position.left}px;" use:portal>
     <div class="bt__row">
       <button
         class="bt__btn bt__btn--type"
