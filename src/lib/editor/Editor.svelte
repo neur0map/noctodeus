@@ -6,7 +6,8 @@
   import { getEditorState } from "../stores/editor.svelte";
   import { getFilesState } from "../stores/files.svelte";
   import { getCoreState } from "../stores/core.svelte";
-  import { writeFile } from "../bridge/commands";
+  import { getGraphState } from "../stores/graph.svelte";
+  import { writeFile, readFile } from "../bridge/commands";
   import { convertFileSrc } from "@tauri-apps/api/core";
   import { logger } from "../logger";
   import SlashCommandMenu from "./SlashCommandMenu.svelte";
@@ -33,6 +34,7 @@
   const editorState = getEditorState();
   const filesState = getFilesState();
   const coreState = getCoreState();
+  const graphState = getGraphState();
 
   let editorElement: HTMLDivElement | undefined = $state();
   let editor: Editor | undefined = $state();
@@ -231,6 +233,10 @@
       const updated = await writeFile(path, markdown);
       filesState.updateFile(updated);
       editorState.markSaved(hash);
+      // Re-scan graph if content has wiki-links
+      if (markdown.includes('[[')) {
+        graphState.scan(filesState.fileMap, readFile);
+      }
     } catch (err) {
       logger.error(`Failed to save ${path}: ${err}`);
       editorState.markDirty();
