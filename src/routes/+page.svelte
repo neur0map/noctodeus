@@ -41,9 +41,11 @@
   let currentFilePath = $state<string | null>(null);
   let currentContent = $state<string | null>(null);
   let currentMetadata = $state<FileNode | null>(null);
+  const HIDDEN_NAMES = new Set(['.DS_Store', '.noctodeus', 'Thumbs.db', '.git', '.gitignore']);
+
   let recentFiles = $derived(
     Array.from(files.fileMap.values())
-      .filter((f) => !f.is_directory)
+      .filter((f) => !f.is_directory && !HIDDEN_NAMES.has(f.name) && !f.name.startsWith('.'))
       .sort((a, b) => b.modified_at - a.modified_at)
       .slice(0, 10),
   );
