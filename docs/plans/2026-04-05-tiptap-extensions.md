@@ -1,13 +1,13 @@
 # TipTap Extensions — Implementation Plan
 
-## Phase 2 (from common-sense-features plan, still pending)
-- [ ] Inline rename in sidebar (double-click file name to edit in place)
-- [ ] Drag files between folders in sidebar (done — pointer-based with ghost)
-- [ ] Backlinks panel (what links to this note?) in right panel below graph
-- [ ] Outline view (table of contents from headings) in right panel
-- [ ] File tree filter/search (quick filter within the tree)
+## Phase 2 (DONE)
+- [x] Inline rename in sidebar (double-click file name to edit in place)
+- [x] Drag files between folders in sidebar (pointer-based with ghost)
+- [x] Backlinks panel (what links to this note?) in right panel below graph
+- [x] Outline view (table of contents from headings) in right panel + minimap
+- [x] File tree filter/search (search bar filters tree instantly)
 
-## Phase 3 (from common-sense-features plan, still pending)
+## Phase 3 (in progress)
 - [ ] Word count / reading time in tab bar trailing area
 - [ ] Pin/unpin files (star icon in file tree, pinned section at top)
 - [ ] Export to PDF/HTML

@@ -39,7 +39,7 @@
     onFileDeleted,
     onFileRenamed,
   } from "../lib/bridge/events";
-  import { createFile, deleteFile, renameFile, duplicateFile, createDir, searchQuery } from "../lib/bridge/commands";
+  import { createFile, deleteFile, renameFile, duplicateFile, createDir, searchQuery, addPin, removePin, searchPinned } from "../lib/bridge/commands";
   import { ask as tauriAsk } from "@tauri-apps/plugin-dialog";
   import type { SearchHit } from "../lib/types/core";
   import { logger } from "../lib/logger";
@@ -91,6 +91,16 @@
   // Search state
   let searchResults = $state<SearchHit[]>([]);
 
+  // Pinned files state
+  let pinnedPaths = $state<Set<string>>(new Set());
+
+  async function loadPinned() {
+    try {
+      const pinned = await searchPinned();
+      pinnedPaths = new Set(pinned.map(f => f.path));
+    } catch {}
+  }
+
   async function handleSearch(query: string) {
     // Filter the file tree instantly as user types
     files.setFilterQuery(query);
@@ -138,8 +148,10 @@
       { id: 'sep2', label: '', separator: true },
       { id: 'delete', label: 'Delete', icon: '✕', danger: true },
     ] : [
+      { id: 'pin', label: pinnedPaths.has(path) ? 'Unpin' : 'Pin', icon: pinnedPaths.has(path) ? '★' : '☆' },
       { id: 'rename', label: 'Rename', icon: '✎' },
       { id: 'duplicate', label: 'Duplicate', icon: '⊕' },
+      { id: 'export-html', label: 'Export HTML', icon: '↗' },
       { id: 'sep1', label: '', separator: true },
       { id: 'delete', label: 'Delete', icon: '✕', danger: true },
     ];
@@ -163,6 +175,40 @@
     if (!ctxTargetPath) return;
 
     switch (id) {
+      case 'export-html': {
+        try {
+          const { readFile } = await import('../lib/bridge/commands');
+          const { content } = await readFile(ctxTargetPath);
+          const { parseMarkdown } = await import('../lib/editor/serializer');
+          const html = parseMarkdown(content);
+          const fileName = ctxTargetPath.split('/').pop()?.replace(/\.(md|markdown)$/i, '.html') ?? 'export.html';
+          const fullHtml = `<!DOCTYPE html>\n<html>\n<head>\n<meta charset="utf-8">\n<title>${fileName}</title>\n<style>body{font-family:system-ui;max-width:720px;margin:2rem auto;padding:0 1rem;color:#e0e0e0;background:#1a1a2e;}a{color:#6366f1;}pre{background:#111;padding:1rem;border-radius:8px;overflow-x:auto;}code{font-family:monospace;}img{max-width:100%;border-radius:8px;}blockquote{border-left:3px solid #444;padding-left:1rem;color:#aaa;}</style>\n</head>\n<body>\n${html}\n</body>\n</html>`;
+          const blob = new Blob([fullHtml], { type: 'text/html' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = fileName;
+          a.click();
+          URL.revokeObjectURL(url);
+        } catch (err) {
+          logger.error(`Export failed: ${err}`);
+        }
+        break;
+      }
+      case 'pin': {
+        try {
+          if (pinnedPaths.has(ctxTargetPath)) {
+            await removePin(ctxTargetPath);
+            pinnedPaths = new Set([...pinnedPaths].filter(p => p !== ctxTargetPath));
+          } else {
+            await addPin(ctxTargetPath);
+            pinnedPaths = new Set([...pinnedPaths, ctxTargetPath]);
+          }
+        } catch (err) {
+          logger.error(`Pin failed: ${err}`);
+        }
+        break;
+      }
       case 'rename': {
         const oldPath = ctxTargetPath;
         const oldName = oldPath.split('/').pop() ?? oldPath;
@@ -250,6 +296,7 @@
       const u1 = await onCoreReady((e) => {
         logger.info("Core ready, loading file tree");
         files.setFiles(e.file_tree);
+        loadPinned();
       });
 
       const u2 = await onCoreClosed(() => {
@@ -414,6 +461,24 @@
         </div>
       {/snippet}
 
+      {#if pinnedPaths.size > 0}
+        <div class="sidebar-pinned">
+          {#each [...pinnedPaths] as path}
+            {@const file = files.fileMap.get(path)}
+            {#if file}
+              <button
+                class="sidebar-pinned__item"
+                class:sidebar-pinned__item--active={files.activeFilePath === path}
+                onclick={() => handleFileSelect(path)}
+              >
+                <span class="sidebar-pinned__star">★</span>
+                <span class="sidebar-pinned__name">{file.title || file.name}</span>
+              </button>
+            {/if}
+          {/each}
+        </div>
+      {/if}
+
       <SearchBar
         results={searchResults}
         onselect={handleFileSelect}
@@ -463,6 +528,11 @@
         >
           {#snippet trailing()}
             {#if isMarkdownActive}
+              {#if activeEditorState.editor}
+                {@const text = activeEditorState.editor.state.doc.textContent}
+                {@const words = text.trim() ? text.trim().split(/\s+/).length : 0}
+                <span class="tab-bar-wordcount">{words}w</span>
+              {/if}
               <SaveIndicator status={editor.saveStatus} />
             {/if}
           {/snippet}
@@ -568,6 +638,58 @@
     line-height: var(--text-base-leading);
     color: var(--color-text-primary);
     background: #050608;
+  }
+
+  .sidebar-pinned {
+    padding: var(--space-1) calc(var(--space-3) * var(--sidebar-density));
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    margin-bottom: var(--space-1);
+  }
+
+  .sidebar-pinned__item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    width: 100%;
+    padding: 3px var(--space-2);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.56);
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    text-align: left;
+    cursor: pointer;
+    transition: background var(--duration-fast) var(--ease-out);
+  }
+
+  .sidebar-pinned__item:hover {
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--color-text-primary);
+  }
+
+  .sidebar-pinned__item--active {
+    color: var(--color-text-primary);
+    background: rgba(122, 141, 255, 0.08);
+  }
+
+  .sidebar-pinned__star {
+    color: rgba(255, 200, 50, 0.6);
+    font-size: 9px;
+    flex-shrink: 0;
+  }
+
+  .sidebar-pinned__name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .tab-bar-wordcount {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.26);
+    margin-right: var(--space-2);
   }
 
   .sidebar-header {
