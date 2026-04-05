@@ -100,7 +100,7 @@
   .outline__label {
     font-family: var(--font-mono);
     font-size: 10px;
-    color: rgba(255, 255, 255, 0.36);
+    color: var(--color-placeholder);
     text-transform: uppercase;
     letter-spacing: 0.04em;
   }
@@ -117,7 +117,7 @@
     padding: 3px 6px;
     font-family: var(--font-sans);
     font-size: 12px;
-    color: rgba(255, 255, 255, 0.56);
+    color: var(--color-muted-foreground);
     background: transparent;
     border: none;
     border-radius: 4px;
@@ -130,18 +130,18 @@
   }
 
   .outline__item:hover {
-    background: rgba(255, 255, 255, 0.06);
+    background: var(--color-hover);
     color: var(--color-foreground);
   }
 
-  .outline__item--h1 { padding-left: 6px; font-weight: 600; color: rgba(255, 255, 255, 0.72); }
+  .outline__item--h1 { padding-left: 6px; font-weight: 600; color: var(--color-foreground); }
   .outline__item--h2 { padding-left: 18px; }
   .outline__item--h3 { padding-left: 30px; font-size: 11px; }
 
   .outline__empty {
     font-family: var(--font-mono);
     font-size: 10px;
-    color: rgba(255, 255, 255, 0.18);
+    color: var(--color-placeholder);
     padding: 4px 0;
   }
 </style>

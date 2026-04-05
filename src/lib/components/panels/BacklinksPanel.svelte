@@ -61,7 +61,7 @@
   .backlinks__label {
     font-family: var(--font-mono);
     font-size: 10px;
-    color: rgba(255, 255, 255, 0.36);
+    color: var(--color-placeholder);
     text-transform: uppercase;
     letter-spacing: 0.04em;
   }
@@ -69,7 +69,7 @@
   .backlinks__count {
     font-family: var(--font-mono);
     font-size: 10px;
-    color: rgba(255, 255, 255, 0.22);
+    color: var(--color-placeholder);
   }
 
   .backlinks__list {
@@ -84,7 +84,7 @@
     padding: 4px 6px;
     font-family: var(--font-mono);
     font-size: 11px;
-    color: rgba(255, 255, 255, 0.6);
+    color: var(--color-muted-foreground);
     background: transparent;
     border: none;
     border-radius: 4px;
@@ -97,14 +97,14 @@
   }
 
   .backlinks__item:hover {
-    background: rgba(255, 255, 255, 0.06);
+    background: var(--color-hover);
     color: var(--color-foreground);
   }
 
   .backlinks__empty {
     font-family: var(--font-mono);
     font-size: 10px;
-    color: rgba(255, 255, 255, 0.18);
+    color: var(--color-placeholder);
     padding: 4px 0;
   }
 </style>

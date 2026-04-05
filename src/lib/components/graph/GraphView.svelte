@@ -269,8 +269,8 @@
     width: 100%;
     height: 100%;
     overflow: hidden;
-    background: rgba(8, 9, 12, 0.5);
-    border-radius: 12px;
+    background: var(--color-background);
+    border-radius: 8px;
   }
   canvas { display: block; width: 100%; height: 100%; cursor: grab; }
   canvas:active { cursor: grabbing; }
@@ -280,9 +280,9 @@
     right: 8px;
     display: flex;
     gap: 2px;
-    background: rgba(18, 19, 24, 0.85);
+    background: var(--color-popover);
     border-radius: 6px;
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--color-border);
     padding: 2px;
   }
   .gv__btn {
@@ -294,10 +294,8 @@
     border: none;
     border-radius: 4px;
     background: transparent;
-    color: rgba(255, 255, 255, 0.5);
-    font-family: var(--font-mono);
-    font-size: 12px;
+    color: var(--color-muted-foreground);
     cursor: pointer;
   }
-  .gv__btn:hover { background: rgba(255, 255, 255, 0.08); color: var(--color-foreground); }
+  .gv__btn:hover { background: var(--color-hover); color: var(--color-foreground); }
 </style>
