@@ -44,43 +44,35 @@
   }
 
   let dashboardEl: HTMLDivElement | undefined = $state();
-  let titleAnimated = false;
-  let statsAnimated = false;
-  let rowsAnimated = false;
+  let animatedEls = new WeakSet<Element>();
+
+  function animateNewElements(selector: string, delay: number) {
+    if (!dashboardEl) return;
+    requestAnimationFrame(() => {
+      const els = dashboardEl!.querySelectorAll(selector);
+      const newEls = Array.from(els).filter(el => !animatedEls.has(el));
+      if (newEls.length === 0) return;
+      newEls.forEach(el => animatedEls.add(el));
+      presets.staggerIn(newEls, { delay, staggerDelay: 30 });
+    });
+  }
 
   onMount(() => {
     if (!dashboardEl) return;
-
     const title = dashboardEl.querySelector('.dashboard__name');
-    if (title && !titleAnimated) {
-      titleAnimated = true;
-      presets.fadeInUp(title, { duration: 400 });
-    }
+    if (title) { animatedEls.add(title); presets.fadeInUp(title, { duration: 400 }); }
 
     const stats = dashboardEl.querySelectorAll('.stat');
-    if (stats.length && !statsAnimated) {
-      statsAnimated = true;
+    if (stats.length) {
+      Array.from(stats).forEach(el => animatedEls.add(el));
       presets.staggerIn(Array.from(stats), { delay: 100, staggerDelay: 60 });
     }
   });
 
-  // Rows load async — animate them when data arrives
-  $effect(() => {
-    // Read reactive deps to trigger on data change
-    const _linked = graphStats.mostConnected;
-    const _recent = recentFiles;
-    const _pinned = pinnedFiles;
-
-    if (!dashboardEl || rowsAnimated) return;
-
-    requestAnimationFrame(() => {
-      const rows = dashboardEl!.querySelectorAll('.dashboard__row');
-      if (rows.length > 0) {
-        rowsAnimated = true;
-        presets.staggerIn(Array.from(rows), { delay: 50, staggerDelay: 30 });
-      }
-    });
-  });
+  // Animate rows as each data source arrives
+  $effect(() => { void graphStats.mostConnected; animateNewElements('.dashboard__row', 50); });
+  $effect(() => { void recentFiles; animateNewElements('.dashboard__row', 50); });
+  $effect(() => { void pinnedFiles; animateNewElements('.dashboard__row', 50); });
 </script>
 
 <div class="dashboard" bind:this={dashboardEl}>
