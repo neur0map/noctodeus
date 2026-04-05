@@ -9,6 +9,7 @@
     onselect,
     ontoggle,
     oncontextmenu,
+    onmove,
   }: {
     node: TreeNode;
     depth?: number;
@@ -16,9 +17,11 @@
     onselect: (path: string) => void;
     ontoggle: (path: string) => void;
     oncontextmenu?: (path: string, isDir: boolean, e: MouseEvent) => void;
+    onmove?: (sourcePath: string, targetDir: string) => void;
   } = $props();
 
   let isActive = $derived(node.path === activeFilePath);
+  let dropOver = $state(false);
 
   function handleClick() {
     if (node.is_directory) {
@@ -35,22 +38,45 @@
     }
   }
 
+  function handleDragStart(e: DragEvent) {
+    if (!e.dataTransfer) return;
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', node.path);
+    e.dataTransfer.setData('application/x-noctodeus-path', node.path);
+  }
+
+  function handleDragOver(e: DragEvent) {
+    if (!node.is_directory) return;
+    if (!e.dataTransfer?.types.includes('application/x-noctodeus-path')) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    dropOver = true;
+  }
+
+  function handleDragLeave() {
+    dropOver = false;
+  }
+
+  function handleDrop(e: DragEvent) {
+    dropOver = false;
+    if (!node.is_directory || !e.dataTransfer) return;
+    e.preventDefault();
+    const sourcePath = e.dataTransfer.getData('application/x-noctodeus-path');
+    if (!sourcePath || sourcePath === node.path) return;
+    // Don't allow dropping into itself or its own parent
+    if (sourcePath.startsWith(node.path + '/')) return;
+    onmove?.(sourcePath, node.path);
+  }
+
   function getFileIcon(ext: string | null): string {
     if (!ext) return "\u25CB";
     switch (ext.toLowerCase()) {
-      case "md":
-        return "\u25A0";
-      case "txt":
-        return "\u25A1";
-      case "json":
-        return "\u25C6";
-      case "yaml":
-      case "yml":
-        return "\u25C7";
-      case "toml":
-        return "\u25C8";
-      default:
-        return "\u25CB";
+      case "md": return "\u25A0";
+      case "txt": return "\u25A1";
+      case "json": return "\u25C6";
+      case "yaml": case "yml": return "\u25C7";
+      case "toml": return "\u25C8";
+      default: return "\u25CB";
     }
   }
 </script>
@@ -64,10 +90,16 @@
   <button
     class="tree-node__row"
     class:tree-node__row--active={isActive}
+    class:tree-node__row--drop-over={dropOver}
     style:padding-left="{depth * 16 + 8}px"
     onclick={handleClick}
     onkeydown={handleKeydown}
     oncontextmenu={(e) => { e.preventDefault(); oncontextmenu?.(node.path, node.is_directory, e); }}
+    draggable={!node.is_directory}
+    ondragstart={handleDragStart}
+    ondragover={handleDragOver}
+    ondragleave={handleDragLeave}
+    ondrop={handleDrop}
     tabindex={0}
     aria-label={node.name}
   >
@@ -102,6 +134,7 @@
           {onselect}
           {ontoggle}
           {oncontextmenu}
+          {onmove}
         />
       {/each}
     </div>
@@ -151,6 +184,12 @@
     );
     color: var(--color-text-primary);
     border-left-color: var(--color-accent);
+  }
+
+  .tree-node__row--drop-over {
+    background: rgba(122, 141, 255, 0.12);
+    border-left-color: var(--color-accent);
+    box-shadow: inset 0 0 8px rgba(99, 102, 241, 0.1);
   }
 
   .tree-node__chevron {

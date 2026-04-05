@@ -9,6 +9,7 @@
     ontoggle,
     oncontextmenu,
     ondelete,
+    onmove,
   }: {
     tree?: TreeNode[];
     activeFilePath?: string | null;
@@ -16,6 +17,7 @@
     ontoggle: (path: string) => void;
     oncontextmenu?: (path: string, isDir: boolean, e: MouseEvent) => void;
     ondelete?: () => void;
+    onmove?: (sourcePath: string, targetDir: string) => void;
   } = $props();
 
   let container: HTMLElement | undefined = $state();
@@ -70,6 +72,20 @@
   aria-label="File tree"
   bind:this={container}
   onkeydown={handleKeydown}
+  ondragover={(e) => {
+    if (e.dataTransfer?.types.includes('application/x-noctodeus-path')) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+    }
+  }}
+  ondrop={(e) => {
+    if (!e.dataTransfer) return;
+    const sourcePath = e.dataTransfer.getData('application/x-noctodeus-path');
+    if (sourcePath) {
+      e.preventDefault();
+      onmove?.(sourcePath, '.');
+    }
+  }}
 >
   {#if tree.length === 0}
     <div class="file-tree__empty">
@@ -83,6 +99,7 @@
         {onselect}
         {ontoggle}
         {oncontextmenu}
+        {onmove}
       />
     {/each}
   {/if}

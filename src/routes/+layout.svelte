@@ -326,6 +326,20 @@
     }
   }
 
+  async function handleFileMove(sourcePath: string, targetDir: string) {
+    try {
+      const { moveFile } = await import('../lib/bridge/commands');
+      const updated = await moveFile(sourcePath, targetDir);
+      const newPath = updated.path;
+      files.removeFile(sourcePath);
+      files.addFile(updated);
+      tabsState.updateFileTab(sourcePath, updated);
+      if (files.activeFilePath === sourcePath) files.setActiveFile(newPath);
+    } catch (err) {
+      logger.error(`Move failed: ${err}`);
+    }
+  }
+
   async function handleDeleteFile() {
     const path = files.activeFilePath;
     if (!path) return;
@@ -390,6 +404,7 @@
         ontoggle={handleDirToggle}
         oncontextmenu={handleTreeContextMenu}
         ondelete={handleDeleteFile}
+        onmove={handleFileMove}
       />
 
       {#snippet footer()}
