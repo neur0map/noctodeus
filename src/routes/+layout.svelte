@@ -48,7 +48,7 @@
   import { APP_SHORTCUTS } from "../lib/utils/shortcuts";
 
   import Ellipsis from "@lucide/svelte/icons/ellipsis";
-  import Star from "@lucide/svelte/icons/star";
+
   import Menu from "@lucide/svelte/icons/menu";
   import PanelRight from "@lucide/svelte/icons/panel-right";
   import Plus from "@lucide/svelte/icons/plus";
@@ -624,24 +624,6 @@
         </div>
       {/snippet}
 
-      {#if pinned.paths.size > 0}
-        <div class="sidebar-pinned">
-          {#each [...pinned.paths] as path}
-            {@const file = files.fileMap.get(path)}
-            {#if file}
-              <button
-                class="sidebar-pinned__item"
-                class:sidebar-pinned__item--active={files.activeFilePath === path}
-                onclick={() => handleFileSelect(path)}
-              >
-                <Star size={10} class="sidebar-pinned__star" />
-                <span class="sidebar-pinned__name">{file.title || file.name}</span>
-              </button>
-            {/if}
-          {/each}
-        </div>
-      {/if}
-
       <SearchBar
         results={searchResults}
         onselect={handleFileSelect}
@@ -849,51 +831,6 @@
   .sidebar-header__btn:hover {
     color: var(--color-foreground);
     background: var(--color-hover);
-  }
-
-  /* ── Sidebar pinned ── */
-  .sidebar-pinned {
-    padding: 4px 12px;
-    border-bottom: 1px solid var(--color-border);
-    margin-bottom: 4px;
-  }
-
-  .sidebar-pinned__item {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    width: 100%;
-    padding: 3px 8px;
-    font-family: var(--font-mono);
-    font-size: 11px;
-    color: var(--color-muted-foreground);
-    background: transparent;
-    border: none;
-    border-radius: 4px;
-    text-align: left;
-    cursor: pointer;
-    transition: background 150ms var(--ease-expo-out);
-  }
-
-  .sidebar-pinned__item:hover {
-    background: var(--color-hover);
-    color: var(--color-foreground);
-  }
-
-  .sidebar-pinned__item--active {
-    color: var(--color-foreground);
-    background: rgba(99, 102, 241, 0.08);
-  }
-
-  .sidebar-pinned :global(.sidebar-pinned__star) {
-    color: rgba(255, 200, 50, 0.6);
-    flex-shrink: 0;
-  }
-
-  .sidebar-pinned__name {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
   }
 
   /* ── Sidebar footer ── */
