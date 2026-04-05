@@ -3,7 +3,7 @@ import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
 import TaskList from '@tiptap/extension-task-list';
 import TaskItem from '@tiptap/extension-task-item';
 import Link from '@tiptap/extension-link';
-import { Table } from '@tiptap/extension-table';
+import { TableKit } from '@tiptap/extension-table';
 import Highlight from '@tiptap/extension-highlight';
 import Subscript from '@tiptap/extension-subscript';
 import Superscript from '@tiptap/extension-superscript';
@@ -60,12 +60,8 @@ export function createEditorExtensions(
       autolink: true,
     }),
 
-    // Tables
-    Table.configure({
-      resizable: true,
-      handleWidth: 5,
-      cellMinWidth: 80,
-    }),
+    // Tables (TableKit bundles Table, TableRow, TableCell, TableHeader)
+    TableKit,
 
     // Text formatting
     Highlight.configure({

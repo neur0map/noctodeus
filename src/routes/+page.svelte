@@ -319,7 +319,14 @@
       }
     };
     window.addEventListener("beforeunload", handleBeforeUnload);
-    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+
+    const handleOpenCoreEvent = () => handleOpenCore();
+    window.addEventListener("noctodeus-open-core", handleOpenCoreEvent);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      window.removeEventListener("noctodeus-open-core", handleOpenCoreEvent);
+    };
   });
 
   // Watch for sidebar file tree clicks (layout sets files.activeFilePath)
