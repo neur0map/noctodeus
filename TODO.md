@@ -49,3 +49,9 @@
 - [x] Cross-platform keyboard shortcuts (Cmd/Ctrl)
 - [x] Cross-platform path normalization
 - [x] AGPLv3 license
+- [x] TipTap extensions (tables, highlight, sub/sup, underline, text align, typography, color, character count, focus)
+- [x] Math rendering (KaTeX via @vscode/markdown-it-katex)
+- [x] Core switcher dropdown (multiple vaults, switch/open/create)
+- [x] Lucide icon library (replaced all Unicode and inline SVG icons)
+- [x] Bubble toolbar (bold, italic, underline, strike, highlight, code, link + block type picker)
+- [x] Search content inside files (FTS5 with snippet highlights)
