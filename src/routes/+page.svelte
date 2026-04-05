@@ -15,9 +15,9 @@
   import { getEditorState } from "../lib/stores/editor.svelte";
   import { getGraphState } from "../lib/stores/graph.svelte";
   import { getTabsState } from "../lib/stores/tabs.svelte";
+  import { getPinnedState } from "../lib/stores/pinned.svelte";
   import {
     readFile,
-    searchPinned,
     createFile,
     openCore,
     createCore,
@@ -49,7 +49,7 @@
       .sort((a, b) => b.modified_at - a.modified_at)
       .slice(0, 10),
   );
-  let pinnedFiles = $state<FileNode[]>([]);
+  const pinned = getPinnedState();
   let editorRef: EditorComponent | undefined = $state();
 
   let isMarkdown = $derived(
@@ -216,13 +216,9 @@
   }
 
   async function refreshHomeLists() {
-    if (!core.activeCore) {
-      pinnedFiles = [];
-      return;
-    }
-
+    if (!core.activeCore) return;
     try {
-      pinnedFiles = await searchPinned();
+      await pinned.load();
     } catch (err) {
       logger.warn(`Failed to refresh home lists: ${errorMessage(err)}`);
     }
@@ -363,7 +359,7 @@
     <Dashboard
       coreName={core.activeCore?.name ?? "Noctodeus"}
       {recentFiles}
-      {pinnedFiles}
+      pinnedFiles={pinned.files}
       totalNotes={Array.from(files.fileMap.values()).filter(f => !f.is_directory).length}
       graphStats={graphState.stats}
       graphScanning={graphState.scanning}

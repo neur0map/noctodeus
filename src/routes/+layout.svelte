@@ -40,7 +40,8 @@
     onFileDeleted,
     onFileRenamed,
   } from "../lib/bridge/events";
-  import { createFile, deleteFile, renameFile, duplicateFile, createDir, searchQuery, addPin, removePin, searchPinned } from "../lib/bridge/commands";
+  import { createFile, deleteFile, renameFile, duplicateFile, createDir, searchQuery } from "../lib/bridge/commands";
+  import { getPinnedState } from "../lib/stores/pinned.svelte";
   import { ask as tauriAsk } from "@tauri-apps/plugin-dialog";
   import type { SearchHit } from "../lib/types/core";
   import { logger } from "../lib/logger";
@@ -63,6 +64,7 @@
   const graphState = getGraphState();
   const activeEditorState = getActiveEditorState();
   const appSettings = getSettings();
+  const pinned = getPinnedState();
 
   let unlisteners: UnlistenFn[] = [];
   let overlayOpen = $derived(ui.quickOpenVisible || ui.commandPaletteVisible);
@@ -142,15 +144,6 @@
     }
   }
 
-  // Pinned files state
-  let pinnedPaths = $state<Set<string>>(new Set());
-
-  async function loadPinned() {
-    try {
-      const pinned = await searchPinned();
-      pinnedPaths = new Set(pinned.map(f => f.path));
-    } catch {}
-  }
 
   async function handleSearch(query: string) {
     // Filter the file tree instantly as user types
@@ -211,7 +204,7 @@
       { id: 'sep2', label: '', separator: true },
       { id: 'delete', label: 'Delete', danger: true },
     ] : [
-      { id: 'pin', label: pinnedPaths.has(path) ? 'Unpin' : 'Pin' },
+      { id: 'pin', label: pinned.isPinned(path) ? 'Unpin' : 'Pin' },
       { id: 'rename', label: 'Rename' },
       { id: 'duplicate', label: 'Duplicate' },
       { id: 'export', label: 'Export...' },
@@ -245,13 +238,7 @@
       }
       case 'pin': {
         try {
-          if (pinnedPaths.has(ctxTargetPath)) {
-            await removePin(ctxTargetPath);
-            pinnedPaths = new Set([...pinnedPaths].filter(p => p !== ctxTargetPath));
-          } else {
-            await addPin(ctxTargetPath);
-            pinnedPaths = new Set([...pinnedPaths, ctxTargetPath]);
-          }
+          await pinned.toggle(ctxTargetPath);
         } catch (err) {
           logger.error(`Pin failed: ${err}`);
         }
@@ -346,7 +333,7 @@
       const u1 = await onCoreReady((e) => {
         logger.info("Core ready, loading file tree");
         files.setFiles(e.file_tree);
-        loadPinned();
+        pinned.load();
       });
 
       const u2 = await onCoreClosed(() => {
@@ -637,9 +624,9 @@
         </div>
       {/snippet}
 
-      {#if pinnedPaths.size > 0}
+      {#if pinned.paths.size > 0}
         <div class="sidebar-pinned">
-          {#each [...pinnedPaths] as path}
+          {#each [...pinned.paths] as path}
             {@const file = files.fileMap.get(path)}
             {#if file}
               <button
