@@ -91,6 +91,44 @@
   // Search state
   let searchResults = $state<SearchHit[]>([]);
 
+  // Sidebar ⋯ menu state
+  let sidebarMenuVisible = $state(false);
+  let sidebarMenuPosition = $state({ top: 0, left: 0 });
+
+  const sidebarMenuItems: MenuItem[] = [
+    { id: 'new-file', label: 'New File', icon: '＋' },
+    { id: 'new-folder', label: 'New Folder', icon: '▸' },
+    { id: 'sep1', label: '', separator: true },
+    { id: 'sort-name-asc', label: 'Sort A → Z', icon: '↑' },
+    { id: 'sort-name-desc', label: 'Sort Z → A', icon: '↓' },
+    { id: 'sort-modified-new', label: 'Sort Newest', icon: '◷' },
+    { id: 'sort-modified-old', label: 'Sort Oldest', icon: '◶' },
+  ];
+
+  async function handleSidebarMenu(id: string) {
+    sidebarMenuVisible = false;
+    switch (id) {
+      case 'new-file': {
+        const rawName = await showInputDialog('New file name', 'untitled');
+        if (!rawName) return;
+        const name = sanitizeFileName(rawName, false);
+        try {
+          const node = await createFile(name, '');
+          files.addFile(node);
+          files.setActiveFile(node.path);
+        } catch (err) { logger.error(`Create file failed: ${err}`); }
+        break;
+      }
+      case 'new-folder':
+        await handleNewFolder();
+        break;
+      case 'sort-name-asc': files.setSortMode('name-asc'); break;
+      case 'sort-name-desc': files.setSortMode('name-desc'); break;
+      case 'sort-modified-new': files.setSortMode('modified-new'); break;
+      case 'sort-modified-old': files.setSortMode('modified-old'); break;
+    }
+  }
+
   // Pinned files state
   let pinnedPaths = $state<Set<string>>(new Set());
 
@@ -181,15 +219,21 @@
           const { content } = await readFile(ctxTargetPath);
           const { parseMarkdown } = await import('../lib/editor/serializer');
           const html = parseMarkdown(content);
-          const fileName = ctxTargetPath.split('/').pop()?.replace(/\.(md|markdown)$/i, '.html') ?? 'export.html';
-          const fullHtml = `<!DOCTYPE html>\n<html>\n<head>\n<meta charset="utf-8">\n<title>${fileName}</title>\n<style>body{font-family:system-ui;max-width:720px;margin:2rem auto;padding:0 1rem;color:#e0e0e0;background:#1a1a2e;}a{color:#6366f1;}pre{background:#111;padding:1rem;border-radius:8px;overflow-x:auto;}code{font-family:monospace;}img{max-width:100%;border-radius:8px;}blockquote{border-left:3px solid #444;padding-left:1rem;color:#aaa;}</style>\n</head>\n<body>\n${html}\n</body>\n</html>`;
-          const blob = new Blob([fullHtml], { type: 'text/html' });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = fileName;
-          a.click();
-          URL.revokeObjectURL(url);
+          const defaultName = ctxTargetPath.split('/').pop()?.replace(/\.(md|markdown)$/i, '.html') ?? 'export.html';
+          const fullHtml = `<!DOCTYPE html>\n<html>\n<head>\n<meta charset="utf-8">\n<title>${defaultName}</title>\n<style>body{font-family:system-ui,-apple-system,sans-serif;max-width:720px;margin:2rem auto;padding:0 1rem;color:#e0e0e0;background:#1a1a2e;line-height:1.7;}a{color:#6366f1;}pre{background:#111;padding:1rem;border-radius:8px;overflow-x:auto;}code{font-family:monospace;font-size:0.9em;}img{max-width:100%;border-radius:8px;}blockquote{border-left:3px solid #444;padding-left:1rem;color:#aaa;}h1,h2,h3{font-weight:600;letter-spacing:-0.02em;}</style>\n</head>\n<body>\n${html}\n</body>\n</html>`;
+
+          // Use Tauri save dialog
+          const { save: saveDialog } = await import('@tauri-apps/plugin-dialog');
+          const savePath = await saveDialog({
+            defaultPath: defaultName,
+            filters: [{ name: 'HTML', extensions: ['html'] }],
+          });
+          if (savePath) {
+            const { writeFile: tauriWrite } = await import('@tauri-apps/plugin-fs');
+            await tauriWrite(savePath, new TextEncoder().encode(fullHtml));
+            const { toast } = await import('../lib/stores/toast.svelte');
+            toast.success(`Exported to ${savePath.split('/').pop()}`);
+          }
         } catch (err) {
           logger.error(`Export failed: ${err}`);
         }
@@ -452,11 +496,11 @@
           <span class="sidebar-header__name">
             {core.activeCore?.name ?? "Noctodeus"}
           </span>
-          <button class="sidebar-header__btn" onclick={handleNewFolder} title="New folder">
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-              <path d="M2 3.5h3.5l1.5 1.5H12v6H2V3.5z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>
-              <path d="M7 7v3M5.5 8.5h3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
-            </svg>
+          <button class="sidebar-header__btn" onclick={(e) => {
+            sidebarMenuPosition = { top: e.clientY + 4, left: e.clientX - 140 };
+            sidebarMenuVisible = true;
+          }} title="Actions">
+            ⋯
           </button>
         </div>
       {/snippet}
@@ -501,16 +545,11 @@
           <span class="sidebar-footer__count">
             {files.fileMap.size} files
           </span>
-          <select
-            class="sidebar-footer__sort"
-            value={files.sortMode}
-            onchange={(e) => files.setSortMode((e.target as HTMLSelectElement).value as any)}
-          >
-            <option value="name-asc">A → Z</option>
-            <option value="name-desc">Z → A</option>
-            <option value="modified-new">Newest</option>
-            <option value="modified-old">Oldest</option>
-          </select>
+          {#if activeEditorState.editor}
+            <span class="sidebar-footer__words">
+              {activeEditorState.editor.storage.characterCount?.words?.() ?? activeEditorState.editor.state.doc.textContent.trim().split(/\s+/).filter(Boolean).length}w
+            </span>
+          {/if}
         </div>
       {/snippet}
     </Sidebar>
@@ -528,11 +567,6 @@
         >
           {#snippet trailing()}
             {#if isMarkdownActive}
-              {#if activeEditorState.editor}
-                {@const text = activeEditorState.editor.state.doc.textContent}
-                {@const words = text.trim() ? text.trim().split(/\s+/).length : 0}
-                <span class="tab-bar-wordcount">{words}w</span>
-              {/if}
               <SaveIndicator status={editor.saveStatus} />
             {/if}
           {/snippet}
@@ -621,6 +655,14 @@
   onclose={() => ctxVisible = false}
 />
 
+<ContextMenu
+  visible={sidebarMenuVisible}
+  position={sidebarMenuPosition}
+  items={sidebarMenuItems}
+  onselect={handleSidebarMenu}
+  onclose={() => sidebarMenuVisible = false}
+/>
+
 <InputDialog
   visible={inputDialogVisible}
   title={inputDialogTitle}
@@ -685,13 +727,6 @@
     white-space: nowrap;
   }
 
-  .tab-bar-wordcount {
-    font-family: var(--font-mono);
-    font-size: 10px;
-    color: rgba(255, 255, 255, 0.26);
-    margin-right: var(--space-2);
-  }
-
   .sidebar-header {
     display: flex;
     align-items: center;
@@ -739,29 +774,12 @@
     height: 24px;
   }
 
-  .sidebar-footer__count {
+  .sidebar-footer__count,
+  .sidebar-footer__words {
     font-family: var(--font-mono);
     font-size: var(--text-xs);
     line-height: var(--text-xs-leading);
     color: rgba(255, 255, 255, 0.36);
-  }
-
-  .sidebar-footer__sort {
-    font-family: var(--font-mono);
-    font-size: 10px;
-    color: rgba(255, 255, 255, 0.36);
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    outline: none;
-    -webkit-appearance: none;
-    appearance: none;
-    padding: 0 2px;
-  }
-
-  .sidebar-footer__sort option {
-    background: var(--color-bg-elevated);
-    color: var(--color-text-primary);
   }
 
   .utility-rail {
