@@ -90,11 +90,11 @@
 
 <style>
   .outline {
-    padding: 0 var(--space-3);
+    padding: 0 12px;
   }
 
   .outline__header {
-    padding: var(--space-2) 0;
+    padding: 8px 0;
   }
 
   .outline__label {
@@ -126,12 +126,12 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    transition: background var(--duration-fast) var(--ease-out);
+    transition: background 150ms var(--ease-expo-out);
   }
 
   .outline__item:hover {
     background: rgba(255, 255, 255, 0.06);
-    color: var(--color-text-primary);
+    color: var(--color-foreground);
   }
 
   .outline__item--h1 { padding-left: 6px; font-weight: 600; color: rgba(255, 255, 255, 0.72); }
@@ -142,6 +142,6 @@
     font-family: var(--font-mono);
     font-size: 10px;
     color: rgba(255, 255, 255, 0.18);
-    padding: var(--space-1) 0;
+    padding: 4px 0;
   }
 </style>

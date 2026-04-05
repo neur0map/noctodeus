@@ -172,7 +172,7 @@
       0 0 0 1px rgba(255, 255, 255, 0.03);
     backdrop-filter: blur(20px);
     padding: 3px;
-    animation: bt-in var(--duration-fast) var(--ease-out) both;
+    animation: bt-in 150ms var(--ease-expo-out) both;
     user-select: none;
   }
 
@@ -211,13 +211,13 @@
     font-weight: 600;
     cursor: pointer;
     transition:
-      background var(--duration-fast) var(--ease-out),
-      color var(--duration-fast) var(--ease-out);
+      background 150ms var(--ease-expo-out),
+      color 150ms var(--ease-expo-out);
   }
 
   .bt__btn:hover {
     background: rgba(255, 255, 255, 0.08);
-    color: var(--color-text-primary);
+    color: var(--color-foreground);
   }
 
   .bt__btn--active {
@@ -255,7 +255,7 @@
   .bt__menu-item {
     display: flex;
     align-items: center;
-    gap: var(--space-2);
+    gap: 8px;
     padding: 5px 8px;
     border: none;
     border-radius: 6px;
@@ -265,12 +265,12 @@
     font-size: 13px;
     cursor: pointer;
     text-align: left;
-    transition: background var(--duration-fast) var(--ease-out);
+    transition: background 150ms var(--ease-expo-out);
   }
 
   .bt__menu-item:hover {
     background: rgba(255, 255, 255, 0.06);
-    color: var(--color-text-primary);
+    color: var(--color-foreground);
   }
 
   .bt__menu-item--active {

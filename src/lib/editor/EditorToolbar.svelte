@@ -211,8 +211,8 @@
   .editor-toolbar {
     display: flex;
     align-items: center;
-    height: var(--stage-toolbar-height);
-    padding: 0 var(--space-3);
+    height: 42px;
+    padding: 0 12px;
     background: transparent;
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     gap: 2px;
@@ -226,24 +226,24 @@
     justify-content: center;
     min-width: 28px;
     height: 26px;
-    padding: 0 var(--space-1);
+    padding: 0 4px;
     border: none;
     border-radius: 4px;
     background: transparent;
     color: rgba(255, 255, 255, 0.6);
     font-family: var(--font-mono);
-    font-size: var(--text-xs);
+    font-size: 12px;
     line-height: 1;
     cursor: pointer;
     user-select: none;
     transition:
-      background var(--duration-fast) var(--ease-out),
-      color var(--duration-fast) var(--ease-out);
+      background 150ms var(--ease-expo-out),
+      color 150ms var(--ease-expo-out);
   }
 
   .toolbar-btn:hover {
     background: rgba(255, 255, 255, 0.06);
-    color: var(--color-text-primary);
+    color: var(--color-foreground);
   }
 
   .toolbar-btn.active {
@@ -259,7 +259,7 @@
     width: 1px;
     height: 16px;
     background: rgba(255, 255, 255, 0.06);
-    margin: 0 var(--space-1);
+    margin: 0 4px;
     flex-shrink: 0;
   }
 
@@ -275,20 +275,20 @@
     background: rgba(11, 13, 18, 0.98);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 6px;
-    padding: var(--space-1);
-    box-shadow: var(--shadow-elevated);
-    animation: fade-in var(--duration-fast) var(--ease-out) both;
+    padding: 4px;
+    box-shadow: var(--shadow-float);
+    animation: fade-in 150ms var(--ease-expo-out) both;
   }
 
   .toolbar-popover__input {
     width: 220px;
-    padding: var(--space-1) var(--space-2);
-    background: var(--color-bg-surface);
-    border: 1px solid var(--color-border-subtle);
+    padding: 4px 8px;
+    background: var(--color-card);
+    border: 1px solid var(--color-border);
     border-radius: 4px;
-    color: var(--color-text-primary);
+    color: var(--color-foreground);
     font-family: var(--font-mono);
-    font-size: var(--text-xs);
+    font-size: 12px;
     outline: none;
   }
 

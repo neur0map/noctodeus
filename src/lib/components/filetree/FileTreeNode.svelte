@@ -154,13 +154,13 @@
   .tree-node__row {
     display: flex;
     align-items: center;
-    gap: var(--space-1);
+    gap: 4px;
     width: 100%;
-    height: calc(30px * var(--sidebar-density));
-    padding-right: var(--space-2);
+    height: 30px;
+    padding-right: 8px;
     font-family: var(--font-mono);
     font-size: 12px;
-    line-height: var(--text-sm-leading);
+    line-height: 1.5;
     color: rgba(255, 255, 255, 0.56);
     background: transparent;
     border: none;
@@ -170,10 +170,10 @@
     user-select: none;
     text-align: left;
     transition:
-      background var(--duration-fast) var(--ease-out),
-      color var(--duration-fast) var(--ease-out),
-      border-color var(--duration-fast) var(--ease-out),
-      opacity var(--duration-fast) var(--ease-out);
+      background 150ms var(--ease-expo-out),
+      color 150ms var(--ease-expo-out),
+      border-color 150ms var(--ease-expo-out),
+      opacity 150ms var(--ease-expo-out);
   }
 
   .tree-node__row:hover {
@@ -188,7 +188,7 @@
 
   .tree-node__row--active {
     background: linear-gradient(90deg, rgba(122, 141, 255, 0.12), rgba(122, 141, 255, 0.03));
-    color: var(--color-text-primary);
+    color: var(--color-foreground);
     border-left-color: var(--color-accent);
   }
 
@@ -199,7 +199,7 @@
   .tree-node__row--drop-target {
     background: rgba(122, 141, 255, 0.14);
     border-left-color: var(--color-accent);
-    color: var(--color-text-primary);
+    color: var(--color-foreground);
   }
 
   .tree-node__chevron {
@@ -209,8 +209,8 @@
     width: 16px;
     height: 16px;
     flex-shrink: 0;
-    color: var(--color-text-muted);
-    transition: transform var(--duration-fast) var(--ease-out);
+    color: var(--color-placeholder);
+    transition: transform 150ms var(--ease-expo-out);
   }
 
   .tree-node__chevron--expanded {
@@ -240,7 +240,7 @@
     padding: 0 4px;
     font-family: var(--font-mono);
     font-size: 12px;
-    color: var(--color-text-primary);
+    color: var(--color-foreground);
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid var(--color-accent);
     border-radius: 3px;
@@ -252,8 +252,8 @@
     margin-left: 7px;
     padding-left: 9px;
     border-left: 1px solid rgba(255, 255, 255, 0.06);
-    animation: expand var(--duration-fast) var(--ease-out);
-    transition: border-color var(--duration-normal) var(--ease-out);
+    animation: expand 150ms var(--ease-expo-out);
+    transition: border-color 150ms var(--ease-expo-out);
   }
 
   .tree-node__children:hover {

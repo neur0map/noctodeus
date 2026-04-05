@@ -67,7 +67,7 @@
           padding: 0 12px;
           font-family: var(--font-mono);
           font-size: 12px;
-          color: var(--color-text-primary);
+          color: var(--color-foreground);
           background: rgba(25, 26, 35, 0.95);
           border: 1px solid rgba(255, 255, 255, 0.12);
           border-radius: 8px;
@@ -158,7 +158,7 @@
   .tab-bar {
     display: flex;
     align-items: stretch;
-    height: var(--shell-header-height);
+    height: 52px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.045);
     background: transparent;
     flex-shrink: 0;
@@ -193,6 +193,6 @@
     display: flex;
     align-items: center;
     flex-shrink: 0;
-    padding: 0 var(--space-2);
+    padding: 0 8px;
   }
 </style>

@@ -33,7 +33,7 @@
 
   .content-area__header {
     flex-shrink: 0;
-    padding: 0 calc(var(--stage-outer-gutter) * var(--density-scale));
+    padding: 0 12px;
   }
 
   .content-area__body {
@@ -41,6 +41,6 @@
     min-height: 0;
     overflow-y: auto;
     overflow-x: hidden;
-    padding: calc(var(--stage-outer-gutter) * var(--density-scale));
+    padding: 12px;
   }
 </style>

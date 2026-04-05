@@ -35,32 +35,32 @@
   .search-input {
     display: flex;
     align-items: center;
-    padding: 0 var(--space-4);
-    border-bottom: 1px solid var(--color-border-subtle);
+    padding: 0 16px;
+    border-bottom: 1px solid var(--color-border);
   }
 
   .search-input__prefix {
     font-family: var(--font-mono);
-    font-size: var(--text-lg);
-    line-height: var(--text-lg-leading);
-    color: var(--color-text-muted);
-    margin-right: var(--space-1);
+    font-size: 18px;
+    line-height: 1.4;
+    color: var(--color-placeholder);
+    margin-right: 4px;
     user-select: none;
   }
 
   .search-input__field {
     flex: 1;
-    padding: var(--space-4) 0;
+    padding: 16px 0;
     font-family: var(--font-mono);
-    font-size: var(--text-lg);
-    line-height: var(--text-lg-leading);
-    color: var(--color-text-primary);
+    font-size: 18px;
+    line-height: 1.4;
+    color: var(--color-foreground);
     background: transparent;
     border: none;
     outline: none;
   }
 
   .search-input__field::placeholder {
-    color: var(--color-text-muted);
+    color: var(--color-placeholder);
   }
 </style>

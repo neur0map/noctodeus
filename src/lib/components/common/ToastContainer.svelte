@@ -28,11 +28,11 @@
 <style>
   .toast-container {
     position: fixed;
-    bottom: var(--space-4);
-    right: var(--space-4);
+    bottom: 16px;
+    right: 16px;
     display: flex;
     flex-direction: column-reverse;
-    gap: var(--space-2);
+    gap: 8px;
     z-index: 200;
     pointer-events: none;
   }
@@ -43,10 +43,10 @@
 
   .toast-container__overflow {
     font-family: var(--font-mono);
-    font-size: var(--text-xs);
-    color: var(--color-text-muted);
+    font-size: 12px;
+    color: var(--color-placeholder);
     text-align: right;
-    padding-right: var(--space-2);
+    padding-right: 8px;
     pointer-events: none;
   }
 </style>

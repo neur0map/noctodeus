@@ -98,7 +98,7 @@
       0 0 0 1px rgba(255, 255, 255, 0.03);
     backdrop-filter: blur(20px);
     overflow: hidden;
-    animation: mp-in var(--duration-fast) var(--ease-out) both;
+    animation: mp-in 150ms var(--ease-expo-out) both;
   }
 
   @keyframes mp-in {
@@ -123,34 +123,34 @@
     border-bottom: 2px solid transparent;
     cursor: pointer;
     letter-spacing: 0.02em;
-    transition: color var(--duration-fast) var(--ease-out);
+    transition: color 150ms var(--ease-expo-out);
   }
 
   .mp__tab:hover { color: rgba(255, 255, 255, 0.56); }
 
   .mp__tab--active {
-    color: var(--color-text-primary);
+    color: var(--color-foreground);
     border-bottom-color: var(--color-accent);
   }
 
   .mp__upload {
-    padding: var(--space-3);
+    padding: 12px;
   }
 
   .mp__upload-btn {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: var(--space-2);
+    gap: 8px;
     width: 100%;
-    padding: var(--space-3) var(--space-4);
+    padding: 12px 16px;
     background: rgba(255, 255, 255, 0.04);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 8px;
     cursor: pointer;
     transition:
-      background var(--duration-fast) var(--ease-out),
-      border-color var(--duration-fast) var(--ease-out);
+      background 150ms var(--ease-expo-out),
+      border-color 150ms var(--ease-expo-out);
   }
 
   .mp__upload-btn:hover {
@@ -165,14 +165,14 @@
 
   .mp__upload-label {
     font-family: var(--font-sans);
-    font-size: var(--text-sm);
+    font-size: 13px;
     color: rgba(255, 255, 255, 0.64);
   }
 
   .mp__link {
     display: flex;
-    gap: var(--space-2);
-    padding: var(--space-3);
+    gap: 8px;
+    padding: 12px;
   }
 
   .mp__link-input {
@@ -181,12 +181,12 @@
     padding: 6px 10px;
     font-family: var(--font-mono);
     font-size: 12px;
-    color: var(--color-text-primary);
+    color: var(--color-foreground);
     background: rgba(255, 255, 255, 0.04);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 6px;
     outline: none;
-    transition: border-color var(--duration-fast) var(--ease-out);
+    transition: border-color 150ms var(--ease-expo-out);
   }
 
   .mp__link-input:focus { border-color: var(--color-accent); }
@@ -203,7 +203,7 @@
     border-radius: 6px;
     cursor: pointer;
     flex-shrink: 0;
-    transition: opacity var(--duration-fast) var(--ease-out);
+    transition: opacity 150ms var(--ease-expo-out);
   }
 
   .mp__link-btn:disabled { opacity: 0.3; cursor: not-allowed; }

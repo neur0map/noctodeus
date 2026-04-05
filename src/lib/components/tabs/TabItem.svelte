@@ -71,9 +71,9 @@
   .tab-item {
     display: inline-flex;
     align-items: center;
-    gap: var(--space-1);
+    gap: 4px;
     height: 36px;
-    padding: 0 var(--space-3);
+    padding: 0 12px;
     font-family: var(--font-mono);
     font-size: 12px;
     color: rgba(255, 255, 255, 0.52);
@@ -87,10 +87,10 @@
     user-select: none;
     touch-action: none;
     transition:
-      color var(--duration-fast) var(--ease-out),
-      background var(--duration-fast) var(--ease-out),
-      opacity var(--duration-fast) var(--ease-out);
-    animation: tab-enter var(--duration-normal) var(--ease-out) both;
+      color 150ms var(--ease-expo-out),
+      background 150ms var(--ease-expo-out),
+      opacity 150ms var(--ease-expo-out);
+    animation: tab-enter 150ms var(--ease-expo-out) both;
   }
 
   @keyframes tab-enter {
@@ -110,7 +110,7 @@
   }
 
   .tab-item--active {
-    color: var(--color-text-primary);
+    color: var(--color-foreground);
     border-bottom-color: var(--color-accent);
   }
 
@@ -118,19 +118,19 @@
     opacity: 0.3;
     transform: scaleX(0.6);
     transition:
-      opacity var(--duration-fast) var(--ease-out),
-      transform var(--duration-fast) var(--ease-out);
+      opacity 150ms var(--ease-expo-out),
+      transform 150ms var(--ease-expo-out);
   }
 
   .tab-item--drag-over {
     background: rgba(122, 141, 255, 0.1);
     border-bottom-color: var(--color-accent);
-    color: var(--color-text-primary);
+    color: var(--color-foreground);
     box-shadow: inset 0 0 12px rgba(99, 102, 241, 0.12);
   }
 
   .tab-item--home {
-    padding-left: var(--space-2);
+    padding-left: 8px;
   }
 
   .tab-item__icon {
@@ -151,7 +151,7 @@
     justify-content: center;
     width: 16px;
     height: 16px;
-    margin-left: var(--space-1);
+    margin-left: 4px;
     border-radius: 4px;
     font-size: 13px;
     color: rgba(255, 255, 255, 0.36);
@@ -160,9 +160,9 @@
     cursor: pointer;
     opacity: 0;
     transition:
-      opacity var(--duration-fast) var(--ease-out),
-      color var(--duration-fast) var(--ease-out),
-      background var(--duration-fast) var(--ease-out);
+      opacity 150ms var(--ease-expo-out),
+      color 150ms var(--ease-expo-out),
+      background 150ms var(--ease-expo-out);
   }
 
   .tab-item:hover .tab-item__close {
@@ -170,7 +170,7 @@
   }
 
   .tab-item__close:hover {
-    color: var(--color-text-primary);
+    color: var(--color-foreground);
     background: rgba(255, 255, 255, 0.08);
   }
 </style>

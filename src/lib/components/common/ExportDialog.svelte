@@ -95,11 +95,11 @@
     border-radius: 12px;
     box-shadow: 0 16px 64px rgba(0, 0, 0, 0.6);
     backdrop-filter: blur(20px);
-    padding: var(--space-5);
+    padding: 20px;
     display: flex;
     flex-direction: column;
-    gap: var(--space-4);
-    animation: export-in var(--duration-fast) var(--ease-out) both;
+    gap: 16px;
+    animation: export-in 150ms var(--ease-expo-out) both;
   }
 
   @keyframes export-in {
@@ -109,9 +109,9 @@
 
   .export-dialog__title {
     font-family: var(--font-sans);
-    font-size: var(--text-sm);
+    font-size: 13px;
     font-weight: 500;
-    color: var(--color-text-primary);
+    color: var(--color-foreground);
   }
 
   .export-dialog__file {
@@ -127,7 +127,7 @@
   .export-dialog__section {
     display: flex;
     flex-direction: column;
-    gap: var(--space-2);
+    gap: 8px;
   }
 
   .export-dialog__label {
@@ -156,19 +156,19 @@
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 6px;
     cursor: pointer;
-    transition: all var(--duration-fast) var(--ease-out);
+    transition: all 150ms var(--ease-expo-out);
   }
 
   .export-dialog__radio input { display: none; }
 
   .export-dialog__radio:hover {
     border-color: rgba(255, 255, 255, 0.14);
-    color: var(--color-text-primary);
+    color: var(--color-foreground);
   }
 
   .export-dialog__radio--active {
     border-color: var(--color-accent);
-    color: var(--color-text-primary);
+    color: var(--color-foreground);
     background: rgba(99, 102, 241, 0.1);
   }
 
@@ -197,7 +197,7 @@
     height: 18px;
     background: rgba(255, 255, 255, 0.1);
     border-radius: 9px;
-    transition: background var(--duration-fast) var(--ease-out);
+    transition: background 150ms var(--ease-expo-out);
     position: relative;
   }
 
@@ -210,7 +210,7 @@
     height: 14px;
     background: rgba(255, 255, 255, 0.6);
     border-radius: 50%;
-    transition: transform var(--duration-fast) var(--ease-out);
+    transition: transform 150ms var(--ease-expo-out);
   }
 
   .export-dialog__toggle input:checked + .export-dialog__toggle-track {
@@ -232,14 +232,14 @@
   .export-dialog__actions {
     display: flex;
     justify-content: flex-end;
-    gap: var(--space-2);
-    padding-top: var(--space-1);
+    gap: 8px;
+    padding-top: 4px;
   }
 
   .export-dialog__btn {
     padding: 6px 14px;
     font-family: var(--font-sans);
-    font-size: var(--text-sm);
+    font-size: 13px;
     border: none;
     border-radius: 6px;
     cursor: pointer;
@@ -251,7 +251,7 @@
   }
 
   .export-dialog__btn--cancel:hover {
-    color: var(--color-text-primary);
+    color: var(--color-foreground);
   }
 
   .export-dialog__btn--ok {

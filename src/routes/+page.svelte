@@ -390,7 +390,7 @@
     height: 100%;
     display: flex;
     flex-direction: column;
-    animation: content-fade var(--duration-fast) var(--ease-out) both;
+    animation: content-fade 150ms var(--ease-expo-out) both;
   }
 
   @keyframes content-fade {
@@ -401,7 +401,7 @@
   .file-view {
     height: 100%;
     overflow-y: auto;
-    padding: var(--stage-inner-padding);
+    padding: 28px;
   }
 
   .file-view__info {
@@ -409,20 +409,20 @@
     margin: 0 auto;
     display: flex;
     flex-direction: column;
-    gap: var(--space-4);
+    gap: 16px;
   }
 
   .file-view__info-row {
     display: flex;
     align-items: baseline;
-    gap: var(--space-4);
+    gap: 16px;
   }
 
   .file-view__info-label {
     flex-shrink: 0;
     width: 96px;
     font-family: var(--font-mono);
-    font-size: var(--text-xs);
+    font-size: 12px;
     color: rgba(255, 255, 255, 0.46);
     text-transform: uppercase;
     letter-spacing: 0.05em;
@@ -430,8 +430,8 @@
 
   .file-view__info-value {
     font-family: var(--font-mono);
-    font-size: var(--text-sm);
-    color: var(--color-text-primary);
+    font-size: 13px;
+    color: var(--color-foreground);
     word-break: break-all;
   }
 </style>

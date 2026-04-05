@@ -117,11 +117,11 @@
     display: flex;
     flex-direction: column;
     height: 100%;
-    padding: calc(var(--space-8) * var(--density-scale));
-    padding-top: calc(var(--space-10) * var(--density-scale));
+    padding: 32px;
+    padding-top: 40px;
     overflow-y: auto;
     overflow-x: hidden;
-    animation: fade-up var(--duration-slow) var(--ease-out) both;
+    animation: fade-up 150ms var(--ease-expo-out) both;
   }
 
   @keyframes fade-up {
@@ -138,16 +138,16 @@
   .dashboard__name {
     font-family: var(--font-sans);
     font-size: clamp(1.6rem, 2.4vw, 2.2rem);
-    color: var(--color-text-primary);
+    color: var(--color-foreground);
     font-weight: 600;
     letter-spacing: -0.035em;
-    margin-bottom: calc(var(--space-8) * var(--density-scale));
+    margin-bottom: 32px;
   }
 
   .dashboard__columns {
     display: grid;
     grid-template-columns: 1.4fr 1px 1fr;
-    gap: var(--space-8);
+    gap: 32px;
     flex: 1;
     min-height: 0;
   }
@@ -159,21 +159,21 @@
   .dashboard__left {
     display: flex;
     flex-direction: column;
-    gap: var(--space-6);
+    gap: 24px;
     min-width: 0;
   }
 
   .dashboard__right {
     display: flex;
     flex-direction: column;
-    gap: var(--space-6);
+    gap: 24px;
     min-width: 0;
   }
 
   /* Stats */
   .dashboard__stats {
     display: flex;
-    gap: var(--space-7);
+    gap: 28px;
   }
 
   .stat {
@@ -184,9 +184,9 @@
 
   .stat__value {
     font-family: var(--font-mono);
-    font-size: var(--text-2xl);
+    font-size: 24px;
     font-weight: 600;
-    color: var(--color-text-primary);
+    color: var(--color-foreground);
     letter-spacing: -0.03em;
     line-height: 1;
   }
@@ -215,7 +215,7 @@
   }
 
   .dashboard__list--pinned {
-    padding-top: var(--space-2);
+    padding-top: 8px;
     border-top: 1px solid rgba(255, 255, 255, 0.04);
   }
 
@@ -224,14 +224,14 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: var(--space-3);
-    padding: 6px var(--space-2);
+    gap: 12px;
+    padding: 6px 8px;
     border-radius: 4px;
     text-align: left;
     background: transparent;
     border: none;
     cursor: pointer;
-    transition: background var(--duration-fast) var(--ease-out);
+    transition: background 150ms var(--ease-expo-out);
   }
 
   .row:hover {
@@ -240,16 +240,16 @@
 
   .row__name {
     font-family: var(--font-mono);
-    font-size: var(--text-sm);
+    font-size: 13px;
     color: rgba(255, 255, 255, 0.72);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    transition: color var(--duration-fast) var(--ease-out);
+    transition: color 150ms var(--ease-expo-out);
   }
 
   .row:hover .row__name {
-    color: var(--color-text-primary);
+    color: var(--color-foreground);
   }
 
   .row__meta {

@@ -170,17 +170,17 @@
 
 <style>
   .file-tree {
-    padding: var(--space-1) 0;
+    padding: 4px 0;
   }
 
   .file-tree__empty {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: var(--space-8) var(--space-4);
+    padding: 32px 16px;
     font-family: var(--font-mono);
-    font-size: var(--text-sm);
-    color: var(--color-text-muted);
+    font-size: 13px;
+    color: var(--color-placeholder);
   }
 
   :global(.file-drag-ghost) {
@@ -189,7 +189,7 @@
     padding: 4px 10px;
     font-family: var(--font-mono);
     font-size: 11px;
-    color: var(--color-text-primary);
+    color: var(--color-foreground);
     background: rgba(20, 21, 27, 0.95);
     border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 6px;

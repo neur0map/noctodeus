@@ -74,8 +74,8 @@
     align-items: center;
     justify-content: space-between;
     flex-shrink: 0;
-    padding: calc(var(--space-3) * var(--sidebar-density))
-      calc(var(--space-4) * var(--sidebar-density));
+    padding: 12px
+      16px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     width: 100%;
   }
@@ -93,8 +93,8 @@
 
   .sidebar__footer {
     flex-shrink: 0;
-    padding: calc(var(--space-2) * var(--sidebar-density))
-      calc(var(--space-4) * var(--sidebar-density));
+    padding: 8px
+      16px;
     border-top: 1px solid rgba(255, 255, 255, 0.05);
   }
 
@@ -102,8 +102,8 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding-top: var(--space-3);
-    gap: var(--space-2);
+    padding-top: 12px;
+    gap: 8px;
     height: 100%;
   }
 
@@ -119,13 +119,13 @@
     color: rgba(255, 255, 255, 0.46);
     cursor: pointer;
     transition:
-      color var(--duration-fast) var(--ease-out),
-      background var(--duration-fast) var(--ease-out);
-    animation: rail-icon-enter var(--duration-normal) var(--ease-out) both;
+      color 150ms var(--ease-expo-out),
+      background 150ms var(--ease-expo-out);
+    animation: rail-icon-enter 150ms var(--ease-expo-out) both;
   }
 
   .rail-button:hover {
-    color: var(--color-text-primary);
+    color: var(--color-foreground);
     background: rgba(255, 255, 255, 0.06);
   }
 
@@ -153,12 +153,12 @@
     cursor: pointer;
     flex-shrink: 0;
     transition:
-      color var(--duration-fast) var(--ease-out),
-      background var(--duration-fast) var(--ease-out);
+      color 150ms var(--ease-expo-out),
+      background 150ms var(--ease-expo-out);
   }
 
   .collapse-button:hover {
-    color: var(--color-text-primary);
+    color: var(--color-foreground);
     background: rgba(255, 255, 255, 0.06);
   }
 </style>

@@ -34,22 +34,22 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: var(--space-3);
-    padding: var(--space-12) var(--space-4);
+    gap: 12px;
+    padding: 48px 16px;
   }
 
   .empty-state__icon {
     font-size: 32px;
     opacity: 0.25;
-    color: var(--color-text-muted);
+    color: var(--color-placeholder);
     user-select: none;
   }
 
   .empty-state__message {
     font-family: var(--font-mono);
-    font-size: var(--text-sm);
-    line-height: var(--text-sm-leading);
-    color: var(--color-text-muted);
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--color-placeholder);
     text-align: center;
     max-width: 280px;
   }
@@ -57,29 +57,29 @@
   .empty-state__action {
     display: inline-flex;
     align-items: center;
-    gap: var(--space-2);
-    padding: var(--space-2) var(--space-3);
+    gap: 8px;
+    padding: 8px 12px;
     font-family: var(--font-sans);
-    font-size: var(--text-sm);
-    color: var(--color-text-secondary);
-    background: var(--color-bg-hover);
+    font-size: 13px;
+    color: var(--color-muted-foreground);
+    background: var(--color-hover);
     border-radius: 6px;
     transition:
-      color var(--duration-fast) var(--ease-out),
-      background var(--duration-fast) var(--ease-out);
+      color 150ms var(--ease-expo-out),
+      background 150ms var(--ease-expo-out);
   }
 
   .empty-state__action:hover {
-    color: var(--color-text-primary);
-    background: var(--color-bg-active);
+    color: var(--color-foreground);
+    background: var(--color-hover);
   }
 
   .empty-state__hint {
     font-family: var(--font-mono);
-    font-size: var(--text-xs);
-    color: var(--color-text-muted);
-    background: var(--color-bg-surface);
-    padding: 1px var(--space-2);
+    font-size: 12px;
+    color: var(--color-placeholder);
+    background: var(--color-card);
+    padding: 1px 8px;
     border-radius: 4px;
   }
 </style>

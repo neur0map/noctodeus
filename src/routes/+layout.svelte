@@ -1,8 +1,6 @@
 <script lang="ts">
-  import "../lib/styles/reset.css";
-  import "../lib/styles/tokens.css";
-  import "../lib/styles/typography.css";
-  import "../lib/styles/animations.css";
+  import "../lib/styles/app.css";
+  import "../lib/styles/app.scss";
 
   import type { Snippet } from "svelte";
   import { onMount, onDestroy } from "svelte";
@@ -815,24 +813,24 @@
   :global(body) {
     height: 100%;
     font-family: var(--font-sans);
-    font-size: var(--text-base);
-    line-height: var(--text-base-leading);
-    color: var(--color-text-primary);
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--color-foreground);
     background: #050608;
   }
 
   .sidebar-pinned {
-    padding: var(--space-1) calc(var(--space-3) * var(--sidebar-density));
+    padding: 4px 12px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    margin-bottom: var(--space-1);
+    margin-bottom: 4px;
   }
 
   .sidebar-pinned__item {
     display: flex;
     align-items: center;
-    gap: var(--space-1);
+    gap: 4px;
     width: 100%;
-    padding: 3px var(--space-2);
+    padding: 3px 8px;
     font-family: var(--font-mono);
     font-size: 11px;
     color: rgba(255, 255, 255, 0.56);
@@ -841,16 +839,16 @@
     border-radius: 4px;
     text-align: left;
     cursor: pointer;
-    transition: background var(--duration-fast) var(--ease-out);
+    transition: background 150ms var(--ease-expo-out);
   }
 
   .sidebar-pinned__item:hover {
     background: rgba(255, 255, 255, 0.04);
-    color: var(--color-text-primary);
+    color: var(--color-foreground);
   }
 
   .sidebar-pinned__item--active {
-    color: var(--color-text-primary);
+    color: var(--color-foreground);
     background: rgba(122, 141, 255, 0.08);
   }
 
@@ -885,18 +883,18 @@
     color: rgba(255, 255, 255, 0.36);
     font-size: 12px;
     cursor: pointer;
-    transition: color var(--duration-fast) var(--ease-out), background var(--duration-fast) var(--ease-out);
+    transition: color 150ms var(--ease-expo-out), background 150ms var(--ease-expo-out);
   }
 
   .sidebar-header__btn:hover {
-    color: var(--color-text-primary);
+    color: var(--color-foreground);
     background: rgba(255, 255, 255, 0.06);
   }
 
   .sidebar-header__name {
     font-family: var(--font-mono);
     font-size: 12px;
-    line-height: var(--text-sm-leading);
+    line-height: 1.5;
     color: rgba(255, 255, 255, 0.84);
     font-weight: 600;
     letter-spacing: 0.04em;
@@ -915,12 +913,12 @@
 
   .sidebar-footer__count {
     font-family: var(--font-mono);
-    font-size: var(--text-xs);
-    line-height: var(--text-xs-leading);
+    font-size: 12px;
+    line-height: 1.4;
     color: rgba(255, 255, 255, 0.36);
     display: flex;
     align-items: center;
-    gap: var(--space-2);
+    gap: 8px;
   }
 
   .sidebar-footer__chars {
@@ -939,8 +937,8 @@
     color: rgba(255, 255, 255, 0.32);
     cursor: pointer;
     transition:
-      color var(--duration-fast) var(--ease-out),
-      background var(--duration-fast) var(--ease-out);
+      color 150ms var(--ease-expo-out),
+      background 150ms var(--ease-expo-out);
   }
 
   .sidebar-footer__settings:hover {
@@ -953,7 +951,7 @@
     flex-direction: column;
     align-items: center;
     gap: 6px;
-    padding-top: calc(var(--shell-header-height) + var(--space-2));
+    padding-top: 60px;
   }
 
   .utility-rail__button {
@@ -973,14 +971,14 @@
     font-size: 13px;
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
     transition:
-      color var(--duration-fast) var(--ease-out),
-      background var(--duration-fast) var(--ease-out),
-      border-color var(--duration-fast) var(--ease-out);
+      color 150ms var(--ease-expo-out),
+      background 150ms var(--ease-expo-out),
+      border-color 150ms var(--ease-expo-out);
   }
 
   .utility-rail__button:hover,
   .utility-rail__button--active {
-    color: var(--color-text-primary);
+    color: var(--color-foreground);
     background:
       linear-gradient(
         180deg,
@@ -1020,7 +1018,7 @@
   .right-panel__section--scroll::-webkit-scrollbar { display: none; }
 
   .right-panel__section-header {
-    padding: var(--space-2) var(--space-3);
+    padding: 8px 12px;
   }
 
   .right-panel__section-label {
@@ -1034,6 +1032,6 @@
   .right-panel__graph-body {
     flex: 1;
     min-height: 0;
-    padding: 0 var(--space-2) var(--space-2);
+    padding: 0 8px 8px;
   }
 </style>

@@ -97,19 +97,19 @@
     padding-top: 20vh;
     background: rgba(0, 0, 0, 0.5);
     z-index: 100;
-    animation: fade-in var(--duration-fast) var(--ease-out) both;
+    animation: fade-in 150ms var(--ease-expo-out) both;
   }
 
   .quick-open {
     width: 560px;
     max-height: 400px;
-    background: var(--color-bg-elevated);
+    background: var(--color-popover);
     border-radius: 12px;
-    box-shadow: var(--shadow-elevated);
+    box-shadow: var(--shadow-float);
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    animation: quick-open-enter var(--duration-normal) var(--ease-spring) both;
+    animation: quick-open-enter 150ms var(--ease-expo-out) both;
   }
 
   @keyframes quick-open-enter {

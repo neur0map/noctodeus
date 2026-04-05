@@ -19,12 +19,12 @@
   .save-indicator {
     display: flex;
     align-items: center;
-    gap: var(--space-1);
+    gap: 4px;
     font-family: var(--font-mono);
-    font-size: var(--text-xs);
-    line-height: var(--text-xs-leading);
-    color: var(--color-text-muted);
-    transition: color var(--duration-fast) var(--ease-out);
+    font-size: 12px;
+    line-height: 1.4;
+    color: var(--color-placeholder);
+    transition: color 150ms var(--ease-expo-out);
   }
 
   .save-indicator__dot {
@@ -32,15 +32,15 @@
     height: 6px;
     border-radius: 50%;
     flex-shrink: 0;
-    transition: background-color var(--duration-fast) var(--ease-out);
+    transition: background-color 150ms var(--ease-expo-out);
   }
 
   [data-status='saved'] .save-indicator__dot {
-    background-color: var(--color-text-muted);
+    background-color: var(--color-placeholder);
   }
 
   [data-status='saving'] .save-indicator__dot {
-    background-color: var(--color-text-muted);
+    background-color: var(--color-placeholder);
     animation: pulse 1.2s ease-in-out infinite;
   }
 

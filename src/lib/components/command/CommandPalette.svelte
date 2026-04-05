@@ -121,19 +121,19 @@
     padding-top: 20vh;
     background: rgba(0, 0, 0, 0.5);
     z-index: 100;
-    animation: fade-in var(--duration-fast) var(--ease-out) both;
+    animation: fade-in 150ms var(--ease-expo-out) both;
   }
 
   .command-palette {
     width: 560px;
     max-height: 400px;
-    background: var(--color-bg-elevated);
+    background: var(--color-popover);
     border-radius: 12px;
-    box-shadow: var(--shadow-elevated);
+    box-shadow: var(--shadow-float);
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    animation: command-palette-enter var(--duration-normal) var(--ease-spring) both;
+    animation: command-palette-enter 150ms var(--ease-expo-out) both;
   }
 
   @keyframes command-palette-enter {
@@ -150,17 +150,17 @@
   .command-palette__list {
     overflow-y: auto;
     max-height: 340px;
-    padding: var(--space-1) 0;
+    padding: 4px 0;
   }
 
   .command-palette__empty {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: var(--space-8) var(--space-4);
+    padding: 32px 16px;
     font-family: var(--font-mono);
-    font-size: var(--text-sm);
-    color: var(--color-text-muted);
+    font-size: 13px;
+    color: var(--color-placeholder);
   }
 
   .command-palette__item {
@@ -168,33 +168,33 @@
     align-items: center;
     justify-content: space-between;
     width: 100%;
-    padding: var(--space-2) var(--space-4);
+    padding: 8px 16px;
     background: transparent;
     border: none;
     cursor: pointer;
     text-align: left;
-    transition: background var(--duration-fast) var(--ease-out);
+    transition: background 150ms var(--ease-expo-out);
   }
 
   .command-palette__item:hover,
   .command-palette__item--selected {
-    background: var(--color-bg-hover);
+    background: var(--color-hover);
   }
 
   .command-palette__label {
     font-family: var(--font-sans);
-    font-size: var(--text-sm);
-    line-height: var(--text-sm-leading);
-    color: var(--color-text-primary);
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--color-foreground);
   }
 
   .command-palette__shortcut {
     font-family: var(--font-mono);
-    font-size: var(--text-xs);
-    line-height: var(--text-xs-leading);
-    color: var(--color-text-muted);
-    background: var(--color-bg-active);
-    padding: 2px var(--space-2);
+    font-size: 12px;
+    line-height: 1.4;
+    color: var(--color-placeholder);
+    background: var(--color-hover);
+    padding: 2px 8px;
     border-radius: 4px;
   }
 </style>

@@ -95,9 +95,9 @@
     box-shadow:
       0 8px 40px rgba(0, 0, 0, 0.5),
       0 0 0 1px rgba(255, 255, 255, 0.04);
-    padding: var(--space-1);
+    padding: 4px;
     backdrop-filter: blur(16px);
-    animation: slash-enter var(--duration-fast) var(--ease-out) both;
+    animation: slash-enter 150ms var(--ease-expo-out) both;
     scrollbar-width: none;
   }
 
@@ -117,7 +117,7 @@
   }
 
   .slash-menu__group-label {
-    padding: var(--space-2) var(--space-3) var(--space-1);
+    padding: 8px 12px 4px;
     font-family: var(--font-mono);
     font-size: 10px;
     color: rgba(255, 255, 255, 0.26);
@@ -129,21 +129,21 @@
   .slash-menu__divider {
     height: 1px;
     background: rgba(255, 255, 255, 0.06);
-    margin: var(--space-1) var(--space-2);
+    margin: 4px 8px;
   }
 
   .slash-menu__item {
     display: flex;
     align-items: center;
-    gap: var(--space-3);
+    gap: 12px;
     width: 100%;
-    padding: 6px var(--space-3);
+    padding: 6px 12px;
     border: none;
     border-radius: 6px;
     background: transparent;
     cursor: pointer;
     text-align: left;
-    transition: background var(--duration-fast) var(--ease-out);
+    transition: background 150ms var(--ease-expo-out);
   }
 
   .slash-menu__item:hover,
@@ -177,8 +177,8 @@
 
   .slash-menu__label {
     font-family: var(--font-sans);
-    font-size: var(--text-sm);
-    color: var(--color-text-primary);
+    font-size: 13px;
+    color: var(--color-foreground);
     line-height: 1.3;
   }
 
@@ -201,8 +201,8 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: var(--space-2) var(--space-3);
-    margin-top: var(--space-1);
+    padding: 8px 12px;
+    margin-top: 4px;
     border-top: 1px solid rgba(255, 255, 255, 0.05);
     font-family: var(--font-mono);
     font-size: 10px;

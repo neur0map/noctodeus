@@ -75,7 +75,7 @@
       0 0 0 1px rgba(255, 255, 255, 0.03);
     backdrop-filter: blur(20px);
     padding: 3px;
-    animation: ctx-in var(--duration-fast) var(--ease-out) both;
+    animation: ctx-in 150ms var(--ease-expo-out) both;
   }
 
   @keyframes ctx-in {
@@ -86,7 +86,7 @@
   .ctx-menu__item {
     display: flex;
     align-items: center;
-    gap: var(--space-2);
+    gap: 8px;
     width: 100%;
     padding: 6px 10px;
     border: none;
@@ -97,17 +97,17 @@
     font-size: 13px;
     cursor: pointer;
     text-align: left;
-    transition: background var(--duration-fast) var(--ease-out);
+    transition: background 150ms var(--ease-expo-out);
   }
 
   .ctx-menu__item:hover {
     background: rgba(255, 255, 255, 0.07);
-    color: var(--color-text-primary);
+    color: var(--color-foreground);
   }
 
   .ctx-menu__item--danger:hover {
     background: rgba(239, 68, 68, 0.12);
-    color: var(--color-danger);
+    color: var(--color-destructive);
   }
 
   .ctx-menu__icon {

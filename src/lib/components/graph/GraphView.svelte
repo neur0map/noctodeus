@@ -267,7 +267,7 @@
     height: 100%;
     overflow: hidden;
     background: rgba(8, 9, 12, 0.5);
-    border-radius: calc(var(--stage-radius) - 6px);
+    border-radius: 12px;
   }
   canvas { display: block; width: 100%; height: 100%; cursor: grab; }
   canvas:active { cursor: grabbing; }
@@ -296,5 +296,5 @@
     font-size: 12px;
     cursor: pointer;
   }
-  .gv__btn:hover { background: rgba(255, 255, 255, 0.08); color: var(--color-text-primary); }
+  .gv__btn:hover { background: rgba(255, 255, 255, 0.08); color: var(--color-foreground); }
 </style>

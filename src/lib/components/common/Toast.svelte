@@ -53,18 +53,18 @@
   .toast {
     display: flex;
     align-items: center;
-    gap: var(--space-2);
-    padding: var(--space-2) var(--space-3);
-    background: var(--color-bg-elevated);
-    border: 1px solid var(--color-border-subtle);
+    gap: 8px;
+    padding: 8px 12px;
+    background: var(--color-popover);
+    border: 1px solid var(--color-border);
     border-radius: 8px;
-    box-shadow: var(--shadow-elevated);
-    animation: toast-enter var(--duration-normal) var(--ease-spring) both;
+    box-shadow: var(--shadow-float);
+    animation: toast-enter 150ms var(--ease-expo-out) both;
     max-width: 360px;
   }
 
   .toast--exiting {
-    animation: toast-exit var(--duration-normal) var(--ease-in-out) both;
+    animation: toast-exit 150ms var(--ease-expo-out) both;
   }
 
   @keyframes toast-enter {
@@ -93,20 +93,20 @@
     flex-shrink: 0;
     width: 16px;
     text-align: center;
-    font-size: var(--text-sm);
+    font-size: 13px;
   }
 
   .toast--info .toast__icon { color: var(--color-accent); }
   .toast--success .toast__icon { color: #22c55e; }
   .toast--warning .toast__icon { color: #eab308; }
-  .toast--error .toast__icon { color: var(--color-danger); }
+  .toast--error .toast__icon { color: var(--color-destructive); }
 
   .toast__message {
     flex: 1;
     font-family: var(--font-sans);
-    font-size: var(--text-sm);
-    line-height: var(--text-sm-leading);
-    color: var(--color-text-primary);
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--color-foreground);
   }
 
   .toast__dismiss {
@@ -116,15 +116,15 @@
     justify-content: center;
     width: 20px;
     height: 20px;
-    color: var(--color-text-muted);
+    color: var(--color-placeholder);
     border-radius: 4px;
     transition:
-      color var(--duration-fast) var(--ease-out),
-      background var(--duration-fast) var(--ease-out);
+      color 150ms var(--ease-expo-out),
+      background 150ms var(--ease-expo-out);
   }
 
   .toast__dismiss:hover {
-    color: var(--color-text-primary);
-    background: var(--color-bg-hover);
+    color: var(--color-foreground);
+    background: var(--color-hover);
   }
 </style>

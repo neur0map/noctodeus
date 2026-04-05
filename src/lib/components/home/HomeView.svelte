@@ -117,17 +117,17 @@
   .home-view__content {
     display: flex;
     flex-direction: column;
-    gap: calc(var(--space-8) * var(--density-scale));
+    gap: 32px;
     max-width: 920px;
     width: 100%;
-    padding: calc(var(--stage-inner-padding) * var(--density-scale));
+    padding: 28px;
   }
 
   .home-view__title {
     font-family: var(--font-sans);
     font-size: clamp(2rem, 3vw, 3rem);
-    line-height: var(--text-2xl-leading);
-    color: var(--color-text-primary);
+    line-height: 1.3;
+    color: var(--color-foreground);
     font-weight: 600;
     letter-spacing: -0.04em;
   }
@@ -135,14 +135,14 @@
   .home-view__section {
     display: flex;
     flex-direction: column;
-    gap: var(--space-2);
+    gap: 8px;
   }
 
   .home-view__section-title {
     font-family: var(--font-mono);
-    font-size: var(--text-xs);
-    line-height: var(--text-xs-leading);
-    color: var(--color-text-muted);
+    font-size: 12px;
+    line-height: 1.4;
+    color: var(--color-placeholder);
     text-transform: uppercase;
     letter-spacing: 0.05em;
   }
@@ -157,15 +157,15 @@
     align-items: center;
     justify-content: space-between;
     width: 100%;
-    padding: calc(var(--space-2) + 1px) var(--space-3);
-    margin: 0 calc(-1 * var(--space-2));
-    width: calc(100% + var(--space-2) * 2);
+    padding: 9px 12px;
+    margin: 0 -8px;
+    width: calc(100% + 16px);
     border-radius: 4px;
     border-left: 1px solid transparent;
     text-align: left;
     transition:
-      background var(--duration-fast) var(--ease-out),
-      border-color var(--duration-fast) var(--ease-out);
+      background 150ms var(--ease-expo-out),
+      border-color 150ms var(--ease-expo-out);
   }
 
   .home-view__file:hover {
@@ -175,9 +175,9 @@
 
   .home-view__file-name {
     font-family: var(--font-mono);
-    font-size: var(--text-sm);
-    line-height: var(--text-sm-leading);
-    color: var(--color-text-primary);
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--color-foreground);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -185,60 +185,60 @@
 
   .home-view__file-path {
     font-family: var(--font-mono);
-    font-size: var(--text-xs);
-    line-height: var(--text-xs-leading);
-    color: var(--color-text-muted);
+    font-size: 12px;
+    line-height: 1.4;
+    color: var(--color-placeholder);
     flex-shrink: 0;
-    margin-left: var(--space-3);
+    margin-left: 12px;
   }
 
   .home-view__file-time {
     font-family: var(--font-mono);
-    font-size: var(--text-xs);
-    line-height: var(--text-xs-leading);
-    color: var(--color-text-muted);
+    font-size: 12px;
+    line-height: 1.4;
+    color: var(--color-placeholder);
     flex-shrink: 0;
-    margin-left: var(--space-3);
+    margin-left: 12px;
   }
 
   .home-view__actions {
     display: flex;
-    gap: calc(var(--space-3) * var(--density-scale));
+    gap: 12px;
     flex-wrap: wrap;
     margin-top: auto;
-    padding-top: var(--space-8);
+    padding-top: 32px;
   }
 
   .home-view__action {
     display: inline-flex;
     align-items: center;
-    gap: var(--space-2);
+    gap: 8px;
     min-height: 46px;
-    padding: 0 var(--space-4);
+    padding: 0 16px;
     font-family: var(--font-sans);
-    font-size: var(--text-sm);
+    font-size: 13px;
     color: rgba(255, 255, 255, 0.72);
     background: transparent;
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 10px;
     transition:
-      color var(--duration-fast) var(--ease-out),
-      background var(--duration-fast) var(--ease-out),
-      border-color var(--duration-fast) var(--ease-out);
+      color 150ms var(--ease-expo-out),
+      background 150ms var(--ease-expo-out),
+      border-color 150ms var(--ease-expo-out);
   }
 
   .home-view__action:hover {
-    color: var(--color-text-primary);
+    color: var(--color-foreground);
     background: rgba(255, 255, 255, 0.03);
     border-color: rgba(255, 255, 255, 0.12);
   }
 
   .home-view__action-hint {
     font-family: var(--font-mono);
-    font-size: var(--text-xs);
+    font-size: 12px;
     color: rgba(255, 255, 255, 0.48);
-    margin-left: var(--space-1);
-    padding-left: var(--space-3);
+    margin-left: 4px;
+    padding-left: 12px;
     border-left: 1px solid rgba(255, 255, 255, 0.08);
     background: none;
     border-radius: 0;

@@ -8,13 +8,13 @@
    -------------------------------------------------------------------------- */
 .ProseMirror {
   font-family: var(--font-content);
-  font-size: var(--text-base);
+  font-size: 14px;
   line-height: 1.8;
-  color: var(--color-text-primary);
-  max-width: var(--editor-column-max-width);
+  color: var(--color-foreground);
+  max-width: 780px;
   margin: 0 auto;
-  padding: calc(var(--stage-inner-padding) + var(--space-2))
-    var(--stage-inner-padding);
+  padding: 36px
+    28px;
   outline: none;
   min-height: 100%;
   position: relative;
@@ -22,7 +22,7 @@
 }
 
 .ProseMirror > * + * {
-  margin-top: var(--space-3);
+  margin-top: 12px;
 }
 
 /* --------------------------------------------------------------------------
@@ -38,22 +38,22 @@
 
 .ProseMirror h1 {
   font-size: clamp(2.6rem, 4vw, 3.4rem);
-  margin-top: var(--space-6);
-  margin-bottom: var(--space-4);
+  margin-top: 24px;
+  margin-bottom: 16px;
   letter-spacing: -0.05em;
 }
 
 .ProseMirror h2 {
-  font-size: var(--text-xl);
-  margin-top: var(--space-6);
-  margin-bottom: var(--space-3);
+  font-size: 20px;
+  margin-top: 24px;
+  margin-bottom: 12px;
   letter-spacing: -0.03em;
 }
 
 .ProseMirror h3 {
-  font-size: var(--text-lg);
-  margin-top: var(--space-5);
-  margin-bottom: var(--space-2);
+  font-size: 18px;
+  margin-top: 20px;
+  margin-bottom: 8px;
 }
 
 /* --------------------------------------------------------------------------
@@ -61,7 +61,7 @@
    -------------------------------------------------------------------------- */
 .ProseMirror p {
   margin-top: 0;
-  margin-bottom: var(--space-3);
+  margin-bottom: 12px;
   padding: 1px 2px;
   border-radius: 2px;
 }
@@ -74,10 +74,10 @@
   font-size: 0.9em;
   background: rgba(7, 8, 11, 0.74);
   border-radius: 10px;
-  padding: var(--space-4);
+  padding: 16px;
   border: 1px solid rgba(255, 255, 255, 0.05);
   overflow-x: auto;
-  margin: var(--space-4) 0;
+  margin: 16px 0;
 }
 
 .ProseMirror pre code {
@@ -105,14 +105,14 @@
    -------------------------------------------------------------------------- */
 .ProseMirror blockquote {
   border-left: 2px solid rgba(255, 255, 255, 0.22);
-  padding-left: var(--space-4);
+  padding-left: 16px;
   color: rgba(255, 255, 255, 0.68);
-  margin: var(--space-4) 0;
+  margin: 16px 0;
   font-style: italic;
 }
 
 .ProseMirror blockquote > * + * {
-  margin-top: var(--space-2);
+  margin-top: 8px;
 }
 
 /* --------------------------------------------------------------------------
@@ -120,12 +120,12 @@
    -------------------------------------------------------------------------- */
 .ProseMirror ul,
 .ProseMirror ol {
-  padding-left: var(--space-6);
-  margin: var(--space-3) 0;
+  padding-left: 24px;
+  margin: 12px 0;
 }
 
 .ProseMirror li {
-  margin-bottom: var(--space-1);
+  margin-bottom: 4px;
   padding: 1px 0;
 }
 
@@ -144,8 +144,8 @@
 .ProseMirror ul[data-type="taskList"] li {
   display: flex;
   align-items: flex-start;
-  gap: var(--space-2);
-  margin-bottom: var(--space-1);
+  gap: 8px;
+  margin-bottom: 4px;
 }
 
 .ProseMirror ul[data-type="taskList"] li > label {
@@ -159,13 +159,13 @@
   appearance: none;
   width: 16px;
   height: 16px;
-  border: 2px solid var(--color-border-strong);
+  border: 2px solid var(--color-border);
   border-radius: 4px;
   cursor: pointer;
   position: relative;
   transition:
-    background var(--duration-fast) var(--ease-out),
-    border-color var(--duration-fast) var(--ease-out);
+    background 150ms var(--ease-expo-out),
+    border-color 150ms var(--ease-expo-out);
 }
 
 .ProseMirror
@@ -188,7 +188,7 @@
   top: 0px;
   width: 6px;
   height: 10px;
-  border: solid var(--color-bg-base);
+  border: solid var(--color-background);
   border-width: 0 2px 2px 0;
   transform: rotate(45deg);
 }
@@ -200,7 +200,7 @@
 
 .ProseMirror ul[data-type="taskList"] li[data-checked="true"] > div {
   text-decoration: line-through;
-  color: var(--color-text-muted);
+  color: var(--color-placeholder);
 }
 
 /* --------------------------------------------------------------------------
@@ -209,7 +209,7 @@
 .ProseMirror a {
   color: var(--color-accent);
   text-decoration: none;
-  transition: text-decoration var(--duration-fast) var(--ease-out);
+  transition: text-decoration 150ms var(--ease-expo-out);
 }
 
 .ProseMirror a:hover {
@@ -224,7 +224,7 @@
   text-decoration: underline;
   text-decoration-style: dotted;
   cursor: pointer;
-  transition: color var(--duration-fast) var(--ease-out);
+  transition: color 150ms var(--ease-expo-out);
 }
 
 .wiki-link:hover {
@@ -238,7 +238,7 @@
   position: relative;
   display: inline-block;
   max-width: 100%;
-  margin: var(--space-4) 0;
+  margin: 16px 0;
   line-height: 0;
   border-radius: 8px;
 }
@@ -249,7 +249,7 @@
   border-radius: 8px;
   display: block;
   cursor: default;
-  transition: box-shadow var(--duration-fast) var(--ease-out);
+  transition: box-shadow 150ms var(--ease-expo-out);
 }
 
 /* Subtle ring on hover */
@@ -270,8 +270,8 @@
   opacity: 0;
   z-index: 2;
   transition:
-    opacity var(--duration-fast) var(--ease-out),
-    background var(--duration-fast) var(--ease-out);
+    opacity 150ms var(--ease-expo-out),
+    background 150ms var(--ease-expo-out);
 }
 
 .resizable-image__edge--left {
@@ -316,7 +316,7 @@
 .ProseMirror hr {
   border: none;
   border-top: 1px solid rgba(255, 255, 255, 0.06);
-  margin: var(--space-8) 0;
+  margin: 32px 0;
 }
 
 /* --------------------------------------------------------------------------
@@ -338,7 +338,7 @@
    -------------------------------------------------------------------------- */
 .ProseMirror.is-editor-empty:first-child::before {
   content: attr(data-placeholder);
-  color: var(--color-text-muted);
+  color: var(--color-placeholder);
   font-style: italic;
   float: left;
   height: 0;

@@ -54,8 +54,8 @@
 <style>
   .app-shell__canvas {
     height: 100vh;
-    padding: var(--shell-outer-gutter);
-    background: var(--shell-bg);
+    padding: 8px;
+    background: linear-gradient(180deg, #07080b 0%, #0a0b10 100%);
     position: relative;
     overflow: hidden;
   }
@@ -66,10 +66,10 @@
     height: 100%;
     background:
       linear-gradient(180deg, rgba(255, 255, 255, 0.018), transparent 12%),
-      var(--shell-surface);
-    border: 1px solid var(--shell-border);
-    border-radius: var(--shell-frame-radius);
-    box-shadow: var(--shadow-shell);
+      rgba(15, 16, 21, 0.94);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    box-shadow: none;
     overflow: hidden;
     position: relative;
     backdrop-filter: blur(16px);
@@ -77,12 +77,12 @@
   }
 
   .app-shell__sidebar {
-    width: var(--shell-sidebar-width);
+    width: 276px;
     min-width: 200px;
     overflow: hidden;
     transition:
-      width var(--duration-slow) var(--ease-in-out),
-      min-width var(--duration-slow) var(--ease-in-out);
+      width 150ms var(--ease-expo-out),
+      min-width 150ms var(--ease-expo-out);
     will-change: width, min-width;
   }
 
@@ -103,7 +103,7 @@
   }
 
   .app-shell__utility-rail {
-    width: var(--utility-rail-width);
+    width: 54px;
     border-left: 1px solid rgba(255, 255, 255, 0.04);
     background: linear-gradient(
       180deg,
@@ -111,8 +111,8 @@
       transparent 22%
     );
     transition:
-      width var(--duration-normal) var(--ease-in-out),
-      opacity var(--duration-normal) var(--ease-out);
+      width 150ms var(--ease-expo-out),
+      opacity 150ms var(--ease-expo-out);
   }
 
   .app-shell__utility-rail.hidden {
@@ -125,13 +125,13 @@
   .app-shell__right-panel {
     width: 0;
     overflow: hidden;
-    transition: width var(--duration-slow) var(--ease-in-out);
+    transition: width 150ms var(--ease-expo-out);
     will-change: width;
     border-left: 1px solid transparent;
   }
 
   .app-shell__right-panel.open {
-    width: var(--right-panel-width);
+    width: 380px;
     border-left-color: rgba(255, 255, 255, 0.05);
   }
 </style>

@@ -31,13 +31,13 @@
     flex-direction: column;
     min-height: 0;
     height: 100%;
-    width: min(100%, var(--stage-max-width));
+    width: min(100%, 2200px);
     margin: 0 auto;
     background:
       linear-gradient(180deg, rgba(255, 255, 255, 0.012), transparent 10%),
-      var(--stage-bg);
-    border-radius: var(--stage-radius);
-    box-shadow: var(--stage-shadow);
+      rgba(20, 21, 27, 0.96);
+    border-radius: 18px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.24), 0 0 0 1px rgba(255, 255, 255, 0.015);
     overflow: hidden;
     isolation: isolate;
   }
@@ -62,8 +62,8 @@
   }
 
   .worksurface::after {
-    border: 1px solid var(--stage-border);
-    opacity: var(--stage-border-opacity);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    opacity: 0.7;
     z-index: 1;
   }
 

@@ -48,14 +48,14 @@
 
 <style>
   .backlinks {
-    padding: 0 var(--space-3);
+    padding: 0 12px;
   }
 
   .backlinks__header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: var(--space-2) 0;
+    padding: 8px 0;
   }
 
   .backlinks__label {
@@ -93,18 +93,18 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    transition: background var(--duration-fast) var(--ease-out);
+    transition: background 150ms var(--ease-expo-out);
   }
 
   .backlinks__item:hover {
     background: rgba(255, 255, 255, 0.06);
-    color: var(--color-text-primary);
+    color: var(--color-foreground);
   }
 
   .backlinks__empty {
     font-family: var(--font-mono);
     font-size: 10px;
     color: rgba(255, 255, 255, 0.18);
-    padding: var(--space-1) 0;
+    padding: 4px 0;
   }
 </style>

@@ -101,12 +101,12 @@
     width: 300px;
     max-height: 240px;
     overflow-y: auto;
-    background: var(--color-bg-elevated);
-    border: 1px solid var(--color-border-subtle);
+    background: var(--color-popover);
+    border: 1px solid var(--color-border);
     border-radius: 8px;
-    box-shadow: var(--shadow-elevated);
-    padding: var(--space-1);
-    animation: slide-in var(--duration-fast) var(--ease-out) both;
+    box-shadow: var(--shadow-float);
+    padding: 4px;
+    animation: slide-in 150ms var(--ease-expo-out) both;
   }
 
   .wiki-suggest__item {
@@ -114,32 +114,32 @@
     flex-direction: column;
     gap: 2px;
     width: 100%;
-    padding: var(--space-2) var(--space-3);
+    padding: 8px 12px;
     border: none;
     border-radius: 6px;
     background: transparent;
     cursor: pointer;
     text-align: left;
-    transition: background var(--duration-fast) var(--ease-out);
+    transition: background 150ms var(--ease-expo-out);
   }
 
   .wiki-suggest__item:hover,
   .wiki-suggest__item--selected {
-    background: var(--color-bg-hover);
+    background: var(--color-hover);
   }
 
   .wiki-suggest__name {
     font-family: var(--font-mono);
-    font-size: var(--text-sm);
-    line-height: var(--text-sm-leading);
-    color: var(--color-text-primary);
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--color-foreground);
   }
 
   .wiki-suggest__title {
     font-family: var(--font-mono);
-    font-size: var(--text-xs);
-    line-height: var(--text-xs-leading);
-    color: var(--color-text-muted);
+    font-size: 12px;
+    line-height: 1.4;
+    color: var(--color-placeholder);
   }
 
   @keyframes slide-in {

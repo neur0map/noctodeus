@@ -82,11 +82,11 @@
     border-radius: 12px;
     box-shadow: 0 16px 64px rgba(0, 0, 0, 0.6);
     backdrop-filter: blur(20px);
-    padding: var(--space-5);
+    padding: 20px;
     display: flex;
     flex-direction: column;
-    gap: var(--space-4);
-    animation: id-in var(--duration-fast) var(--ease-out) both;
+    gap: 16px;
+    animation: id-in 150ms var(--ease-expo-out) both;
   }
 
   @keyframes id-in {
@@ -96,17 +96,17 @@
 
   .id__title {
     font-family: var(--font-sans);
-    font-size: var(--text-sm);
+    font-size: 13px;
     font-weight: 500;
-    color: var(--color-text-primary);
+    color: var(--color-foreground);
   }
 
   .id__input {
     width: 100%;
     padding: 8px 12px;
     font-family: var(--font-mono);
-    font-size: var(--text-sm);
-    color: var(--color-text-primary);
+    font-size: 13px;
+    color: var(--color-foreground);
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 8px;
@@ -120,13 +120,13 @@
   .id__actions {
     display: flex;
     justify-content: flex-end;
-    gap: var(--space-2);
+    gap: 8px;
   }
 
   .id__btn {
     padding: 6px 14px;
     font-family: var(--font-sans);
-    font-size: var(--text-sm);
+    font-size: 13px;
     border: none;
     border-radius: 6px;
     cursor: pointer;
@@ -138,7 +138,7 @@
   }
 
   .id__btn--cancel:hover {
-    color: var(--color-text-primary);
+    color: var(--color-foreground);
   }
 
   .id__btn--ok {

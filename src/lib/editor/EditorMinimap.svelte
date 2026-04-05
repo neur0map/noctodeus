@@ -111,8 +111,8 @@
     opacity: 1;
     transform: scale(1);
     transition:
-      opacity var(--duration-normal) var(--ease-out),
-      transform var(--duration-normal) var(--ease-out);
+      opacity 150ms var(--ease-expo-out),
+      transform 150ms var(--ease-expo-out);
   }
 
   .mm__bars--hidden {
@@ -125,7 +125,7 @@
     height: 2.5px;
     border-radius: 1px;
     background: rgba(255, 255, 255, 0.2);
-    transition: background var(--duration-fast) var(--ease-out);
+    transition: background 150ms var(--ease-expo-out);
   }
 
   .mm__bar--h1 { width: 22px; background: rgba(255, 255, 255, 0.32); }
@@ -144,7 +144,7 @@
       0 8px 32px rgba(0, 0, 0, 0.45),
       0 0 0 1px rgba(255, 255, 255, 0.03);
     backdrop-filter: blur(16px);
-    padding: var(--space-2);
+    padding: 8px;
     min-width: 160px;
     max-width: 240px;
     max-height: 320px;
@@ -155,8 +155,8 @@
     transform-origin: top right;
     pointer-events: none;
     transition:
-      opacity var(--duration-slow) var(--ease-out),
-      transform var(--duration-slow) var(--ease-out);
+      opacity 150ms var(--ease-expo-out),
+      transform 150ms var(--ease-expo-out);
   }
 
   .mm__popup--visible {
@@ -182,7 +182,7 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    transition: color var(--duration-fast) var(--ease-out);
+    transition: color 150ms var(--ease-expo-out);
   }
 
   .mm__item--h1 {
