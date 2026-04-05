@@ -72,11 +72,11 @@
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    height: 36px;
+    height: 40px;
     padding: 0 12px;
     font-family: var(--font-mono);
     font-size: 12px;
-    color: rgba(255, 255, 255, 0.52);
+    color: var(--color-placeholder);
     background: transparent;
     border: none;
     border-bottom: 2px solid transparent;
@@ -87,26 +87,22 @@
     user-select: none;
     touch-action: none;
     transition:
-      color 150ms var(--ease-expo-out),
-      background 150ms var(--ease-expo-out),
-      opacity 150ms var(--ease-expo-out);
-    animation: tab-enter 150ms var(--ease-expo-out) both;
+      background 150ms ease,
+      color 150ms ease;
+    animation: tab-enter 150ms ease both;
   }
 
   @keyframes tab-enter {
     from {
       opacity: 0;
-      transform: translateX(12px);
     }
     to {
       opacity: 1;
-      transform: translateX(0);
     }
   }
 
-  .tab-item:hover {
-    color: rgba(255, 255, 255, 0.84);
-    background: rgba(255, 255, 255, 0.03);
+  .tab-item:hover:not(.tab-item--active) {
+    color: var(--color-muted-foreground);
   }
 
   .tab-item--active {
@@ -116,17 +112,10 @@
 
   .tab-item--dragging {
     opacity: 0.3;
-    transform: scaleX(0.6);
-    transition:
-      opacity 150ms var(--ease-expo-out),
-      transform 150ms var(--ease-expo-out);
   }
 
   .tab-item--drag-over {
-    background: rgba(122, 141, 255, 0.1);
-    border-bottom-color: var(--color-accent);
-    color: var(--color-foreground);
-    box-shadow: inset 0 0 12px rgba(99, 102, 241, 0.12);
+    border-left: 2px solid var(--color-accent);
   }
 
   .tab-item--home {
@@ -135,34 +124,36 @@
 
   .tab-item__icon {
     font-size: 10px;
-    opacity: 0.7;
+    color: currentColor;
+    opacity: 0.6;
     flex-shrink: 0;
   }
 
   .tab-item__label {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    max-width: 140px;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 140px;
   }
 
   .tab-item__close {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 16px;
-    height: 16px;
+    width: 14px;
+    height: 14px;
     margin-left: 4px;
     border-radius: 4px;
     font-size: 13px;
-    color: rgba(255, 255, 255, 0.36);
+    color: var(--color-placeholder);
     background: transparent;
     border: none;
     cursor: pointer;
     opacity: 0;
     transition:
-      opacity 150ms var(--ease-expo-out),
-      color 150ms var(--ease-expo-out),
-      background 150ms var(--ease-expo-out);
+      opacity 150ms ease,
+      color 150ms ease;
   }
 
   .tab-item:hover .tab-item__close {
@@ -171,6 +162,5 @@
 
   .tab-item__close:hover {
     color: var(--color-foreground);
-    background: rgba(255, 255, 255, 0.08);
   }
 </style>

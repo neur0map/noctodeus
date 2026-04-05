@@ -158,8 +158,8 @@
   .tab-bar {
     display: flex;
     align-items: stretch;
-    height: 52px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.045);
+    height: 40px;
+    border-bottom: 1px solid var(--color-border);
     background: transparent;
     flex-shrink: 0;
     overflow: hidden;
@@ -172,16 +172,6 @@
     overflow-y: hidden;
     flex: 1;
     min-width: 0;
-    mask-image: linear-gradient(
-      to right,
-      black calc(100% - 24px),
-      transparent 100%
-    );
-    -webkit-mask-image: linear-gradient(
-      to right,
-      black calc(100% - 24px),
-      transparent 100%
-    );
     scrollbar-width: none;
   }
 
@@ -193,6 +183,6 @@
     display: flex;
     align-items: center;
     flex-shrink: 0;
-    padding: 0 8px;
+    padding-right: 12px;
   }
 </style>
