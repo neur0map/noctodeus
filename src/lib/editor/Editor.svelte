@@ -14,6 +14,8 @@
   import BubbleToolbar from "./BubbleToolbar.svelte";
   import type { SlashCommandItem } from "./extensions/slash-command";
   import { detectEmbed } from "./extensions/embed-block";
+  import type { WikiSuggestItem } from "./extensions/wiki-link-suggest";
+  import WikiLinkSuggest from "./WikiLinkSuggest.svelte";
   import { open as openFileDialog } from "@tauri-apps/plugin-dialog";
   import "./styles/editor.css";
   import "./styles/media.css";
@@ -145,6 +147,60 @@
     } catch {
       bubbleVisible = false;
     }
+  }
+
+  // --- Wiki link suggest state ---
+  let wikiVisible = $state(false);
+  let wikiItems = $state<WikiSuggestItem[]>([]);
+  let wikiPosition = $state({ top: 0, left: 0 });
+  let wikiQuery = $state('');
+  let wikiCommand: ((item: WikiSuggestItem) => void) | null = null;
+
+  function getWikiSuggestItems(): WikiSuggestItem[] {
+    return Array.from(filesState.fileMap.values())
+      .filter(f => !f.is_directory && !f.name.startsWith('.'))
+      .map(f => ({ path: f.path, name: f.name, title: f.title }));
+  }
+
+  function createWikiPopup() {
+    return {
+      onStart(props: any) {
+        wikiItems = props.items;
+        wikiCommand = props.command;
+        wikiQuery = '';
+        const rect = props.clientRect?.();
+        if (rect) {
+          const spaceBelow = window.innerHeight - rect.bottom;
+          wikiPosition = {
+            top: spaceBelow >= 260 ? rect.bottom + 4 : rect.top - 260,
+            left: Math.max(4, Math.min(rect.left, window.innerWidth - 320)),
+          };
+        }
+        wikiVisible = true;
+      },
+      onUpdate(props: any) {
+        wikiItems = props.items;
+        wikiQuery = props.query ?? '';
+        const rect = props.clientRect?.();
+        if (rect) {
+          const spaceBelow = window.innerHeight - rect.bottom;
+          wikiPosition = {
+            top: spaceBelow >= 260 ? rect.bottom + 4 : rect.top - 260,
+            left: Math.max(4, Math.min(rect.left, window.innerWidth - 320)),
+          };
+        }
+      },
+      onKeyDown(props: any) {
+        // Let WikiLinkSuggest handle keyboard via svelte:window
+        const e = props.event as KeyboardEvent;
+        if (['ArrowDown', 'ArrowUp', 'Enter', 'Escape'].includes(e.key)) return true;
+        return false;
+      },
+      onExit() {
+        wikiVisible = false;
+        wikiCommand = null;
+      },
+    };
   }
 
   // --- Slash command menu state ---
@@ -300,7 +356,7 @@
 
     editor = new Editor({
       element: editorElement,
-      extensions: createEditorExtensions({ slashPopup: createSlashPopup }),
+      extensions: createEditorExtensions({ slashPopup: createSlashPopup, wikiPopup: createWikiPopup, wikiItems: getWikiSuggestItems }),
       content: html,
       onUpdate: () => {
         if (!mounted) return;
@@ -352,6 +408,19 @@
   onupload={() => handleMediaPanelUpload()}
   onlinksubmit={handleMediaPanelLink}
   onclose={() => { mediaPanelVisible = false; editor?.chain().focus().run(); }}
+/>
+
+<WikiLinkSuggest
+  query={wikiQuery}
+  items={wikiItems}
+  visible={wikiVisible}
+  position={wikiPosition}
+  onselect={(name) => {
+    const item = wikiItems.find(i => i.name === name);
+    if (item && wikiCommand) wikiCommand(item);
+    wikiVisible = false;
+  }}
+  onclose={() => { wikiVisible = false; }}
 />
 
 <BubbleToolbar

@@ -8,6 +8,7 @@ import Placeholder from '@tiptap/extension-placeholder';
 import { createLowlight, common } from 'lowlight';
 import { WikiLink } from './wiki-link.js';
 import { createSlashCommand } from './slash-command.js';
+import { createWikiLinkSuggest, type WikiSuggestItem } from './wiki-link-suggest.js';
 import { VideoBlock } from './video-block.js';
 import { AudioBlock } from './audio-block.js';
 import { EmbedBlock } from './embed-block.js';
@@ -20,13 +21,15 @@ const lowlight = createLowlight(common);
 export interface EditorExtensionOptions {
   placeholder?: string;
   slashPopup?: () => any;
+  wikiPopup?: () => any;
+  wikiItems?: () => WikiSuggestItem[];
   mediaUploader?: MediaUploader;
 }
 
 export function createEditorExtensions(
   options: EditorExtensionOptions = {},
 ): Extensions {
-  const { placeholder = 'Start writing...', slashPopup, mediaUploader } = options;
+  const { placeholder = 'Start writing...', slashPopup, wikiPopup, wikiItems, mediaUploader } = options;
 
   const extensions: Extensions = [
     StarterKit.configure({
@@ -55,6 +58,10 @@ export function createEditorExtensions(
 
   if (slashPopup) {
     extensions.push(createSlashCommand(slashPopup));
+  }
+
+  if (wikiPopup && wikiItems) {
+    extensions.push(createWikiLinkSuggest(wikiPopup, wikiItems));
   }
 
   if (mediaUploader) {
