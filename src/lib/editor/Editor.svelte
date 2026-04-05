@@ -24,6 +24,7 @@
   import { open as openFileDialog } from "@tauri-apps/plugin-dialog";
   import "./styles/editor.css";
   import "./styles/media.css";
+  import "katex/dist/katex.min.css";
 
   let {
     path,

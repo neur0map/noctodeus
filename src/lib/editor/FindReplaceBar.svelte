@@ -26,15 +26,13 @@
   let currentIndex = $derived(((editor?.storage as any)?.searchReplace)?.currentIndex ?? 0);
   let caseSensitive = $derived(((editor?.storage as any)?.searchReplace)?.caseSensitive ?? false);
 
+  let wasVisible = false;
+
   $effect(() => {
-    if (visible) {
+    if (visible && !wasVisible) {
       requestAnimationFrame(() => searchInput?.focus());
-    } else {
-      (editor?.commands as any)?.clearSearch?.();
-      searchTerm = '';
-      replaceTerm = '';
-      showReplace = false;
     }
+    wasVisible = visible;
   });
 
   function handleSearchInput() {

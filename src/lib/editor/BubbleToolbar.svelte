@@ -32,6 +32,8 @@
       case 'italic': editor.chain().focus().toggleItalic().run(); break;
       case 'code': editor.chain().focus().toggleCode().run(); break;
       case 'strike': editor.chain().focus().toggleStrike().run(); break;
+      case 'underline': editor.chain().focus().toggleUnderline().run(); break;
+      case 'highlight': editor.chain().focus().toggleHighlight().run(); break;
       case 'link': {
         if (editor.isActive('link')) {
           editor.chain().focus().unsetLink().run();
@@ -128,8 +130,14 @@
       <button class="bt__btn bt__btn--i" class:bt__btn--active={isActive('italic')} onclick={() => toggle('italic')} title="Italic">
         <em>I</em>
       </button>
+      <button class="bt__btn" class:bt__btn--active={isActive('underline')} onclick={() => toggle('underline')} title="Underline">
+        <u>U</u>
+      </button>
       <button class="bt__btn" class:bt__btn--active={isActive('strike')} onclick={() => toggle('strike')} title="Strikethrough">
         <s>S</s>
+      </button>
+      <button class="bt__btn bt__btn--highlight" class:bt__btn--active={isActive('highlight')} onclick={() => toggle('highlight')} title="Highlight">
+        <mark>H</mark>
       </button>
       <button class="bt__btn" class:bt__btn--active={isActive('code')} onclick={() => toggle('code')} title="Inline code">
         &lt;&gt;

@@ -5,6 +5,8 @@ import markdownItMark from 'markdown-it-mark';
 import markdownItSub from 'markdown-it-sub';
 // @ts-ignore — no type declarations available
 import markdownItSup from 'markdown-it-sup';
+// @ts-ignore — no type declarations available
+import markdownItTexmath from 'markdown-it-texmath';
 
 function wikiLinkPlugin(md: MarkdownIt) {
   md.inline.ruler.after('link', 'wiki_link', (state, silent) => {
@@ -152,6 +154,7 @@ md.use(mediaBlockPlugin);
 md.use(markdownItMark);
 md.use(markdownItSub);
 md.use(markdownItSup);
+md.use(markdownItTexmath, { engine: { renderToString: (tex: string) => `<span data-latex="${tex.replace(/"/g, '&quot;')}">${tex}</span>` } });
 
 const FRONTMATTER_RE = /^---\r?\n[\s\S]*?\r?\n---\r?\n?/;
 
