@@ -118,18 +118,18 @@
     display: flex;
     flex-direction: column;
     gap: 32px;
-    max-width: 920px;
+    max-width: 680px;
     width: 100%;
-    padding: 28px;
+    padding: 40px 28px;
   }
 
   .home-view__title {
     font-family: var(--font-sans);
-    font-size: clamp(2rem, 3vw, 3rem);
+    font-size: clamp(1.8rem, 2.5vw, 2.4rem);
     line-height: 1.3;
     color: var(--color-foreground);
     font-weight: 600;
-    letter-spacing: -0.04em;
+    letter-spacing: -0.03em;
   }
 
   .home-view__section {
@@ -140,11 +140,11 @@
 
   .home-view__section-title {
     font-family: var(--font-mono);
-    font-size: 12px;
+    font-size: 10px;
     line-height: 1.4;
     color: var(--color-placeholder);
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.04em;
   }
 
   .home-view__list {
@@ -156,21 +156,17 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    width: 100%;
-    padding: 9px 12px;
+    padding: 6px 8px;
     margin: 0 -8px;
     width: calc(100% + 16px);
     border-radius: 4px;
-    border-left: 1px solid transparent;
+    border: none;
     text-align: left;
-    transition:
-      background 150ms var(--ease-expo-out),
-      border-color 150ms var(--ease-expo-out);
+    transition: background 150ms ease;
   }
 
   .home-view__file:hover {
-    background: rgba(255, 255, 255, 0.04);
-    border-left-color: rgba(255, 255, 255, 0.12);
+    background: var(--color-hover);
   }
 
   .home-view__file-name {
@@ -213,33 +209,34 @@
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    min-height: 46px;
+    min-height: 38px;
     padding: 0 16px;
     font-family: var(--font-sans);
     font-size: 13px;
-    color: rgba(255, 255, 255, 0.72);
+    color: var(--color-muted-foreground);
     background: transparent;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 10px;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    cursor: pointer;
     transition:
-      color 150ms var(--ease-expo-out),
-      background 150ms var(--ease-expo-out),
-      border-color 150ms var(--ease-expo-out);
+      color 150ms ease,
+      background 150ms ease,
+      border-color 150ms ease;
   }
 
   .home-view__action:hover {
     color: var(--color-foreground);
-    background: rgba(255, 255, 255, 0.03);
-    border-color: rgba(255, 255, 255, 0.12);
+    background: var(--color-hover);
+    border-color: var(--color-border);
   }
 
   .home-view__action-hint {
     font-family: var(--font-mono);
     font-size: 12px;
-    color: rgba(255, 255, 255, 0.48);
+    color: var(--color-placeholder);
     margin-left: 4px;
     padding-left: 12px;
-    border-left: 1px solid rgba(255, 255, 255, 0.08);
+    border-left: 1px solid var(--color-border);
     background: none;
     border-radius: 0;
   }
