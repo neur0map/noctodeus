@@ -41,17 +41,40 @@
   }
 
   let viewEl: HTMLDivElement | undefined = $state();
+  let titleAnimated = false;
+  let filesAnimated = false;
+  let actionsAnimated = false;
 
   onMount(() => {
     if (!viewEl) return;
     const title = viewEl.querySelector('.home-view__title');
-    if (title) presets.fadeInUp(title, { duration: 400 });
+    if (title && !titleAnimated) {
+      titleAnimated = true;
+      presets.fadeInUp(title, { duration: 400 });
+    }
 
-    const files = viewEl.querySelectorAll('.home-view__file');
-    if (files.length) presets.staggerIn(Array.from(files), { delay: 150, staggerDelay: 30 });
-
+    // Actions exist at mount (they're static)
     const actions = viewEl.querySelectorAll('.home-view__action');
-    if (actions.length) presets.staggerIn(Array.from(actions), { delay: 250, staggerDelay: 50 });
+    if (actions.length && !actionsAnimated) {
+      actionsAnimated = true;
+      presets.staggerIn(Array.from(actions), { delay: 200, staggerDelay: 50 });
+    }
+  });
+
+  // Files may load async
+  $effect(() => {
+    const _recent = recentFiles;
+    const _pinned = pinnedFiles;
+
+    if (!viewEl || filesAnimated) return;
+
+    requestAnimationFrame(() => {
+      const files = viewEl!.querySelectorAll('.home-view__file');
+      if (files.length > 0) {
+        filesAnimated = true;
+        presets.staggerIn(Array.from(files), { delay: 50, staggerDelay: 30 });
+      }
+    });
   });
 </script>
 

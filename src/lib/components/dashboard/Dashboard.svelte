@@ -44,25 +44,42 @@
   }
 
   let dashboardEl: HTMLDivElement | undefined = $state();
+  let titleAnimated = false;
+  let statsAnimated = false;
+  let rowsAnimated = false;
 
   onMount(() => {
     if (!dashboardEl) return;
 
-    // Animate title
     const title = dashboardEl.querySelector('.dashboard__name');
-    if (title) presets.fadeInUp(title, { duration: 400 });
+    if (title && !titleAnimated) {
+      titleAnimated = true;
+      presets.fadeInUp(title, { duration: 400 });
+    }
 
-    // Stagger stats
     const stats = dashboardEl.querySelectorAll('.stat');
-    if (stats.length) {
+    if (stats.length && !statsAnimated) {
+      statsAnimated = true;
       presets.staggerIn(Array.from(stats), { delay: 100, staggerDelay: 60 });
     }
+  });
 
-    // Stagger section rows
-    const rows = dashboardEl.querySelectorAll('.dashboard__row');
-    if (rows.length) {
-      presets.staggerIn(Array.from(rows), { delay: 200, staggerDelay: 25 });
-    }
+  // Rows load async — animate them when data arrives
+  $effect(() => {
+    // Read reactive deps to trigger on data change
+    const _linked = graphStats.mostConnected;
+    const _recent = recentFiles;
+    const _pinned = pinnedFiles;
+
+    if (!dashboardEl || rowsAnimated) return;
+
+    requestAnimationFrame(() => {
+      const rows = dashboardEl!.querySelectorAll('.dashboard__row');
+      if (rows.length > 0) {
+        rowsAnimated = true;
+        presets.staggerIn(Array.from(rows), { delay: 50, staggerDelay: 30 });
+      }
+    });
   });
 </script>
 
