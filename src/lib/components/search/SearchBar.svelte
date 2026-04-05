@@ -93,20 +93,19 @@
     font-family: var(--font-mono);
     font-size: 11px;
     color: var(--color-foreground);
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    background: var(--color-hover);
+    border: 1px solid transparent;
     border-radius: 6px;
     outline: none;
-    transition: border-color 150ms var(--ease-expo-out);
+    transition: border-color 150ms ease;
   }
 
   .search-bar__input:focus {
     border-color: var(--color-accent);
-    background: rgba(255, 255, 255, 0.06);
   }
 
   .search-bar__input::placeholder {
-    color: rgba(255, 255, 255, 0.24);
+    color: var(--color-placeholder);
   }
 
   .search-bar__results {
@@ -114,10 +113,11 @@
     top: 100%;
     left: 12px;
     right: 12px;
-    background: rgba(18, 19, 24, 0.98);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: var(--color-popover);
+    border: 1px solid var(--color-border);
     border-radius: 8px;
-    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4);
+    box-shadow: var(--shadow-float);
+    backdrop-filter: blur(12px);
     padding: 3px;
     z-index: 50;
     max-height: 240px;
@@ -136,12 +136,12 @@
     background: transparent;
     text-align: left;
     cursor: pointer;
-    transition: background 150ms var(--ease-expo-out);
+    transition: background 150ms ease;
   }
 
   .search-bar__result:hover,
   .search-bar__result--selected {
-    background: rgba(255, 255, 255, 0.06);
+    background: var(--color-hover);
   }
 
   .search-bar__result-title {
@@ -156,7 +156,7 @@
   .search-bar__result-snippet {
     font-family: var(--font-mono);
     font-size: 10px;
-    color: rgba(255, 255, 255, 0.36);
+    color: var(--color-placeholder);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
