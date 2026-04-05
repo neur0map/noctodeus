@@ -139,6 +139,18 @@
     ctxVisible = true;
   }
 
+  function sanitizeFileName(name: string, isDir: boolean): string {
+    // Replace spaces with dashes
+    let clean = name.trim().replace(/\s+/g, '-');
+    // Remove unsafe characters
+    clean = clean.replace(/[<>:"|?*\\]/g, '');
+    // Ensure .md extension for files (not directories)
+    if (!isDir && !clean.includes('.')) {
+      clean += '.md';
+    }
+    return clean;
+  }
+
   async function handleCtxSelect(id: string) {
     ctxVisible = false;
     if (!ctxTargetPath) return;
@@ -147,8 +159,10 @@
       case 'rename': {
         const oldPath = ctxTargetPath;
         const oldName = oldPath.split('/').pop() ?? oldPath;
-        const newName = await showInputDialog('Rename', oldName);
-        if (!newName || newName === oldName) return;
+        const rawName = await showInputDialog('Rename', oldName);
+        if (!rawName) return;
+        const newName = sanitizeFileName(rawName, ctxTargetIsDir);
+        if (newName === oldName) return;
         const parentDir = oldPath.includes('/') ? oldPath.slice(0, oldPath.lastIndexOf('/')) : '';
         const newPath = parentDir ? `${parentDir}/${newName}` : newName;
         try {
@@ -186,8 +200,9 @@
         break;
       }
       case 'new-file': {
-        const name = await showInputDialog('New file name', 'untitled.md');
-        if (!name) return;
+        const rawName = await showInputDialog('New file name', 'untitled');
+        if (!rawName) return;
+        const name = sanitizeFileName(rawName, false);
         const filePath = ctxTargetPath ? `${ctxTargetPath}/${name}` : name;
         try {
           const node = await createFile(filePath, '');
@@ -199,8 +214,9 @@
         break;
       }
       case 'new-folder': {
-        const name = await showInputDialog('Folder name', '');
-        if (!name) return;
+        const rawName = await showInputDialog('Folder name', '');
+        if (!rawName) return;
+        const name = sanitizeFileName(rawName, true);
         const dirPath = ctxTargetPath ? `${ctxTargetPath}/${name}` : name;
         try {
           await createDir(dirPath);
@@ -297,8 +313,9 @@
   }
 
   async function handleNewFolder() {
-    const name = await showInputDialog('Folder name', '');
-    if (!name) return;
+    const rawName = await showInputDialog('Folder name', '');
+    if (!rawName) return;
+    const name = sanitizeFileName(rawName, true);
     try {
       await createDir(name);
       const { scanCore } = await import('../lib/bridge/commands');
