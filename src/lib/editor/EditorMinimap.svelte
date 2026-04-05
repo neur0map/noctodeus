@@ -12,16 +12,14 @@
     level: number;
     text: string;
     pos: number;
-    pct: number; // 0-100 vertical position percentage
   }
 
   let items = $state<MinimapItem[]>([]);
-  let hoveredIndex = $state<number | null>(null);
+  let hovered = $state(false);
+  let activeIndex = $state<number | null>(null);
   let cleanup: (() => void) | null = null;
 
   function extract(ed: Editor) {
-    const docSize = ed.state.doc.content.size;
-    if (docSize === 0) { items = []; return; }
     const result: MinimapItem[] = [];
     ed.state.doc.descendants((node, pos) => {
       if (node.type.name === 'heading') {
@@ -29,7 +27,6 @@
           level: node.attrs.level as number,
           text: node.textContent,
           pos,
-          pct: (pos / docSize) * 100,
         });
       }
     });
@@ -59,93 +56,138 @@
 </script>
 
 {#if items.length > 0}
-  <div class="minimap">
-    {#each items as item, i}
-      <!-- svelte-ignore a11y_no_static_element_interactions -->
-      <div
-        class="minimap__bar"
-        class:minimap__bar--h1={item.level === 1}
-        class:minimap__bar--h2={item.level === 2}
-        class:minimap__bar--h3={item.level === 3}
-        style="top: {item.pct}%"
-        onclick={() => scrollTo(item.pos)}
-        onmouseenter={() => hoveredIndex = i}
-        onmouseleave={() => hoveredIndex = null}
-      >
-        {#if hoveredIndex === i}
-          <div class="minimap__tooltip">
-            {item.text || 'Untitled'}
-          </div>
-        {/if}
+  <!-- svelte-ignore a11y_no_static_element_interactions -->
+  <div
+    class="mm"
+    onmouseenter={() => hovered = true}
+    onmouseleave={() => { hovered = false; activeIndex = null; }}
+  >
+    {#if !hovered}
+      <!-- Collapsed: tiny bars -->
+      <div class="mm__bars">
+        {#each items as item}
+          <div
+            class="mm__bar"
+            class:mm__bar--h1={item.level === 1}
+            class:mm__bar--h2={item.level === 2}
+            class:mm__bar--h3={item.level === 3}
+          ></div>
+        {/each}
       </div>
-    {/each}
+    {:else}
+      <!-- Expanded: full outline popup -->
+      <div class="mm__popup">
+        {#each items as item, i}
+          <button
+            class="mm__item"
+            class:mm__item--active={activeIndex === i}
+            class:mm__item--h1={item.level === 1}
+            class:mm__item--h2={item.level === 2}
+            class:mm__item--h3={item.level === 3}
+            onmouseenter={() => activeIndex = i}
+            onclick={() => scrollTo(item.pos)}
+          >
+            {item.text || 'Untitled'}
+          </button>
+        {/each}
+      </div>
+    {/if}
   </div>
 {/if}
 
 <style>
-  .minimap {
+  .mm {
     position: absolute;
-    top: 60px;
-    right: 6px;
-    bottom: 20px;
-    width: 24px;
-    z-index: 3;
-    pointer-events: none;
+    top: 16px;
+    right: 10px;
+    z-index: 4;
   }
 
-  .minimap__bar {
-    position: absolute;
-    right: 0;
-    height: 3px;
-    border-radius: 1.5px;
-    background: rgba(255, 255, 255, 0.18);
+  /* Collapsed bars */
+  .mm__bars {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    padding: 6px 4px;
     cursor: pointer;
-    pointer-events: auto;
-    transition:
-      background var(--duration-fast) var(--ease-out),
-      width var(--duration-fast) var(--ease-out);
   }
 
-  .minimap__bar--h1 {
-    width: 20px;
-    background: rgba(255, 255, 255, 0.28);
-  }
-
-  .minimap__bar--h2 {
-    width: 14px;
+  .mm__bar {
+    height: 2.5px;
+    border-radius: 1px;
     background: rgba(255, 255, 255, 0.2);
+    transition: background var(--duration-fast) var(--ease-out);
   }
 
-  .minimap__bar--h3 {
-    width: 10px;
-    background: rgba(255, 255, 255, 0.14);
-  }
+  .mm__bar--h1 { width: 22px; background: rgba(255, 255, 255, 0.32); }
+  .mm__bar--h2 { width: 16px; }
+  .mm__bar--h3 { width: 11px; background: rgba(255, 255, 255, 0.14); }
 
-  .minimap__bar:hover {
-    background: var(--color-accent);
-    width: 20px;
-  }
-
-  .minimap__tooltip {
-    position: absolute;
-    right: 28px;
-    top: 50%;
-    transform: translateY(-50%);
-    padding: 3px 8px;
-    font-family: var(--font-sans);
-    font-size: 11px;
-    color: var(--color-text-primary);
+  /* Expanded popup */
+  .mm__popup {
     background: rgba(18, 19, 24, 0.96);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 5px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    white-space: nowrap;
-    pointer-events: none;
-    animation: tip-in 80ms var(--ease-out) both;
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 10px;
+    box-shadow:
+      0 8px 32px rgba(0, 0, 0, 0.45),
+      0 0 0 1px rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(16px);
+    padding: var(--space-2);
+    min-width: 160px;
+    max-width: 240px;
+    max-height: 320px;
+    overflow-y: auto;
+    scrollbar-width: none;
+    animation: mm-in var(--duration-fast) var(--ease-out) both;
   }
 
-  @keyframes tip-in {
-    from { opacity: 0; transform: translateY(-50%) translateX(4px); }
-    to { opacity: 1; transform: translateY(-50%) translateX(0); }
+  .mm__popup::-webkit-scrollbar { display: none; }
+
+  @keyframes mm-in {
+    from { opacity: 0; transform: scale(0.95) translateX(4px); }
+    to { opacity: 1; transform: scale(1) translateX(0); }
+  }
+
+  .mm__item {
+    display: block;
+    width: 100%;
+    padding: 5px 10px;
+    font-family: var(--font-sans);
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.56);
+    background: transparent;
+    border: none;
+    border-radius: 5px;
+    text-align: left;
+    cursor: pointer;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    transition: color var(--duration-fast) var(--ease-out);
+  }
+
+  .mm__item--h1 {
+    font-weight: 600;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.74);
+  }
+
+  .mm__item--h2 {
+    padding-left: 20px;
+  }
+
+  .mm__item--h3 {
+    padding-left: 30px;
+    font-size: 11px;
+  }
+
+  .mm__item:hover,
+  .mm__item--active {
+    color: var(--color-accent);
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .mm__popup { animation: none; }
   }
 </style>
