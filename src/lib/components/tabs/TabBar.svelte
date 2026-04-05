@@ -157,21 +157,25 @@
 <style>
   .tab-bar {
     display: flex;
-    align-items: stretch;
-    height: 40px;
+    align-items: center;
+    height: 42px;
+    padding: 0 8px;
+    gap: 2px;
     border-bottom: 1px solid var(--color-border);
-    background: transparent;
+    background: var(--color-background);
     flex-shrink: 0;
     overflow: hidden;
   }
 
   .tab-bar__tabs {
     display: flex;
-    align-items: stretch;
+    align-items: center;
+    gap: 2px;
     overflow-x: auto;
     overflow-y: hidden;
     flex: 1;
     min-width: 0;
+    padding: 4px 0;
     scrollbar-width: none;
   }
 
@@ -183,6 +187,6 @@
     display: flex;
     align-items: center;
     flex-shrink: 0;
-    padding-right: 12px;
+    padding-left: 8px;
   }
 </style>

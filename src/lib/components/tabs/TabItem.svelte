@@ -82,15 +82,15 @@
   .tab-item {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
-    height: 40px;
-    padding: 0 12px;
+    gap: 6px;
+    height: 32px;
+    padding: 0 10px;
     font-family: var(--font-mono);
     font-size: 12px;
     color: var(--color-placeholder);
     background: transparent;
     border: none;
-    border-bottom: 2px solid transparent;
+    border-radius: 6px;
     cursor: pointer;
     white-space: nowrap;
     flex-shrink: 0;
@@ -98,29 +98,27 @@
     user-select: none;
     touch-action: none;
     transition:
-      background 150ms ease,
-      color 150ms ease;
-    animation: tab-enter 400ms cubic-bezier(0.16, 1, 0.3, 1) both;
+      background 150ms var(--ease-expo-out),
+      color 150ms var(--ease-expo-out);
+    animation: tab-enter 400ms var(--ease-expo-out) both;
   }
 
   @keyframes tab-enter {
-    from {
-      opacity: 0;
-      transform: translateX(-8px);
-    }
-    to {
-      opacity: 1;
-      transform: translateX(0);
-    }
+    from { opacity: 0; transform: translateY(-4px) scale(0.97); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
   }
 
   .tab-item:hover:not(.tab-item--active) {
     color: var(--color-muted-foreground);
+    background: var(--color-hover);
   }
 
   .tab-item--active {
     color: var(--color-foreground);
-    border-bottom-color: var(--color-accent);
+    background: var(--color-card);
+    box-shadow:
+      0 1px 2px rgba(0, 0, 0, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.04);
   }
 
   .tab-item--dragging {
@@ -128,18 +126,19 @@
   }
 
   .tab-item--drag-over {
-    border-left: 2px solid var(--color-accent);
-  }
-
-  .tab-item--home {
-    padding-left: 8px;
+    box-shadow: -2px 0 0 var(--color-accent);
   }
 
   .tab-item__icon {
-    font-size: 10px;
+    display: flex;
+    align-items: center;
     color: currentColor;
-    opacity: 0.6;
+    opacity: 0.5;
     flex-shrink: 0;
+  }
+
+  .tab-item--active .tab-item__icon {
+    opacity: 0.7;
   }
 
   .tab-item__label {
@@ -154,9 +153,10 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 14px;
-    height: 14px;
-    margin-left: 4px;
+    width: 16px;
+    height: 16px;
+    margin-left: 2px;
+    margin-right: -4px;
     border-radius: 4px;
     font-size: 13px;
     color: var(--color-placeholder);
@@ -165,21 +165,22 @@
     cursor: pointer;
     opacity: 0;
     transition:
-      opacity 150ms ease,
-      color 150ms ease;
+      opacity 150ms var(--ease-expo-out),
+      color 150ms var(--ease-expo-out),
+      background 150ms var(--ease-expo-out);
   }
 
   .tab-item:hover .tab-item__close {
-    opacity: 1;
+    opacity: 0.6;
   }
 
   .tab-item__close:hover {
+    opacity: 1 !important;
     color: var(--color-foreground);
+    background: rgba(255, 255, 255, 0.08);
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .tab-item {
-      animation: none;
-    }
+    .tab-item { animation: none; }
   }
 </style>
