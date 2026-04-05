@@ -25,6 +25,7 @@
   import "./styles/editor.css";
   import "./styles/media.css";
   import "katex/dist/katex.min.css";
+  import "highlight.js/styles/atom-one-dark.min.css";
 
   let {
     path,
