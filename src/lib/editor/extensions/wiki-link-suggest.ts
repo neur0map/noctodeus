@@ -18,14 +18,8 @@ export function createWikiLinkSuggest(createPopup: CreateWikiPopup, getItems: ()
     addOptions() {
       return {
         suggestion: {
-          char: '[',
-          // Only trigger when preceded by another [, making it [[
-          allow: ({ state, range }: any) => {
-            const $from = state.doc.resolve(range.from);
-            const textBefore = $from.parent.textContent.slice(0, $from.parentOffset);
-            // Check that the character before our [ is also [
-            return textBefore.endsWith('[');
-          },
+          char: '[[',
+          allowSpaces: false,
           items: ({ query }: { query: string }) => {
             const all = getItems();
             if (!query) return all.slice(0, 12);
@@ -39,11 +33,8 @@ export function createWikiLinkSuggest(createPopup: CreateWikiPopup, getItems: ()
           render: createPopup,
           command: ({ editor, range, props }: { editor: Editor; range: Range; props: WikiSuggestItem }) => {
             const target = props.name.replace(/\.(md|markdown)$/i, '');
-            // Delete the [[ trigger + query, then insert wiki-link
-            // range.from points to the [ trigger, but we need to also delete the [ before it
-            const from = range.from - 1; // include the first [
             editor.chain().focus()
-              .deleteRange({ from, to: range.to })
+              .deleteRange(range)
               .insertContent({ type: 'wikiLink', attrs: { target } })
               .run();
           },
