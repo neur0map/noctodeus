@@ -809,6 +809,7 @@
 />
 
 <style>
+  /* ── Global ── */
   :global(html),
   :global(body) {
     height: 100%;
@@ -816,12 +817,53 @@
     font-size: 14px;
     line-height: 1.6;
     color: var(--color-foreground);
-    background: #050608;
+    background: var(--color-background);
   }
 
+  /* ── Sidebar header ── */
+  .sidebar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 28px;
+  }
+
+  .sidebar-header__name {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--color-foreground);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .sidebar-header__btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--color-placeholder);
+    font-size: 12px;
+    cursor: pointer;
+    transition: color 150ms var(--ease-expo-out), background 150ms var(--ease-expo-out);
+  }
+
+  .sidebar-header__btn:hover {
+    color: var(--color-foreground);
+    background: var(--color-hover);
+  }
+
+  /* ── Sidebar pinned ── */
   .sidebar-pinned {
     padding: 4px 12px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid var(--color-border);
     margin-bottom: 4px;
   }
 
@@ -833,7 +875,7 @@
     padding: 3px 8px;
     font-family: var(--font-mono);
     font-size: 11px;
-    color: rgba(255, 255, 255, 0.56);
+    color: var(--color-muted-foreground);
     background: transparent;
     border: none;
     border-radius: 4px;
@@ -843,13 +885,13 @@
   }
 
   .sidebar-pinned__item:hover {
-    background: rgba(255, 255, 255, 0.04);
+    background: var(--color-hover);
     color: var(--color-foreground);
   }
 
   .sidebar-pinned__item--active {
     color: var(--color-foreground);
-    background: rgba(122, 141, 255, 0.08);
+    background: rgba(99, 102, 241, 0.08);
   }
 
   .sidebar-pinned__star {
@@ -864,46 +906,7 @@
     white-space: nowrap;
   }
 
-  .sidebar-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    height: 28px;
-  }
-
-  .sidebar-header__btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 22px;
-    height: 22px;
-    border: none;
-    border-radius: 4px;
-    background: transparent;
-    color: rgba(255, 255, 255, 0.36);
-    font-size: 12px;
-    cursor: pointer;
-    transition: color 150ms var(--ease-expo-out), background 150ms var(--ease-expo-out);
-  }
-
-  .sidebar-header__btn:hover {
-    color: var(--color-foreground);
-    background: rgba(255, 255, 255, 0.06);
-  }
-
-  .sidebar-header__name {
-    font-family: var(--font-mono);
-    font-size: 12px;
-    line-height: 1.5;
-    color: rgba(255, 255, 255, 0.84);
-    font-weight: 600;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
+  /* ── Sidebar footer ── */
   .sidebar-footer {
     display: flex;
     align-items: center;
@@ -914,8 +917,7 @@
   .sidebar-footer__count {
     font-family: var(--font-mono);
     font-size: 12px;
-    line-height: 1.4;
-    color: rgba(255, 255, 255, 0.36);
+    color: var(--color-placeholder);
     display: flex;
     align-items: center;
     gap: 8px;
@@ -934,71 +936,55 @@
     border: none;
     border-radius: 5px;
     background: transparent;
-    color: rgba(255, 255, 255, 0.32);
+    color: var(--color-placeholder);
     cursor: pointer;
-    transition:
-      color 150ms var(--ease-expo-out),
-      background 150ms var(--ease-expo-out);
+    transition: color 150ms var(--ease-expo-out), background 150ms var(--ease-expo-out);
   }
 
   .sidebar-footer__settings:hover {
-    color: rgba(255, 255, 255, 0.72);
-    background: rgba(255, 255, 255, 0.06);
+    color: var(--color-muted-foreground);
+    background: var(--color-hover);
   }
 
+  /* ── Utility rail ── */
   .utility-rail {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 6px;
-    padding-top: 60px;
+    gap: 4px;
+    padding-top: 12px;
   }
 
   .utility-rail__button {
     width: 34px;
-    height: 38px;
-    border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.07);
-    background:
-      linear-gradient(
-        180deg,
-        rgba(255, 255, 255, 0.028),
-        rgba(255, 255, 255, 0.012)
-      ),
-      rgba(255, 255, 255, 0.016);
-    color: rgba(255, 255, 255, 0.58);
+    height: 34px;
+    border-radius: 6px;
+    border: none;
+    background: transparent;
+    color: var(--color-placeholder);
     font-family: var(--font-mono);
     font-size: 13px;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
-    transition:
-      color 150ms var(--ease-expo-out),
-      background 150ms var(--ease-expo-out),
-      border-color 150ms var(--ease-expo-out);
+    cursor: pointer;
+    transition: color 150ms var(--ease-expo-out), background 150ms var(--ease-expo-out);
   }
 
   .utility-rail__button:hover,
   .utility-rail__button--active {
     color: var(--color-foreground);
-    background:
-      linear-gradient(
-        180deg,
-        rgba(255, 255, 255, 0.05),
-        rgba(255, 255, 255, 0.022)
-      ),
-      rgba(255, 255, 255, 0.024);
-    border-color: rgba(255, 255, 255, 0.13);
+    background: var(--color-hover);
   }
 
+  /* ── Right panel ── */
   .right-panel {
     display: flex;
     flex-direction: column;
     height: 100%;
-    background: rgba(10, 12, 16, 0.72);
+    background: var(--color-card);
     overflow: hidden;
   }
 
   .right-panel__section {
-    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    border-bottom: 1px solid var(--color-border);
   }
 
   .right-panel__section--graph {
@@ -1024,7 +1010,7 @@
   .right-panel__section-label {
     font-family: var(--font-mono);
     font-size: 10px;
-    color: rgba(255, 255, 255, 0.36);
+    color: var(--color-placeholder);
     text-transform: uppercase;
     letter-spacing: 0.04em;
   }
