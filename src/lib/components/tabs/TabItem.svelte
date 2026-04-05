@@ -1,5 +1,8 @@
 <script lang="ts">
   import type { Tab } from '../../stores/tabs.svelte';
+  import Home from "@lucide/svelte/icons/house";
+  import FileText from "@lucide/svelte/icons/file-text";
+  import File from "@lucide/svelte/icons/file";
 
   let {
     tab,
@@ -27,11 +30,11 @@
   }
 
   function getTabIcon(tab: Tab): string {
-    if (tab.type === 'home') return '\u2302';
+    if (tab.type === 'home') return 'home';
     const ext = tab.fileNode?.extension?.toLowerCase();
     switch (ext) {
-      case 'md': return '\u25A0';
-      case 'txt': return '\u25A1';
+      case 'md': case 'markdown': case 'mdx': return 'markdown';
+      case 'txt': return 'text';
       case 'json': return '\u25C6';
       case 'yaml': case 'yml': return '\u25C7';
       case 'toml': return '\u25C8';
@@ -51,7 +54,15 @@
   onpointerdown={onpointerdown}
   title={tab.type === 'file' ? tab.fileNode?.path : 'Home'}
 >
-  <span class="tab-item__icon">{getTabIcon(tab)}</span>
+  <span class="tab-item__icon">
+    {#if tab.type === 'home'}
+      <Home size={12} />
+    {:else if tab.fileNode?.extension === 'md' || tab.fileNode?.extension === 'markdown'}
+      <FileText size={12} />
+    {:else}
+      <File size={12} />
+    {/if}
+  </span>
   <span class="tab-item__label">{tab.label}</span>
   {#if tab.type !== 'home' && onclose}
     <span

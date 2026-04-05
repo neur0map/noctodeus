@@ -1,6 +1,9 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
   import type { GraphNode, GraphEdge } from '../../stores/graph.svelte';
+  import ZoomIn from "@lucide/svelte/icons/zoom-in";
+  import ZoomOut from "@lucide/svelte/icons/zoom-out";
+  import Maximize from "@lucide/svelte/icons/maximize";
 
   let {
     nodes = [],
@@ -254,9 +257,9 @@
     onwheel={handleWheel}
   ></canvas>
   <div class="gv__ctrl">
-    <button class="gv__btn" onclick={() => sc = Math.min(4, sc * 1.3)} title="Zoom in">+</button>
-    <button class="gv__btn" onclick={() => sc = Math.max(0.15, sc * 0.7)} title="Zoom out">−</button>
-    <button class="gv__btn" onclick={() => { sc = 1; ox = 0; oy = 0; }} title="Reset">⌂</button>
+    <button class="gv__btn" onclick={() => sc = Math.min(4, sc * 1.3)} title="Zoom in"><ZoomIn size={12} /></button>
+    <button class="gv__btn" onclick={() => sc = Math.max(0.15, sc * 0.7)} title="Zoom out"><ZoomOut size={12} /></button>
+    <button class="gv__btn" onclick={() => { sc = 1; ox = 0; oy = 0; }} title="Reset"><Maximize size={12} /></button>
   </div>
 </div>
 
