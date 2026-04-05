@@ -193,9 +193,23 @@
         }
       },
       onKeyDown(props: any) {
-        // Let WikiLinkSuggest handle keyboard via svelte:window
         const e = props.event as KeyboardEvent;
-        if (['ArrowDown', 'ArrowUp', 'Enter', 'Escape'].includes(e.key)) return true;
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          return true;
+        }
+        if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          return true;
+        }
+        if (e.key === 'Escape') {
+          wikiVisible = false;
+          return true;
+        }
+        if (e.key === 'Enter') {
+          // Don't handle here — let WikiLinkSuggest component handle via onselect
+          return true;
+        }
         return false;
       },
       onExit() {

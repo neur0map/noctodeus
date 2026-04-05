@@ -33,9 +33,13 @@ export function createWikiLinkSuggest(createPopup: CreateWikiPopup, getItems: ()
           render: createPopup,
           command: ({ editor, range, props }: { editor: Editor; range: Range; props: WikiSuggestItem }) => {
             const target = props.name.replace(/\.(md|markdown)$/i, '');
+            // Replace the entire [[query range with the wiki-link node
             editor.chain().focus()
-              .deleteRange(range)
-              .insertContent({ type: 'wikiLink', attrs: { target } })
+              .command(({ tr }) => {
+                const node = editor.schema.nodes.wikiLink.create({ target });
+                tr.replaceWith(range.from, range.to, node);
+                return true;
+              })
               .run();
           },
         },
