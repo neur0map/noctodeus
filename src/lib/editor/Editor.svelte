@@ -182,6 +182,7 @@
       },
       onUpdate(props: any) {
         wikiItems = props.items;
+        wikiCommand = props.command;
         wikiQuery = props.query ?? '';
         const rect = props.clientRect?.();
         if (rect) {
