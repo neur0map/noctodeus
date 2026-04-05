@@ -6,7 +6,7 @@ import markdownItSub from 'markdown-it-sub';
 // @ts-ignore — no type declarations available
 import markdownItSup from 'markdown-it-sup';
 // @ts-ignore — no type declarations available
-import markdownItTexmath from 'markdown-it-texmath';
+import markdownItKatex from '@vscode/markdown-it-katex';
 
 function wikiLinkPlugin(md: MarkdownIt) {
   md.inline.ruler.after('link', 'wiki_link', (state, silent) => {
@@ -147,31 +147,14 @@ function mediaBlockPlugin(md: MarkdownIt) {
   });
 }
 
-const md = new MarkdownIt('default', { html: false, linkify: true, typographer: false });
+const md = new MarkdownIt('default', { html: true, linkify: true, typographer: false });
 md.use(wikiLinkPlugin);
 md.use(taskListPlugin);
 md.use(mediaBlockPlugin);
 md.use(markdownItMark);
 md.use(markdownItSub);
 md.use(markdownItSup);
-md.use(markdownItTexmath, {
-  engine: { renderToString: (t: string) => t },
-  delimiters: 'dollars',
-});
-
-// Override texmath renderers to output TipTap-compatible HTML
-md.renderer.rules.math_inline = (tokens: any[], idx: number) => {
-  const tex = tokens[idx].content.trim();
-  return `<span data-type="inline-math" data-latex="${tex.replace(/"/g, '&quot;')}"></span>`;
-};
-md.renderer.rules.math_inline_double = (tokens: any[], idx: number) => {
-  const tex = tokens[idx].content.trim();
-  return `<div data-type="block-math" data-latex="${tex.replace(/"/g, '&quot;')}"></div>`;
-};
-md.renderer.rules.math_block = (tokens: any[], idx: number) => {
-  const tex = tokens[idx].content.trim();
-  return `<div data-type="block-math" data-latex="${tex.replace(/"/g, '&quot;')}"></div>`;
-};
+md.use(markdownItKatex);
 
 const FRONTMATTER_RE = /^---\r?\n[\s\S]*?\r?\n---\r?\n?/;
 

@@ -13,7 +13,6 @@ import { TextStyle } from '@tiptap/extension-text-style';
 import Color from '@tiptap/extension-color';
 import Underline from '@tiptap/extension-underline';
 import CharacterCount from '@tiptap/extension-character-count';
-import Mathematics from '@tiptap/extension-mathematics';
 import Focus from '@tiptap/extension-focus';
 import { ResizableImage } from './resizable-image.js';
 import Placeholder from '@tiptap/extension-placeholder';
@@ -80,9 +79,6 @@ export function createEditorExtensions(
 
     // Typography (smart quotes, dashes, ellipsis)
     Typography,
-
-    // Math (LaTeX)
-    Mathematics,
 
     // Character count
     CharacterCount,

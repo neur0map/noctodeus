@@ -140,17 +140,6 @@ const COMMANDS: SlashCommandItem[] = [
     },
   },
   {
-    id: 'math-block',
-    label: 'Math block',
-    icon: 'Σ',
-    description: 'LaTeX math formula',
-    group: 'Advanced',
-    command: (editor, range) => {
-      editor.chain().focus().deleteRange(range).run();
-      (editor.commands as any).setMathematics?.();
-    },
-  },
-  {
     id: 'highlight',
     label: 'Highlight',
     icon: '🖍',

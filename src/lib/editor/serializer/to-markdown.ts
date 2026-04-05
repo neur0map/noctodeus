@@ -43,10 +43,6 @@ function serializeInline(node: JSONContent): string {
     return `[[${node.attrs?.target ?? ''}]]`;
   }
 
-  if (node.type === 'inlineMath') {
-    return `$${node.attrs?.latex ?? ''}$`;
-  }
-
   if (node.type === 'hardBreak') {
     return '  \n';
   }
@@ -169,16 +165,6 @@ function serializeNode(node: JSONContent): string {
     case 'tableCell':
     case 'tableHeader':
       return serializeChildren(node.content);
-
-    case 'inlineMath': {
-      const latex = node.attrs?.latex ?? '';
-      return `$${latex}$`;
-    }
-
-    case 'blockMath': {
-      const latex = node.attrs?.latex ?? '';
-      return `$$${latex}$$\n\n`;
-    }
 
     case 'hardBreak':
       return '  \n';
