@@ -53,6 +53,7 @@
   import PanelRight from "@lucide/svelte/icons/panel-right";
   import Plus from "@lucide/svelte/icons/plus";
   import Settings from "@lucide/svelte/icons/settings";
+  import CoreSwitcher from "../lib/components/common/CoreSwitcher.svelte";
 
   let { children }: { children: Snippet } = $props();
 
@@ -649,12 +650,12 @@
 
       {#snippet footer()}
         <div class="sidebar-footer">
-          <span class="sidebar-footer__count">
-            {files.fileMap.size} files
-            {#if appSettings.showCharCount && activeEditorState.charCount > 0}
-              <span class="sidebar-footer__chars">{activeEditorState.charCount}c</span>
-            {/if}
-          </span>
+          <CoreSwitcher
+            activeCore={core.activeCore}
+            onswitch={(c) => window.dispatchEvent(new CustomEvent('noctodeus-switch-core', { detail: c.path }))}
+            oncreate={() => window.dispatchEvent(new CustomEvent('noctodeus-create-core'))}
+            onopen={() => window.dispatchEvent(new CustomEvent('noctodeus-open-core'))}
+          />
           <button
             class="sidebar-footer__settings"
             onclick={() => ui.showSettings()}

@@ -323,9 +323,36 @@
     const handleOpenCoreEvent = () => handleOpenCore();
     window.addEventListener("noctodeus-open-core", handleOpenCoreEvent);
 
+    const handleSwitchCoreEvent = (e: Event) => {
+      const path = (e as CustomEvent).detail;
+      if (path) openOrCreateCore(path);
+    };
+    window.addEventListener("noctodeus-switch-core", handleSwitchCoreEvent);
+
+    const handleCreateCoreEvent = async () => {
+      try {
+        const name = window.prompt("Core name:");
+        if (!name) return;
+        const selected = await openDialog({
+          directory: true,
+          multiple: false,
+          title: "Choose folder for new core",
+        });
+        if (!selected) return;
+        const folderPath = typeof selected === "string" ? selected : String(selected);
+        const fullPath = `${folderPath}/${name}`;
+        await openOrCreateCore(fullPath);
+      } catch (err) {
+        toast.error(`Failed to create core: ${err}`);
+      }
+    };
+    window.addEventListener("noctodeus-create-core", handleCreateCoreEvent);
+
     return () => {
       window.removeEventListener("beforeunload", handleBeforeUnload);
       window.removeEventListener("noctodeus-open-core", handleOpenCoreEvent);
+      window.removeEventListener("noctodeus-switch-core", handleSwitchCoreEvent);
+      window.removeEventListener("noctodeus-create-core", handleCreateCoreEvent);
     };
   });
 
