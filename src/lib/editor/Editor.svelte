@@ -411,12 +411,12 @@
 />
 
 <WikiLinkSuggest
-  query={wikiQuery}
+  query={''}
   items={wikiItems}
   visible={wikiVisible}
   position={wikiPosition}
   onselect={(name) => {
-    const item = wikiItems.find(i => i.name === name);
+    const item = wikiItems.find(i => i.name === name || i.name.replace(/\.(md|markdown)$/i, '') === name);
     if (item && wikiCommand) wikiCommand(item);
     wikiVisible = false;
   }}
