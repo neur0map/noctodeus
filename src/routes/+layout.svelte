@@ -614,7 +614,8 @@
       {#snippet header()}
         <div class="sidebar-header">
           <button class="sidebar-header__btn" onclick={(e) => {
-            sidebarMenuPosition = { top: e.clientY + 4, left: e.clientX - 140 };
+            const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+            sidebarMenuPosition = { top: rect.bottom + 4, left: rect.left };
             sidebarMenuVisible = true;
           }} title="Actions">
             <Ellipsis size={14} />
