@@ -24,6 +24,7 @@
   import GraphView from "../lib/components/graph/GraphView.svelte";
   import BacklinksPanel from "../lib/components/panels/BacklinksPanel.svelte";
   import OutlinePanel from "../lib/components/panels/OutlinePanel.svelte";
+  import NoteDetailsPanel from "../lib/components/panels/NoteDetailsPanel.svelte";
   import { getActiveEditorState } from "../lib/stores/active-editor.svelte";
   import { getSettings } from "../lib/stores/settings.svelte";
 
@@ -736,6 +737,10 @@
       </div>
 
       <div class="right-panel__section right-panel__section--scroll">
+        <NoteDetailsPanel
+          editor={activeEditorState.editor}
+          fileNode={files.activeFilePath ? files.fileMap.get(files.activeFilePath) ?? null : null}
+        />
         <OutlinePanel editor={activeEditorState.editor} />
       </div>
 
