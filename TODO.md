@@ -2,9 +2,6 @@
 
 ## Current Stack (can build now with what we have)
 
-- [ ] Light theme (Dark / Light / System toggle in settings)
-- [ ] Note details panel (word count, timestamps, clickable TOC in right panel)
-- [ ] Edit/View mode toggle (rendered markdown preview)
 - [ ] Task extraction (consolidated task view across all notes)
 - [ ] Keyboard navigation (arrow keys in file tree, Tab between zones, vim bindings)
 - [ ] Daily / periodic notes with calendar view
@@ -55,3 +52,7 @@
 - [x] Lucide icon library (replaced all Unicode and inline SVG icons)
 - [x] Bubble toolbar (bold, italic, underline, strike, highlight, code, link + block type picker)
 - [x] Search content inside files (FTS5 with snippet highlights)
+- [x] Light theme (Dark / Light / System toggle in settings)
+- [x] Note details panel (word count, chars, reading time, modified date in right panel)
+- [x] Edit/View mode toggle (rendered markdown preview with eye icon)
+- [x] Syntax highlighting for code blocks (atom-one-dark theme)
