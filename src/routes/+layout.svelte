@@ -747,22 +747,24 @@
         </div>
       {/if}
 
-      <div class="right-panel__section right-panel__section--scroll">
-        <NoteDetailsPanel
-          editor={activeEditorState.editor}
-          fileNode={files.activeFilePath ? files.fileMap.get(files.activeFilePath) ?? null : null}
-        />
-        <OutlinePanel editor={activeEditorState.editor} />
-      </div>
+      {#if ui.rightPanelVisible}
+        <div class="right-panel__section right-panel__section--scroll">
+          <NoteDetailsPanel
+            editor={activeEditorState.editor}
+            fileNode={files.activeFilePath ? files.fileMap.get(files.activeFilePath) ?? null : null}
+          />
+          <OutlinePanel editor={activeEditorState.editor} />
+        </div>
 
-      <div class="right-panel__section right-panel__section--scroll">
-        <BacklinksPanel
-          currentPath={files.activeFilePath}
-          nodes={graphState.nodes}
-          edges={graphState.edges}
-          onselect={handleFileSelect}
-        />
-      </div>
+        <div class="right-panel__section right-panel__section--scroll">
+          <BacklinksPanel
+            currentPath={files.activeFilePath}
+            nodes={graphState.nodes}
+            edges={graphState.edges}
+            onselect={handleFileSelect}
+          />
+        </div>
+      {/if}
     </div>
   {/snippet}
 </AppShell>
