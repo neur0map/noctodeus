@@ -2,7 +2,6 @@
 
 ## Current Stack (can build now with what we have)
 
-- [ ] Custom CSS themes (user-created themes, font/color customization beyond settings)
 - [ ] Version history / file recovery (automatic snapshots, restore previous versions)
 - [ ] Quick capture (global hotkey to capture a thought without opening the full app)
 - [ ] Queryable database views (filter, sort, group notes by metadata — table/kanban/calendar)
@@ -57,3 +56,4 @@
 - [x] Aliases (frontmatter aliases resolve wiki-links, shown in suggest dropdown)
 - [x] Unlinked mentions detection (scan for title/alias text, one-click convert to wiki link)
 - [x] Import files and folders into core
+- [x] Custom appearance (accent color picker, font overrides, editor width, custom CSS injection)
