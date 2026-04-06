@@ -1,5 +1,6 @@
 let sidebarVisible = $state(true);
 let rightPanelVisible = $state(false);
+let graphPanelVisible = $state(false);
 let quickOpenVisible = $state(false);
 let commandPaletteVisible = $state(false);
 let sidebarCollapsed = $state(false);
@@ -12,6 +13,9 @@ export function getUiState() {
     },
     get rightPanelVisible() {
       return rightPanelVisible;
+    },
+    get graphPanelVisible() {
+      return graphPanelVisible;
     },
     get quickOpenVisible() {
       return quickOpenVisible;
@@ -31,6 +35,9 @@ export function getUiState() {
     },
     toggleRightPanel() {
       rightPanelVisible = !rightPanelVisible;
+    },
+    toggleGraphPanel() {
+      graphPanelVisible = !graphPanelVisible;
     },
     toggleSidebarCollapse() {
       sidebarCollapsed = !sidebarCollapsed;
@@ -66,6 +73,7 @@ export function getUiState() {
     reset() {
       sidebarVisible = true;
       rightPanelVisible = false;
+      graphPanelVisible = false;
       quickOpenVisible = false;
       commandPaletteVisible = false;
       sidebarCollapsed = false;

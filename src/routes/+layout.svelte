@@ -55,6 +55,7 @@
   import PanelRight from "@lucide/svelte/icons/panel-right";
   import Plus from "@lucide/svelte/icons/plus";
   import Settings from "@lucide/svelte/icons/settings";
+  import GitFork from "@lucide/svelte/icons/git-fork";
   import CoreSwitcher from "../lib/components/common/CoreSwitcher.svelte";
 
   let { children }: { children: Snippet } = $props();
@@ -618,7 +619,7 @@
 <AppShell
   sidebarVisible={ui.sidebarVisible}
   sidebarCollapsed={ui.sidebarCollapsed}
-  rightPanelVisible={ui.rightPanelVisible}
+  rightPanelVisible={ui.rightPanelVisible || ui.graphPanelVisible}
 >
   {#snippet sidebar()}
     <Sidebar collapsed={ui.sidebarCollapsed} ontogglecollapse={() => ui.toggleSidebarCollapse()}>
@@ -704,6 +705,14 @@
       </button>
       <button
         class="utility-rail__button"
+        class:utility-rail__button--active={ui.graphPanelVisible}
+        onclick={() => ui.toggleGraphPanel()}
+        title="Toggle graph"
+      >
+        <GitFork size={16} />
+      </button>
+      <button
+        class="utility-rail__button"
         class:utility-rail__button--active={ui.rightPanelVisible}
         onclick={() => ui.toggleRightPanel()}
         title="Toggle detail rail"
@@ -722,19 +731,21 @@
 
   {#snippet rightPanel()}
     <div class="right-panel">
-      <div class="right-panel__section right-panel__section--graph">
-        <div class="right-panel__section-header">
-          <span class="right-panel__section-label">Graph</span>
+      {#if ui.graphPanelVisible}
+        <div class="right-panel__section right-panel__section--graph">
+          <div class="right-panel__section-header">
+            <span class="right-panel__section-label">Graph</span>
+          </div>
+          <div class="right-panel__graph-body">
+            <GraphView
+              nodes={graphState.nodes}
+              edges={graphState.edges}
+              activeFilePath={files.activeFilePath}
+              onselect={handleFileSelect}
+            />
+          </div>
         </div>
-        <div class="right-panel__graph-body">
-          <GraphView
-            nodes={graphState.nodes}
-            edges={graphState.edges}
-            activeFilePath={files.activeFilePath}
-            onselect={handleFileSelect}
-          />
-        </div>
-      </div>
+      {/if}
 
       <div class="right-panel__section right-panel__section--scroll">
         <NoteDetailsPanel
