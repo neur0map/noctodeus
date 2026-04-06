@@ -168,14 +168,12 @@
   .bt {
     position: fixed;
     z-index: 200;
-    background: rgba(18, 18, 24, 0.92);
+    background: var(--color-popover, rgba(18, 18, 24, 0.92));
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
     border-radius: 12px;
-    box-shadow:
-      0 8px 32px rgba(0, 0, 0, 0.5),
-      inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    box-shadow: var(--shadow-elevated, 0 2px 8px rgba(0, 0, 0, 0.25));
     padding: 4px;
     animation: bt-in 250ms var(--ease-expo-out) both;
     user-select: none;
@@ -195,7 +193,7 @@
   .bt__sep {
     width: 1px;
     height: 16px;
-    background: rgba(255, 255, 255, 0.06);
+    background: var(--border-subtle, rgba(255, 255, 255, 0.06));
     margin: 0 3px;
   }
 
@@ -210,7 +208,7 @@
     border: none;
     border-radius: 8px;
     background: transparent;
-    color: rgba(255, 255, 255, 0.5);
+    color: var(--text-muted, rgba(255, 255, 255, 0.5));
     font-family: var(--font-sans);
     font-size: 13px;
     font-weight: 500;
@@ -221,12 +219,12 @@
   }
 
   .bt__btn:hover {
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--surface-3, rgba(255, 255, 255, 0.08));
     color: var(--color-foreground);
   }
 
   .bt__btn--active {
-    background: rgba(99, 102, 241, 0.15);
+    background: rgba(122, 162, 247, 0.15);
     color: var(--color-accent);
   }
 
@@ -236,7 +234,7 @@
   }
 
   .bt__btn--highlight.bt__btn--active {
-    background: rgba(99, 102, 241, 0.15);
+    background: rgba(122, 162, 247, 0.15);
     color: var(--color-accent);
   }
 
@@ -258,7 +256,7 @@
 
   /* Block type dropdown */
   .bt__menu {
-    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    border-top: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.06));
     margin-top: 4px;
     padding: 4px 0 0;
     display: flex;
@@ -276,7 +274,7 @@
     border: none;
     border-radius: 6px;
     background: transparent;
-    color: rgba(255, 255, 255, 0.6);
+    color: var(--text-muted, rgba(255, 255, 255, 0.6));
     font-family: var(--font-sans);
     font-size: 13px;
     cursor: pointer;
@@ -285,7 +283,7 @@
   }
 
   .bt__menu-item:hover {
-    background: rgba(255, 255, 255, 0.06);
+    background: var(--surface-3, rgba(255, 255, 255, 0.06));
     color: var(--color-foreground);
   }
 
@@ -299,7 +297,7 @@
     font-weight: 600;
     width: 22px;
     flex-shrink: 0;
-    color: rgba(255, 255, 255, 0.3);
+    color: var(--color-placeholder, rgba(255, 255, 255, 0.3));
   }
 
   .bt__menu-item--active .bt__menu-icon {

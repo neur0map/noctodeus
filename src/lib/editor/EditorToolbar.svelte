@@ -214,7 +214,7 @@
     height: 42px;
     padding: 0 12px;
     background: transparent;
-    border-bottom: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--border-subtle, var(--color-border));
     gap: 2px;
     flex-shrink: 0;
     overflow-x: auto;
@@ -248,7 +248,7 @@
 
   .toolbar-btn.active {
     color: var(--color-accent);
-    background: rgba(122, 141, 255, 0.12);
+    background: rgba(122, 162, 247, 0.12);
   }
 
   .toolbar-btn--italic {
@@ -272,11 +272,11 @@
     top: calc(100% + 4px);
     left: 0;
     z-index: 10;
-    background: rgba(11, 13, 18, 0.98);
-    border: 1px solid var(--color-border);
+    background: var(--color-popover, rgba(11, 13, 18, 0.98));
+    border: 1px solid var(--border-subtle, var(--color-border));
     border-radius: 6px;
     padding: 4px;
-    box-shadow: var(--shadow-float);
+    box-shadow: var(--shadow-elevated, 0 2px 8px rgba(0, 0, 0, 0.25));
     animation: fade-in 150ms var(--ease-expo-out) both;
   }
 
