@@ -3,7 +3,8 @@
 
 @custom-variant dark (&:is(.dark *));
 
-:root {
+/* Dark theme (default) */
+:root, .dark {
   --radius: 0.375rem;
   --background: #09090b;
   --foreground: #fafafa;
@@ -31,6 +32,46 @@
   --sidebar-accent-foreground: #fafafa;
   --sidebar-border: #27272a;
   --sidebar-ring: #6366f1;
+  --hover: #27272a;
+  --placeholder: #52525b;
+  --accent-hover: #818cf8;
+  --float-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  color-scheme: dark;
+}
+
+/* Light theme */
+.light {
+  --background: #ffffff;
+  --foreground: #09090b;
+  --card: #f4f4f5;
+  --card-foreground: #09090b;
+  --popover: #ffffff;
+  --popover-foreground: #09090b;
+  --primary: #4f46e5;
+  --primary-foreground: #ffffff;
+  --secondary: #f4f4f5;
+  --secondary-foreground: #18181b;
+  --muted: #f4f4f5;
+  --muted-foreground: #71717a;
+  --accent: #4f46e5;
+  --accent-foreground: #ffffff;
+  --destructive: #dc2626;
+  --border: #e4e4e7;
+  --input: #e4e4e7;
+  --ring: #4f46e5;
+  --sidebar: #f9fafb;
+  --sidebar-foreground: #09090b;
+  --sidebar-primary: #4f46e5;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f4f4f5;
+  --sidebar-accent-foreground: #18181b;
+  --sidebar-border: #e4e4e7;
+  --sidebar-ring: #4f46e5;
+  --hover: #f4f4f5;
+  --placeholder: #a1a1aa;
+  --accent-hover: #6366f1;
+  --float-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  color-scheme: light;
 }
 
 @theme inline {
@@ -71,11 +112,11 @@
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
   --font-content: "Source Serif 4", "Charter", "Georgia", ui-serif, serif;
 
-  --color-hover: #27272a;
-  --color-placeholder: #52525b;
-  --color-accent-hover: #818cf8;
+  --color-hover: var(--hover, #27272a);
+  --color-placeholder: var(--placeholder, #52525b);
+  --color-accent-hover: var(--accent-hover, #818cf8);
 
-  --shadow-float: 0 4px 16px rgba(0, 0, 0, 0.4);
+  --shadow-float: var(--float-shadow, 0 4px 16px rgba(0, 0, 0, 0.4));
 
   --animate-duration: 150ms;
   --ease-expo-out: cubic-bezier(0.16, 1, 0.3, 1);

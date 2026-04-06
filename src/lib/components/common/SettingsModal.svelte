@@ -122,8 +122,14 @@
                   <span class="settings__row-label">Theme</span>
                   <span class="settings__row-desc">Choose the interface theme.</span>
                 </div>
-                <select class="settings__select" disabled>
+                <select
+                  class="settings__select"
+                  value={settings.theme}
+                  onchange={(e) => settings.update('theme', e.currentTarget.value as any)}
+                >
                   <option value="dark">Dark</option>
+                  <option value="light">Light</option>
+                  <option value="system">System</option>
                 </select>
               </div>
               <div class="settings__row">

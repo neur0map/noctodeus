@@ -4,6 +4,7 @@
 
   import type { Snippet } from "svelte";
   import { onMount, onDestroy } from "svelte";
+  import { applyTheme, watchSystemTheme } from "../lib/utils/theme";
   import type { UnlistenFn } from "@tauri-apps/api/event";
 
   import AppShell from "../lib/components/layout/AppShell.svelte";
@@ -66,6 +67,15 @@
   const activeEditorState = getActiveEditorState();
   const appSettings = getSettings();
   const pinned = getPinnedState();
+
+  // Apply theme reactively
+  let unwatchTheme: (() => void) | undefined;
+  $effect(() => {
+    const mode = appSettings.theme;
+    applyTheme(mode);
+    unwatchTheme?.();
+    unwatchTheme = watchSystemTheme(mode, () => applyTheme(mode));
+  });
 
   let unlisteners: UnlistenFn[] = [];
   let overlayOpen = $derived(ui.quickOpenVisible || ui.commandPaletteVisible);

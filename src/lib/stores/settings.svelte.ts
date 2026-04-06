@@ -1,11 +1,14 @@
 const STORAGE_KEY = 'noctodeus-settings';
 
+export type ThemeMode = 'dark' | 'light' | 'system';
+
 export interface AppSettings {
   // General
   restoreLastSession: boolean;
   // Editor
   autoSave: boolean;
   // Appearance
+  theme: ThemeMode;
   fontSize: number;
   showCharCount: boolean;
   // Files
@@ -17,6 +20,7 @@ export interface AppSettings {
 const DEFAULTS: AppSettings = {
   restoreLastSession: true,
   autoSave: true,
+  theme: 'dark' as ThemeMode,
   fontSize: 16,
   showCharCount: true,
   defaultExtension: '.md',
@@ -51,6 +55,7 @@ export function getSettings() {
   return {
     get restoreLastSession() { return settings.restoreLastSession; },
     get autoSave() { return settings.autoSave; },
+    get theme() { return settings.theme; },
     get fontSize() { return settings.fontSize; },
     get showCharCount() { return settings.showCharCount; },
     get defaultExtension() { return settings.defaultExtension; },
