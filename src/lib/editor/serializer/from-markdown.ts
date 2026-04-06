@@ -106,17 +106,14 @@ function mediaBlockPlugin(md: MarkdownIt) {
       return `<audio src="${src}" controls class="media-audio"></audio>`;
     }
 
-    // Check for width suffix: ![alt](src =WIDTHx)
-    let imgSrc = src;
     let widthAttr = '';
-    const widthMatch = src.match(/^(.+?)\s+=(\d+)x\)?$/);
-    if (widthMatch) {
-      imgSrc = widthMatch[1];
-      widthAttr = ` width="${widthMatch[2]}" style="width:${widthMatch[2]}px"`;
+    const storedWidth = imageWidths.get(src);
+    if (storedWidth) {
+      widthAttr = ` width="${storedWidth}" style="width:${storedWidth}px"`;
     }
 
     const escapedAlt = alt.replace(/"/g, '&quot;');
-    return `<img src="${imgSrc}" alt="${escapedAlt}"${widthAttr} />`;
+    return `<img src="${src}" alt="${escapedAlt}"${widthAttr} />`;
   };
 
   // Transform [embed](url) links into embed divs
@@ -158,10 +155,24 @@ md.use(markdownItKatex);
 
 const FRONTMATTER_RE = /^---\r?\n[\s\S]*?\r?\n---\r?\n?/;
 
-/** Strip YAML frontmatter before rendering. Returns [html, frontmatter]. */
+// Store width data extracted during pre-processing
+const imageWidths = new Map<string, string>();
+
+/** Pre-process markdown to extract width suffixes from images.
+ *  Converts `![alt](url =WIDTHx)` to `![alt](url)` and stores width. */
+function preprocessImageWidths(text: string): string {
+  return text.replace(/!\[([^\]]*)\]\((.+?)\s+=(\d+)x\)/g, (_match, alt, url, width) => {
+    imageWidths.set(url, width);
+    return `![${alt}](${url})`;
+  });
+}
+
+/** Strip YAML frontmatter before rendering. */
 export function parseMarkdown(markdown: string): string {
+  imageWidths.clear();
   const body = markdown.replace(FRONTMATTER_RE, '');
-  return md.render(body);
+  const preprocessed = preprocessImageWidths(body);
+  return md.render(preprocessed);
 }
 
 /** Extract raw frontmatter string (including delimiters) from markdown. */
