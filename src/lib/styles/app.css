@@ -197,6 +197,45 @@ html, body {
   color: var(--color-foreground);
 }
 
+/* Midnight Tokyo — Scrollbars */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-active, #2A2F45);
+  border-radius: 2px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted, #6B7394);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-subtle, #1E2336) transparent;
+}
+
+*:hover {
+  scrollbar-color: var(--border-active, #2A2F45) transparent;
+}
+
+/* Midnight Tokyo — Focus states (soft glow, no hard rings) */
+*:focus-visible {
+  outline: none;
+  box-shadow: var(--glow-focus, 0 0 0 2px rgba(122, 162, 247, 0.15));
+}
+
+/* Midnight Tokyo — Transitions */
+button, a, input, textarea, select, [role="button"], [role="tab"] {
+  transition: background-color 150ms ease-out, color 150ms ease-out, box-shadow 150ms ease-out, border-color 150ms ease-out, opacity 150ms ease-out;
+}
+
 ::selection {
   background: rgba(122, 162, 247, 0.2);
   color: inherit;
