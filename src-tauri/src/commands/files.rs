@@ -96,6 +96,7 @@ fn file_info_from_path(abs_path: &Path, core_root: &Path) -> Result<FileInfo, No
         modified_at,
         content_hash: None,
         is_directory,
+        aliases: Vec::new(),
     })
 }
 

@@ -84,17 +84,17 @@ pub fn scan_directory(core_path: &Path) -> Result<Vec<FileInfo>, NoctoError> {
             .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
             .map(|d| d.as_secs() as i64);
 
-        // Extract title from markdown files.
-        let title = if !is_dir && is_markdown(&name) {
+        // Extract title and aliases from markdown files.
+        let (title, aliases) = if !is_dir && is_markdown(&name) {
             match fs::read_to_string(entry_path) {
-                Ok(content) => extract_title(&content),
+                Ok(content) => (extract_title(&content), extract_aliases(&content)),
                 Err(e) => {
                     warn!(path = %rel_path, error = %e, "failed to read file for title extraction");
-                    None
+                    (None, Vec::new())
                 }
             }
         } else {
-            None
+            (None, Vec::new())
         };
 
         // Compute content hash for files within size limit.
@@ -116,6 +116,7 @@ pub fn scan_directory(core_path: &Path) -> Result<Vec<FileInfo>, NoctoError> {
             modified_at,
             content_hash,
             is_directory: is_dir,
+            aliases,
         });
     }
 
@@ -165,12 +166,13 @@ pub fn scan_single_file(core_path: &Path, abs_path: &Path) -> Result<FileInfo, N
         .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
         .map(|d| d.as_secs() as i64);
 
-    let title = if !is_dir && is_markdown(&name) {
-        fs::read_to_string(abs_path)
-            .ok()
-            .and_then(|content| extract_title(&content))
+    let (title, aliases) = if !is_dir && is_markdown(&name) {
+        match fs::read_to_string(abs_path) {
+            Ok(content) => (extract_title(&content), extract_aliases(&content)),
+            Err(_) => (None, Vec::new()),
+        }
     } else {
-        None
+        (None, Vec::new())
     };
 
     let content_hash = if !is_dir {
@@ -189,6 +191,7 @@ pub fn scan_single_file(core_path: &Path, abs_path: &Path) -> Result<FileInfo, N
         modified_at,
         content_hash,
         is_directory: is_dir,
+        aliases,
     })
 }
 
@@ -262,6 +265,42 @@ fn extract_first_heading(content: &str) -> Option<String> {
         }
     }
     None
+}
+
+/// Extract aliases from YAML frontmatter (`aliases: [a, b, c]`).
+pub fn extract_aliases(content: &str) -> Vec<String> {
+    let trimmed = content.trim_start();
+    if !trimmed.starts_with("---") {
+        return Vec::new();
+    }
+    let after_opening = &trimmed[3..];
+    let closing_pos = match after_opening.find("\n---") {
+        Some(p) => p,
+        None => return Vec::new(),
+    };
+    let frontmatter = &after_opening[..closing_pos];
+
+    for line in frontmatter.lines() {
+        let line = line.trim();
+        if let Some(rest) = line.strip_prefix("aliases:") {
+            let rest = rest.trim();
+            if rest.starts_with('[') && rest.ends_with(']') {
+                return rest[1..rest.len() - 1]
+                    .split(',')
+                    .map(|s| {
+                        let s = s.trim();
+                        s.strip_prefix('"')
+                            .and_then(|v| v.strip_suffix('"'))
+                            .or_else(|| s.strip_prefix('\'').and_then(|v| v.strip_suffix('\'')))
+                            .unwrap_or(s)
+                            .to_string()
+                    })
+                    .filter(|s| !s.is_empty())
+                    .collect();
+            }
+        }
+    }
+    Vec::new()
 }
 
 /// Compute SHA-256 hash of a byte slice, returned as hex string.

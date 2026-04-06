@@ -14,6 +14,8 @@ pub struct FileInfo {
     pub modified_at: Option<i64>,
     pub content_hash: Option<String>,
     pub is_directory: bool,
+    #[serde(default)]
+    pub aliases: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -36,6 +38,7 @@ fn row_to_file_info(row: &Row<'_>) -> rusqlite::Result<FileInfo> {
         modified_at: row.get("modified_at")?,
         content_hash: row.get("content_hash")?,
         is_directory: is_dir != 0,
+        aliases: Vec::new(),
     })
 }
 
