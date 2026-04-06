@@ -951,21 +951,6 @@
     max-height: 35%;
     overflow-y: auto;
     scrollbar-width: none;
-    position: relative;
-    mask-image: linear-gradient(
-      to bottom,
-      transparent 0%,
-      black 8%,
-      black 92%,
-      transparent 100%
-    );
-    -webkit-mask-image: linear-gradient(
-      to bottom,
-      transparent 0%,
-      black 8%,
-      black 92%,
-      transparent 100%
-    );
   }
 
   .right-panel__section--scroll::-webkit-scrollbar { display: none; }
