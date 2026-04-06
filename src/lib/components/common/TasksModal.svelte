@@ -1,6 +1,6 @@
 <script lang="ts">
   import { getFilesState } from '../../stores/files.svelte';
-  import { readFile } from '../../bridge/commands';
+  import { readFile, writeFile } from '../../bridge/commands';
   import { logger } from '../../logger';
   import X from '@lucide/svelte/icons/x';
   import Square from '@lucide/svelte/icons/square';
@@ -73,6 +73,30 @@
     loading = false;
   }
 
+  async function toggleTask(filePath: string, task: TaskItem) {
+    try {
+      const { content } = await readFile(filePath);
+      const lines = content.split('\n');
+      const line = lines[task.line];
+      if (!line) return;
+
+      if (task.checked) {
+        lines[task.line] = line.replace(/- \[x\]/i, '- [ ]');
+      } else {
+        lines[task.line] = line.replace(/- \[ \]/, '- [x]');
+      }
+
+      const newContent = lines.join('\n');
+      await writeFile(filePath, newContent);
+
+      // Update local state
+      task.checked = !task.checked;
+      groups = [...groups];
+    } catch (err) {
+      logger.error(`Failed to toggle task: ${err}`);
+    }
+  }
+
   let wasVisible = false;
   $effect(() => {
     if (visible && !wasVisible) {
@@ -131,14 +155,14 @@
                 {group.title}
               </button>
               {#each group.tasks as task (task.line)}
-                <div class="tasks-modal__task" class:tasks-modal__task--done={task.checked}>
+                <button class="tasks-modal__task" class:tasks-modal__task--done={task.checked} onclick={() => toggleTask(group.path, task)}>
                   {#if task.checked}
                     <CheckSquare size={14} />
                   {:else}
                     <Square size={14} />
                   {/if}
                   <span class="tasks-modal__task-text">{task.text}</span>
-                </div>
+                </button>
               {/each}
             </div>
           {/each}
@@ -298,9 +322,14 @@
     display: flex;
     align-items: flex-start;
     gap: 8px;
+    width: 100%;
     padding: 5px 8px;
+    border: none;
     border-radius: 4px;
+    background: transparent;
     color: var(--color-foreground);
+    cursor: pointer;
+    text-align: left;
     transition: background 150ms var(--ease-expo-out);
   }
 
