@@ -13,8 +13,7 @@
   color: var(--color-foreground);
   max-width: 780px;
   margin: 0 auto;
-  padding: 36px
-    28px;
+  padding: 36px 28px;
   outline: none;
   min-height: 100%;
   position: relative;
@@ -87,7 +86,6 @@
   font-size: inherit;
   color: inherit;
 }
-
 
 /* --------------------------------------------------------------------------
    Inline Code
@@ -344,7 +342,6 @@
   pointer-events: none;
 }
 
-
 /* --------------------------------------------------------------------------
    Search & Replace Highlights
    -------------------------------------------------------------------------- */
@@ -411,10 +408,10 @@
    Highlight
    -------------------------------------------------------------------------- */
 .ProseMirror mark {
-  background: rgba(253, 224, 71, 0.25);
+  background: rgba(253, 224, 71, 0.65);
   color: #fff;
-  border-radius: 3px;
-  padding: 1px 4px;
+  border-radius: 5px;
+  padding: 2px 6px;
   box-decoration-break: clone;
   -webkit-box-decoration-break: clone;
 }
@@ -443,9 +440,15 @@
 /* --------------------------------------------------------------------------
    Text Align
    -------------------------------------------------------------------------- */
-.ProseMirror [style*="text-align: center"] { text-align: center; }
-.ProseMirror [style*="text-align: right"] { text-align: right; }
-.ProseMirror [style*="text-align: justify"] { text-align: justify; }
+.ProseMirror [style*="text-align: center"] {
+  text-align: center;
+}
+.ProseMirror [style*="text-align: right"] {
+  text-align: right;
+}
+.ProseMirror [style*="text-align: justify"] {
+  text-align: justify;
+}
 
 /* --------------------------------------------------------------------------
    Mathematics (KaTeX)
