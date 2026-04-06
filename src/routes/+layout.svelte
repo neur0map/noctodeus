@@ -39,6 +39,7 @@
   import type { SearchHit } from "../lib/types/core";
   import { logger } from "../lib/logger";
   import { APP_SHORTCUTS } from "../lib/utils/shortcuts";
+  import { sanitizeFileName } from "../lib/utils/files";
 
   import UtilityRail from "../lib/components/layout/UtilityRail.svelte";
   import FocusManager from "../lib/components/common/FocusManager.svelte";
@@ -195,7 +196,7 @@
       case 'new-file': {
         const rawName = await showInputDialog('New file name', 'untitled');
         if (!rawName) return;
-        const name = sanitizeFileName(rawName, false);
+        const name = sanitizeFileName(rawName, false, appSettings.defaultExtension);
         try {
           const node = await createFile(name, '');
           files.addFile(node);
@@ -286,18 +287,6 @@
     ctxVisible = true;
   }
 
-  function sanitizeFileName(name: string, isDir: boolean): string {
-    // Replace spaces with dashes
-    let clean = name.trim().replace(/\s+/g, '-');
-    // Remove unsafe characters
-    clean = clean.replace(/[<>:"|?*\\]/g, '');
-    // Ensure default extension for files (not directories)
-    if (!isDir && !clean.includes('.')) {
-      clean += appSettings.defaultExtension;
-    }
-    return clean;
-  }
-
   async function handleCtxSelect(id: string) {
     ctxVisible = false;
     if (!ctxTargetPath) return;
@@ -321,7 +310,7 @@
         const oldName = oldPath.split('/').pop() ?? oldPath;
         const rawName = await showInputDialog('Rename', oldName);
         if (!rawName) return;
-        const newName = sanitizeFileName(rawName, ctxTargetIsDir);
+        const newName = sanitizeFileName(rawName, ctxTargetIsDir, appSettings.defaultExtension);
         if (newName === oldName) return;
         const parentDir = oldPath.includes('/') ? oldPath.slice(0, oldPath.lastIndexOf('/')) : '';
         const newPath = parentDir ? `${parentDir}/${newName}` : newName;
@@ -364,7 +353,7 @@
       case 'new-file': {
         const rawName = await showInputDialog('New file name', 'untitled');
         if (!rawName) return;
-        const name = sanitizeFileName(rawName, false);
+        const name = sanitizeFileName(rawName, false, appSettings.defaultExtension);
         const filePath = ctxTargetPath ? `${ctxTargetPath}/${name}` : name;
         try {
           const node = await createFile(filePath, '');
@@ -378,7 +367,7 @@
       case 'new-folder': {
         const rawName = await showInputDialog('Folder name', '');
         if (!rawName) return;
-        const name = sanitizeFileName(rawName, true);
+        const name = sanitizeFileName(rawName, true, appSettings.defaultExtension);
         const dirPath = ctxTargetPath ? `${ctxTargetPath}/${name}` : name;
         try {
           await createDir(dirPath);
@@ -479,7 +468,7 @@
   async function handleNewFolder() {
     const rawName = await showInputDialog('Folder name', '');
     if (!rawName) return;
-    const name = sanitizeFileName(rawName, true);
+    const name = sanitizeFileName(rawName, true, appSettings.defaultExtension);
     try {
       await createDir(name);
       const { scanCore } = await import('../lib/bridge/commands');
@@ -540,7 +529,7 @@
 
   async function handleInlineRename(oldPath: string, rawNewName: string) {
     const isDir = files.fileMap.get(oldPath)?.is_directory ?? false;
-    const newName = sanitizeFileName(rawNewName, isDir);
+    const newName = sanitizeFileName(rawNewName, isDir, appSettings.defaultExtension);
     if (newName === oldPath.split('/').pop()) return;
     const parentDir = oldPath.includes('/') ? oldPath.slice(0, oldPath.lastIndexOf('/')) : '';
     const newPath = parentDir ? `${parentDir}/${newName}` : newName;
