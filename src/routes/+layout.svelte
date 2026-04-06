@@ -202,6 +202,7 @@
   const sidebarMenuItems: MenuItem[] = [
     { id: 'new-file', label: 'New File' },
     { id: 'new-folder', label: 'New Folder' },
+    { id: 'import-files', label: 'Import Files...' },
     { id: 'sep1', label: '', separator: true },
     { id: 'sort-name-asc', label: 'Sort A \u2192 Z' },
     { id: 'sort-name-desc', label: 'Sort Z \u2192 A' },
@@ -225,6 +226,9 @@
       }
       case 'new-folder':
         await handleNewFolder();
+        break;
+      case 'import-files':
+        await handleImportFiles();
         break;
       case 'sort-name-asc': files.setSortMode('name-asc'); break;
       case 'sort-name-desc': files.setSortMode('name-desc'); break;
@@ -504,6 +508,54 @@
       files.setFiles(fileTree);
     } catch (err) {
       logger.error(`Create folder failed: ${err}`);
+    }
+  }
+
+  async function handleImportFiles() {
+    try {
+      const { open: openFileDialog } = await import('@tauri-apps/plugin-dialog');
+      const { readFile: tauriReadFile } = await import('@tauri-apps/plugin-fs');
+      const { toast } = await import('../lib/stores/toast.svelte');
+
+      const selected = await openFileDialog({
+        multiple: true,
+        directory: false,
+        filters: [{ name: 'Markdown', extensions: ['md', 'markdown', 'mdx', 'txt'] }],
+        title: 'Import files (copies into core)',
+      });
+      if (!selected) return;
+
+      const paths = Array.isArray(selected) ? selected : [selected];
+      let imported = 0;
+
+      for (const fp of paths) {
+        try {
+          const absPath = typeof fp === 'string' ? fp : String(fp);
+          const fileName = absPath.split('/').pop() ?? absPath.split('\\').pop() ?? 'imported.md';
+          const bytes = await tauriReadFile(absPath);
+          const content = new TextDecoder().decode(bytes);
+
+          let targetPath = fileName;
+          if (files.fileMap.has(targetPath)) {
+            const base = fileName.replace(/\.(md|markdown|mdx|txt)$/i, '');
+            const ext = fileName.slice(base.length);
+            targetPath = `${base}-imported${ext}`;
+          }
+
+          const node = await createFile(targetPath, content);
+          files.addFile(node);
+          imported++;
+        } catch (err) {
+          logger.error(`Failed to import file: ${err}`);
+        }
+      }
+
+      if (imported > 0) {
+        const { toast } = await import('../lib/stores/toast.svelte');
+        toast.success(`Imported ${imported} file${imported > 1 ? 's' : ''}`);
+      }
+    } catch (err) {
+      logger.error(`Import failed: ${err}`);
     }
   }
 
