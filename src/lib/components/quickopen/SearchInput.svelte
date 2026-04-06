@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { nerdIcon } from '$lib/utils/nerd-icons';
+  import Search from '@lucide/svelte/icons/search';
 
   let {
     value = $bindable(''),
@@ -22,7 +22,7 @@
   {#if prefix}
     <span class="si__prefix">{prefix}</span>
   {:else}
-    <span class="si__glyph">{nerdIcon('search')}</span>
+    <Search size={18} class="si__icon" />
   {/if}
   <input
     bind:this={inputEl}
@@ -47,12 +47,10 @@
     border-bottom: 1px solid rgba(255, 255, 255, 0.04);
   }
 
-  .si__glyph {
-    font-family: var(--font-mono);
-    font-size: 18px;
+  .si :global(.si__icon) {
     color: var(--accent-blue, #7AA2F7);
     flex-shrink: 0;
-    opacity: 0.7;
+    opacity: 0.6;
   }
 
   .si__input {
