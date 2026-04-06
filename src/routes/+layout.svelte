@@ -23,7 +23,6 @@
   import { getUiState } from "../lib/stores/ui.svelte";
   import { getCoreState } from "../lib/stores/core.svelte";
   import { getFilesState } from "../lib/stores/files.svelte";
-  import { getEditorState } from "../lib/stores/editor.svelte";
   import { getTabsState } from "../lib/stores/tabs.svelte";
   import {
     onCoreReady,
@@ -49,7 +48,6 @@
   const ui = getUiState();
   const core = getCoreState();
   const files = getFilesState();
-  const editor = getEditorState();
   const tabsState = getTabsState();
   const appSettings = getSettings();
   const pinned = getPinnedState();
