@@ -924,6 +924,8 @@
         <div class="right-panel__section right-panel__section--scroll">
           <BacklinksPanel
             currentPath={files.activeFilePath}
+            currentTitle={files.activeFilePath ? (files.fileMap.get(files.activeFilePath)?.title ?? null) : null}
+            currentAliases={files.activeFilePath ? (files.fileMap.get(files.activeFilePath)?.aliases ?? []) : []}
             nodes={graphState.nodes}
             edges={graphState.edges}
             onselect={handleFileSelect}
