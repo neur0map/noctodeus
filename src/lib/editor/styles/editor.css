@@ -411,7 +411,7 @@
    Highlight
    -------------------------------------------------------------------------- */
 .ProseMirror mark {
-  background: rgba(250, 204, 21, 0.35);
+  background: rgba(253, 224, 71, 0.25);
   color: #fff;
   border-radius: 3px;
   padding: 1px 4px;
