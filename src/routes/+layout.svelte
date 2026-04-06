@@ -16,9 +16,7 @@
   import type { MenuItem } from "../lib/components/common/ContextMenu.svelte";
   import InputDialog from "../lib/components/common/InputDialog.svelte";
   import KeyboardManager from "../lib/components/common/KeyboardManager.svelte";
-  import ToastContainer from "../lib/components/common/ToastContainer.svelte";
-  import SettingsModal from "../lib/components/common/SettingsModal.svelte";
-  import ExportDialog from "../lib/components/common/ExportDialog.svelte";
+  import Dialogs from "../lib/components/layout/Dialogs.svelte";
   import RightPanelContent from "../lib/components/layout/RightPanelContent.svelte";
   import { getSettings } from "../lib/stores/settings.svelte";
 
@@ -43,7 +41,6 @@
   import { APP_SHORTCUTS } from "../lib/utils/shortcuts";
 
   import UtilityRail from "../lib/components/layout/UtilityRail.svelte";
-  import TasksModal from "../lib/components/common/TasksModal.svelte";
   import FocusManager from "../lib/components/common/FocusManager.svelte";
 
   let { children }: { children: Snippet } = $props();
@@ -772,8 +769,6 @@
   {/snippet}
 </AppShell>
 
-<ToastContainer />
-
 <ContextMenu
   visible={ctxVisible}
   position={ctxPosition}
@@ -798,22 +793,12 @@
   oncancel={cancelInputDialog}
 />
 
-<SettingsModal
-  visible={ui.settingsVisible}
-  onclose={() => ui.hideSettings()}
-/>
-
-<ExportDialog
-  visible={exportDialogVisible}
-  filePath={exportDialogPath}
-  onexport={handleExport}
-  oncancel={() => exportDialogVisible = false}
-/>
-
-<TasksModal
-  visible={ui.tasksVisible}
-  onclose={() => ui.hideTasks()}
-  onfileopen={(path) => { ui.hideTasks(); handleFileSelect(path); }}
+<Dialogs
+  {exportDialogVisible}
+  {exportDialogPath}
+  onExport={handleExport}
+  onExportCancel={() => exportDialogVisible = false}
+  onFileOpen={(path) => { ui.hideTasks(); handleFileSelect(path); }}
 />
 
 </FocusManager>
