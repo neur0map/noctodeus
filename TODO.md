@@ -2,9 +2,6 @@
 
 ## Current Stack (can build now with what we have)
 
-- [ ] Properties panel (GUI for YAML frontmatter — typed fields: date, checkbox, number, list)
-- [ ] Aliases (multiple names per note, link resolution)
-- [ ] Unlinked mentions detection (find text matching a note title that isn't linked yet)
 - [ ] Custom CSS themes (user-created themes, font/color customization beyond settings)
 - [ ] Version history / file recovery (automatic snapshots, restore previous versions)
 - [ ] Quick capture (global hotkey to capture a thought without opening the full app)
@@ -56,3 +53,7 @@
 - [x] Task extraction modal (scan all files, grouped by file, filter All/Todo/Done)
 - [x] Daily notes with calendar widget (month grid, today highlight, note dots, auto-create)
 - [x] Keyboard navigation (Ctrl+Tab zone cycling, arrow keys in file tree, Escape to editor)
+- [x] Properties panel (collapsible YAML frontmatter editor with typed fields)
+- [x] Aliases (frontmatter aliases resolve wiki-links, shown in suggest dropdown)
+- [x] Unlinked mentions detection (scan for title/alias text, one-click convert to wiki link)
+- [x] Import files and folders into core
