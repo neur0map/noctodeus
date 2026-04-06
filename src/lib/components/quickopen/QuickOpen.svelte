@@ -22,6 +22,31 @@
   let searching = $state(false);
   let debounceTimer: ReturnType<typeof setTimeout> | undefined;
 
+  /** Strip common markdown syntax from snippet text while preserving <b> highlight tags. */
+  function cleanSnippet(s: string): string {
+    // Temporarily replace <b> tags
+    const preserved: string[] = [];
+    let cleaned = s.replace(/<b>(.*?)<\/b>/g, (_, content) => {
+      preserved.push(content);
+      return `\x00${preserved.length - 1}\x00`;
+    });
+
+    // Strip markdown
+    cleaned = cleaned
+      .replace(/#{1,6}\s*/g, '')
+      .replace(/!\[.*?\]\(.*?\)/g, '')
+      .replace(/\[([^\]]*)\]\(.*?\)/g, '$1')
+      .replace(/[*_~`]/g, '')
+      .replace(/---+/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    // Restore <b> tags
+    cleaned = cleaned.replace(/\x00(\d+)\x00/g, (_, i) => `<b>${preserved[parseInt(i)]}</b>`);
+
+    return cleaned;
+  }
+
   // File-name matches (instant, client-side)
   let nameMatches = $derived(
     query.length === 0
@@ -36,12 +61,29 @@
         })
   );
 
-  // Merged results: name matches first, then content-only matches
+  // Merged results: name matches first, then content-only matches (deduplicated)
   let filtered = $derived.by(() => {
     if (query.length === 0) return items;
-    const namePaths = new Set(nameMatches.map(m => m.path));
-    const contentOnly = contentResults.filter(r => !namePaths.has(r.path));
-    return [...nameMatches, ...contentOnly];
+    const seen = new Set<string>();
+    const result: QuickOpenItem[] = [];
+
+    // Name matches first
+    for (const item of nameMatches) {
+      if (!seen.has(item.path)) {
+        seen.add(item.path);
+        result.push(item);
+      }
+    }
+
+    // Then content-only matches
+    for (const item of contentResults) {
+      if (!seen.has(item.path)) {
+        seen.add(item.path);
+        result.push(item);
+      }
+    }
+
+    return result;
   });
 
   // FTS search with debounce
@@ -71,7 +113,7 @@
           path: h.path,
           name: h.path.split('/').pop() ?? h.path,
           title: h.title,
-          snippet: h.snippet,
+          snippet: cleanSnippet(h.snippet),
           parentPath: h.path.includes('/') ? h.path.slice(0, h.path.lastIndexOf('/')) : undefined,
         }));
       } catch {
@@ -162,11 +204,11 @@
   }
 
   .quick-open {
-    width: 560px;
-    max-height: 400px;
-    background: var(--color-popover);
+    width: min(600px, 90vw);
+    max-height: 480px;
+    background: var(--surface-2, var(--color-popover));
     border-radius: 12px;
-    box-shadow: var(--shadow-float);
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.04);
     overflow: hidden;
     display: flex;
     flex-direction: column;

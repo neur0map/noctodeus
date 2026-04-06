@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { nerdIcon } from '$lib/utils/nerd-icons';
+
   let {
     value = $bindable(''),
     placeholder = 'Search files...',
@@ -17,6 +19,7 @@
 </script>
 
 <div class="search-input">
+  <span class="search-input__icon">{nerdIcon('search')}</span>
   {#if prefix}
     <span class="search-input__prefix">{prefix}</span>
   {/if}
@@ -36,7 +39,15 @@
     display: flex;
     align-items: center;
     padding: 0 16px;
-    border-bottom: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--border-subtle, var(--color-border));
+  }
+
+  .search-input__icon {
+    font-family: var(--font-mono);
+    font-size: 16px;
+    color: var(--text-muted, var(--color-placeholder));
+    margin-right: 10px;
+    flex-shrink: 0;
   }
 
   .search-input__prefix {

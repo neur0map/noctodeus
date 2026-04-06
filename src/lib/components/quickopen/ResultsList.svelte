@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { QuickOpenItem } from '../../types/ui';
+  import { fileIcon } from '$lib/utils/nerd-icons';
 
   let {
     items = [],
@@ -27,20 +28,10 @@
   }
 
   function getDisplayPath(item: QuickOpenItem): string {
-    return item.parentPath || item.path;
-  }
-
-  function getFileIcon(name: string): string {
-    const ext = name.split('.').pop()?.toLowerCase();
-    switch (ext) {
-      case 'md': return '\u25A0';
-      case 'txt': return '\u25A1';
-      case 'json': return '\u25C6';
-      case 'yaml':
-      case 'yml': return '\u25C7';
-      case 'toml': return '\u25C8';
-      default: return '\u25CB';
-    }
+    const p = item.parentPath || item.path;
+    const parts = p.split('/');
+    if (parts.length <= 2) return p;
+    return parts.slice(-2).join('/');
   }
 </script>
 
@@ -57,7 +48,7 @@
         onclick={() => onselect(item.path)}
       >
         <div class="results-list__row">
-          <span class="results-list__icon">{getFileIcon(item.name)}</span>
+          <span class="results-list__icon">{fileIcon(item.name)}</span>
           <span class="results-list__name">{getDisplayName(item)}</span>
           <span class="results-list__path">{getDisplayPath(item)}</span>
         </div>
@@ -72,8 +63,8 @@
 <style>
   .results-list {
     overflow-y: auto;
-    max-height: 340px;
-    padding: 4px 0;
+    max-height: 400px;
+    padding: 6px 0;
   }
 
   .results-list__empty {
@@ -90,13 +81,15 @@
     display: flex;
     flex-direction: column;
     gap: 2px;
-    width: 100%;
-    padding: 8px 16px;
+    width: calc(100% - 12px);
+    padding: 10px 16px;
+    margin: 2px 6px;
     background: transparent;
     border: none;
+    border-radius: 8px;
     cursor: pointer;
     text-align: left;
-    transition: background 150ms var(--ease-expo-out);
+    transition: background 150ms ease-out;
   }
 
   .results-list__row {
@@ -106,16 +99,21 @@
     width: 100%;
   }
 
-  .results-list__item:hover,
+  .results-list__item:hover {
+    background: var(--surface-3, var(--color-hover));
+  }
+
   .results-list__item--selected {
-    background: var(--color-hover);
+    background: var(--surface-3, var(--color-hover));
+    box-shadow: inset 3px 0 0 var(--accent-blue, #7AA2F7);
   }
 
   .results-list__icon {
     flex-shrink: 0;
-    width: 16px;
-    font-size: 8px;
-    color: var(--color-placeholder);
+    width: 18px;
+    font-family: var(--font-mono);
+    font-size: 14px;
+    color: var(--text-muted, var(--color-placeholder));
     text-align: center;
   }
 
@@ -132,9 +130,10 @@
   .results-list__path {
     flex: 1;
     font-family: var(--font-mono);
-    font-size: 12px;
+    font-size: 11px;
     line-height: 1.4;
-    color: var(--color-placeholder);
+    color: var(--text-muted, var(--color-placeholder));
+    opacity: 0.7;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -144,9 +143,9 @@
   .results-list__snippet {
     font-family: var(--font-mono);
     font-size: 11px;
-    line-height: 1.4;
+    line-height: 1.5;
     color: var(--text-muted, var(--color-placeholder));
-    padding-left: 24px;
+    padding-left: 28px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -154,7 +153,8 @@
 
   /* Highlight matched terms in snippet */
   .results-list__snippet :global(b) {
-    color: var(--accent-yellow, #E0AF68);
+    color: var(--accent-blue, #7AA2F7);
     font-weight: 600;
+    background: none;
   }
 </style>
