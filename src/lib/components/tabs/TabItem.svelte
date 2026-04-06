@@ -1,8 +1,6 @@
 <script lang="ts">
   import type { Tab } from '../../stores/tabs.svelte';
-  import Home from "@lucide/svelte/icons/house";
-  import FileText from "@lucide/svelte/icons/file-text";
-  import File from "@lucide/svelte/icons/file";
+  import { fileIcon, nerdIcon } from '$lib/utils/nerd-icons';
 
   let {
     tab,
@@ -28,19 +26,6 @@
       onclose();
     }
   }
-
-  function getTabIcon(tab: Tab): string {
-    if (tab.type === 'home') return 'home';
-    const ext = tab.fileNode?.extension?.toLowerCase();
-    switch (ext) {
-      case 'md': case 'markdown': case 'mdx': return 'markdown';
-      case 'txt': return 'text';
-      case 'json': return '\u25C6';
-      case 'yaml': case 'yml': return '\u25C7';
-      case 'toml': return '\u25C8';
-      default: return '\u25CB';
-    }
-  }
 </script>
 
 <button
@@ -56,11 +41,9 @@
 >
   <span class="tab-item__icon">
     {#if tab.type === 'home'}
-      <Home size={12} />
-    {:else if tab.fileNode?.extension === 'md' || tab.fileNode?.extension === 'markdown'}
-      <FileText size={12} />
+      {nerdIcon('home')}
     {:else}
-      <File size={12} />
+      {fileIcon(tab.fileNode?.name ?? tab.label)}
     {/if}
   </span>
   <span class="tab-item__label">{tab.label}</span>
@@ -87,9 +70,10 @@
     padding: 0 10px;
     font-family: var(--font-mono);
     font-size: 12px;
-    color: var(--color-placeholder);
+    color: var(--text-muted, var(--color-placeholder));
     background: transparent;
     border: none;
+    border-top: 2px solid transparent;
     border-radius: 6px;
     cursor: pointer;
     white-space: nowrap;
@@ -99,7 +83,8 @@
     touch-action: none;
     transition:
       background 150ms var(--ease-expo-out),
-      color 150ms var(--ease-expo-out);
+      color 150ms var(--ease-expo-out),
+      border-color 150ms var(--ease-expo-out);
     animation: tab-enter 400ms var(--ease-expo-out) both;
   }
 
@@ -109,13 +94,14 @@
   }
 
   .tab-item:hover:not(.tab-item--active) {
-    color: var(--color-muted-foreground);
-    background: var(--color-hover);
+    color: var(--text-secondary, var(--color-muted-foreground));
+    background: var(--surface-3, var(--color-hover));
   }
 
   .tab-item--active {
-    color: var(--color-foreground);
-    background: var(--color-card);
+    color: var(--text-primary, var(--color-foreground));
+    background: var(--surface-3, var(--color-card));
+    border-top-color: var(--accent-blue, var(--color-accent));
     box-shadow:
       0 1px 2px rgba(0, 0, 0, 0.2),
       inset 0 1px 0 rgba(255, 255, 255, 0.04);
@@ -126,12 +112,14 @@
   }
 
   .tab-item--drag-over {
-    box-shadow: -2px 0 0 var(--color-accent);
+    box-shadow: -2px 0 0 var(--accent-blue, var(--color-accent));
   }
 
   .tab-item__icon {
     display: flex;
     align-items: center;
+    font-family: var(--font-mono);
+    font-size: 13px;
     color: currentColor;
     opacity: 0.5;
     flex-shrink: 0;
@@ -159,7 +147,7 @@
     margin-right: -4px;
     border-radius: 4px;
     font-size: 13px;
-    color: var(--color-placeholder);
+    color: var(--text-muted, var(--color-placeholder));
     background: transparent;
     border: none;
     cursor: pointer;
@@ -171,12 +159,12 @@
   }
 
   .tab-item:hover .tab-item__close {
-    opacity: 0.6;
+    opacity: 1;
   }
 
   .tab-item__close:hover {
     opacity: 1 !important;
-    color: var(--color-foreground);
+    color: var(--accent-red, #F7768E);
     background: rgba(255, 255, 255, 0.08);
   }
 

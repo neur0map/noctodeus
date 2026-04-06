@@ -2,6 +2,7 @@
   import { onMount } from "svelte";
   import type { FileNode } from "../../types/core";
   import { presets } from "../../utils/motion";
+  import { fileIcon, nerdIcon } from "$lib/utils/nerd-icons";
 
   let {
     coreName = "Noctodeus",
@@ -84,7 +85,7 @@
 
     {#if pinnedFiles.length > 0}
       <section class="home-view__section">
-        <h2 class="home-view__section-title">Pinned</h2>
+        <h2 class="home-view__section-title"><span class="home-view__section-glyph">{nerdIcon('most-linked')}</span> MOST LINKED</h2>
         <ul class="home-view__list">
           {#each pinnedFiles as file (file.path)}
             <li>
@@ -92,6 +93,7 @@
                 class="home-view__file"
                 onclick={() => onfileopen(file.path)}
               >
+                <span class="home-view__file-icon">{fileIcon(file.name)}</span>
                 <span class="home-view__file-name">{getDisplayName(file)}</span>
                 <span class="home-view__file-path">{file.path}</span>
               </button>
@@ -103,7 +105,7 @@
 
     {#if recentFiles.length > 0}
       <section class="home-view__section">
-        <h2 class="home-view__section-title">Recent</h2>
+        <h2 class="home-view__section-title"><span class="home-view__section-glyph">{nerdIcon('recent')}</span> RECENT</h2>
         <ul class="home-view__list">
           {#each recentFiles.slice(0, 8) as file (file.path)}
             <li>
@@ -111,6 +113,7 @@
                 class="home-view__file"
                 onclick={() => onfileopen(file.path)}
               >
+                <span class="home-view__file-icon">{fileIcon(file.name)}</span>
                 <span class="home-view__file-name">{getDisplayName(file)}</span>
                 <span class="home-view__file-time"
                   >{formatRelativeTime(file.modified_at)}</span
@@ -163,10 +166,10 @@
   }
 
   .home-view__title {
-    font-family: var(--font-sans);
+    font-family: var(--font-mono);
     font-size: clamp(1.8rem, 2.5vw, 2.4rem);
     line-height: 1.3;
-    color: var(--color-foreground);
+    color: var(--text-primary, var(--color-foreground));
     font-weight: 600;
     letter-spacing: -0.03em;
     opacity: 0;
@@ -182,9 +185,14 @@
     font-family: var(--font-mono);
     font-size: 10px;
     line-height: 1.4;
-    color: var(--color-placeholder);
-    text-transform: uppercase;
+    color: var(--text-muted, var(--color-placeholder));
+    font-variant: small-caps;
     letter-spacing: 0.04em;
+  }
+
+  .home-view__section-glyph {
+    font-family: var(--font-mono);
+    margin-right: 4px;
   }
 
   .home-view__list {
@@ -195,47 +203,59 @@
   .home-view__file {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: 6px 8px;
+    height: 38px;
+    padding: 0 8px;
     margin: 0 -8px;
     width: calc(100% + 16px);
     border-radius: 4px;
     border: none;
     opacity: 0;
     text-align: left;
-    transition: background 150ms ease;
+    transition: background 150ms ease-out;
   }
 
   .home-view__file:hover {
-    background: var(--color-hover);
+    background: var(--surface-3, var(--color-hover));
+  }
+
+  .home-view__file-icon {
+    font-family: var(--font-mono);
+    font-size: 14px;
+    margin-right: 6px;
+    flex-shrink: 0;
+    color: var(--text-muted, var(--color-placeholder));
   }
 
   .home-view__file-name {
     font-family: var(--font-mono);
     font-size: 13px;
     line-height: 1.5;
-    color: var(--color-foreground);
+    color: var(--text-primary, var(--color-foreground));
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    flex: 1;
+    min-width: 0;
   }
 
   .home-view__file-path {
     font-family: var(--font-mono);
     font-size: 12px;
     line-height: 1.4;
-    color: var(--color-placeholder);
+    color: var(--text-muted, var(--color-placeholder));
     flex-shrink: 0;
     margin-left: 12px;
+    text-align: right;
   }
 
   .home-view__file-time {
     font-family: var(--font-mono);
     font-size: 12px;
     line-height: 1.4;
-    color: var(--color-placeholder);
+    color: var(--text-muted, var(--color-placeholder));
     flex-shrink: 0;
     margin-left: 12px;
+    text-align: right;
   }
 
   .home-view__actions {
@@ -252,11 +272,11 @@
     gap: 8px;
     min-height: 38px;
     padding: 0 16px;
-    font-family: var(--font-sans);
+    font-family: var(--font-mono);
     font-size: 13px;
-    color: var(--color-muted-foreground);
-    background: transparent;
-    border: 1px solid var(--color-border);
+    color: var(--text-secondary, var(--color-muted-foreground));
+    background: var(--surface-1, transparent);
+    border: 1px solid var(--border-subtle, var(--color-border));
     opacity: 0;
     border-radius: 6px;
     cursor: pointer;
@@ -267,18 +287,18 @@
   }
 
   .home-view__action:hover {
-    color: var(--color-foreground);
-    background: var(--color-hover);
-    border-color: var(--color-border);
+    color: var(--text-primary, var(--color-foreground));
+    background: var(--surface-3, var(--color-hover));
+    border-color: var(--border-active, var(--color-border));
   }
 
   .home-view__action-hint {
     font-family: var(--font-mono);
     font-size: 12px;
-    color: var(--color-placeholder);
+    color: var(--text-muted, var(--color-placeholder));
     margin-left: 4px;
     padding-left: 12px;
-    border-left: 1px solid var(--color-border);
+    border-left: 1px solid var(--border-subtle, var(--color-border));
     background: none;
     border-radius: 0;
   }

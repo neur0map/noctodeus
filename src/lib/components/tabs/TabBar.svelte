@@ -68,8 +68,8 @@
           font-family: var(--font-mono);
           font-size: 12px;
           color: var(--color-foreground);
-          background: rgba(25, 26, 35, 0.95);
-          border: 1px solid var(--color-border);
+          background: var(--surface-2, rgba(25, 26, 35, 0.95));
+          border: 1px solid var(--border-subtle, var(--color-border));
           border-radius: 8px;
           box-shadow: var(--shadow-float);
           pointer-events: none;
