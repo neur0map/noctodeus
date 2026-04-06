@@ -104,7 +104,7 @@
   }
 
   .ctx-menu__item--danger:hover {
-    background: rgba(239, 68, 68, 0.12);
+    background: rgba(247, 118, 142, 0.12);
     color: var(--color-destructive);
   }
 

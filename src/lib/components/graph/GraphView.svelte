@@ -130,7 +130,7 @@
       ctx.beginPath();
       ctx.moveTo(a.x, a.y);
       ctx.lineTo(b.x, b.y);
-      ctx.strokeStyle = 'rgba(122, 141, 255, 0.15)';
+      ctx.strokeStyle = 'rgba(30, 35, 54, 0.8)';
       ctx.lineWidth = 1.2 / sc;
       ctx.stroke();
     }
@@ -144,21 +144,21 @@
       if (active || hover) {
         ctx.beginPath();
         ctx.arc(n.x, n.y, r + 8, 0, Math.PI * 2);
-        ctx.fillStyle = active ? 'rgba(99, 102, 241, 0.12)' : 'rgba(255, 255, 255, 0.05)';
+        ctx.fillStyle = active ? 'rgba(122, 162, 247, 0.12)' : 'rgba(187, 154, 247, 0.08)';
         ctx.fill();
       }
 
       ctx.beginPath();
       ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
-      ctx.fillStyle = active ? 'rgba(99, 102, 241, 0.9)'
-        : n.linkCount === 0 ? 'rgba(255, 255, 255, 0.18)'
-        : 'rgba(255, 255, 255, 0.45)';
+      ctx.fillStyle = active ? '#7AA2F7'
+        : n.linkCount === 0 ? 'rgba(107, 115, 148, 0.4)'
+        : '#6B7394';
       ctx.fill();
 
       if (hover || active || sc > 0.6) {
         const fontSize = Math.max(9, 11 / sc);
         ctx.font = `${fontSize}px system-ui, -apple-system, sans-serif`;
-        ctx.fillStyle = active ? 'rgba(255,255,255,0.95)' : hover ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.4)';
+        ctx.fillStyle = active ? '#C0CAF5' : hover ? '#BB9AF7' : '#A9B1D6';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'top';
         const label = n.title.length > 22 ? n.title.slice(0, 20) + '...' : n.title;

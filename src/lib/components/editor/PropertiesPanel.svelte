@@ -324,7 +324,7 @@
     font-family: var(--font-mono);
     font-size: 11px;
     color: var(--color-accent);
-    background: rgba(99, 102, 241, 0.1);
+    background: rgba(122, 162, 247, 0.1);
     border-radius: 4px;
   }
 

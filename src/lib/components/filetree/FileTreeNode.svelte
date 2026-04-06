@@ -278,11 +278,11 @@
 
   .tree-node__star--pinned {
     opacity: 1;
-    color: #eab308;
+    color: var(--accent-yellow);
   }
 
   .tree-node__star--pinned:hover {
-    color: #ca8a04;
+    color: var(--accent-orange);
   }
 
   .tree-node__children {

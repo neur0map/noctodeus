@@ -175,7 +175,7 @@
   .export-dialog__radio--active {
     border-color: var(--color-accent);
     color: var(--color-foreground);
-    background: rgba(99, 102, 241, 0.1);
+    background: rgba(122, 162, 247, 0.1);
   }
 
   .export-dialog__toggle-row {
