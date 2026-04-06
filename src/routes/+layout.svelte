@@ -59,6 +59,7 @@
   import CoreSwitcher from "../lib/components/common/CoreSwitcher.svelte";
   import TasksModal from "../lib/components/common/TasksModal.svelte";
   import CalendarWidget from "../lib/components/sidebar/CalendarWidget.svelte";
+  import FocusManager from "../lib/components/common/FocusManager.svelte";
   import ListChecks from "@lucide/svelte/icons/list-checks";
 
   let { children }: { children: Snippet } = $props();
@@ -634,6 +635,8 @@
   }
 </script>
 
+<FocusManager {overlayOpen}>
+
 <KeyboardManager
   {overlayOpen}
   keymap={APP_SHORTCUTS}
@@ -856,6 +859,8 @@
   onclose={() => ui.hideTasks()}
   onfileopen={(path) => { ui.hideTasks(); handleFileSelect(path); }}
 />
+
+</FocusManager>
 
 <style>
   /* ── Global ── */
