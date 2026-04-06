@@ -9,11 +9,9 @@
   import type { UnlistenFn } from "@tauri-apps/api/event";
 
   import AppShell from "../lib/components/layout/AppShell.svelte";
-  import Sidebar from "../lib/components/layout/Sidebar.svelte";
+  import SidebarContent from "../lib/components/layout/SidebarContent.svelte";
   import ContentArea from "../lib/components/layout/ContentArea.svelte";
   import TabBar from "../lib/components/tabs/TabBar.svelte";
-  import FileTree from "../lib/components/filetree/FileTree.svelte";
-  import SearchBar from "../lib/components/search/SearchBar.svelte";
   import ContextMenu from "../lib/components/common/ContextMenu.svelte";
   import type { MenuItem } from "../lib/components/common/ContextMenu.svelte";
   import InputDialog from "../lib/components/common/InputDialog.svelte";
@@ -45,13 +43,8 @@
   import { logger } from "../lib/logger";
   import { APP_SHORTCUTS } from "../lib/utils/shortcuts";
 
-  import Ellipsis from "@lucide/svelte/icons/ellipsis";
-
   import UtilityRail from "../lib/components/layout/UtilityRail.svelte";
-  import Settings from "@lucide/svelte/icons/settings";
-  import CoreSwitcher from "../lib/components/common/CoreSwitcher.svelte";
   import TasksModal from "../lib/components/common/TasksModal.svelte";
-  import CalendarWidget from "../lib/components/sidebar/CalendarWidget.svelte";
   import FocusManager from "../lib/components/common/FocusManager.svelte";
 
   let { children }: { children: Snippet } = $props();
@@ -742,58 +735,23 @@
   rightPanelVisible={ui.rightPanelVisible || ui.graphPanelVisible}
 >
   {#snippet sidebar()}
-    <Sidebar collapsed={ui.sidebarCollapsed} ontogglecollapse={() => ui.toggleSidebarCollapse()}>
-      {#snippet header()}
-        <div class="sidebar-header">
-          <button class="sidebar-header__btn" onclick={(e) => {
-            const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-            sidebarMenuPosition = { top: rect.bottom + 4, left: rect.left };
-            sidebarMenuVisible = true;
-          }} title="Actions">
-            <Ellipsis size={14} />
-          </button>
-        </div>
-      {/snippet}
-
-      <SearchBar
-        results={searchResults}
-        onselect={handleFileSelect}
-        onsearch={handleSearch}
-      />
-
-      <FileTree
-        tree={files.tree}
-        activeFilePath={files.activeFilePath}
-        onselect={handleFileSelect}
-        ontoggle={handleDirToggle}
-        oncontextmenu={handleTreeContextMenu}
-        ondelete={handleDeleteFile}
-        onmove={handleFileMove}
-        onrename={handleInlineRename}
-      />
-
-      <CalendarWidget
-        existingDates={journalDates}
-        onselect={handleDailyNote}
-      />
-
-      {#snippet footer()}
-        <div class="sidebar-footer">
-          <CoreSwitcher
-            activeCore={core.activeCore}
-            onswitch={(c) => window.dispatchEvent(new CustomEvent('noctodeus-switch-core', { detail: c.path }))}
-            onopen={() => window.dispatchEvent(new CustomEvent('noctodeus-open-core'))}
-          />
-          <button
-            class="sidebar-footer__settings"
-            onclick={() => ui.showSettings()}
-            title="Settings"
-          >
-            <Settings size={15} />
-          </button>
-        </div>
-      {/snippet}
-    </Sidebar>
+    <SidebarContent
+      {searchResults}
+      {journalDates}
+      onFileSelect={handleFileSelect}
+      onDirToggle={handleDirToggle}
+      onContextMenu={handleTreeContextMenu}
+      onDelete={handleDeleteFile}
+      onMove={handleFileMove}
+      onRename={handleInlineRename}
+      onSearch={handleSearch}
+      onDailyNote={handleDailyNote}
+      onSidebarMenuOpen={(e) => {
+        const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+        sidebarMenuPosition = { top: rect.bottom + 4, left: rect.left };
+        sidebarMenuVisible = true;
+      }}
+    />
   {/snippet}
 
   {#snippet content()}
@@ -883,86 +841,6 @@
     line-height: 1.6;
     color: var(--color-foreground);
     background: var(--color-background);
-  }
-
-  /* ── Sidebar header ── */
-  .sidebar-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    height: 28px;
-  }
-
-  .sidebar-header__name {
-    font-family: var(--font-mono);
-    font-size: 12px;
-    color: var(--color-foreground);
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .sidebar-header__btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 22px;
-    height: 22px;
-    border: none;
-    border-radius: 4px;
-    background: transparent;
-    color: var(--color-placeholder);
-    font-size: 12px;
-    cursor: pointer;
-    transition: color 150ms var(--ease-expo-out), background 150ms var(--ease-expo-out);
-  }
-
-  .sidebar-header__btn:hover {
-    color: var(--color-foreground);
-    background: var(--color-hover);
-  }
-
-  /* ── Sidebar footer ── */
-  .sidebar-footer {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    height: 24px;
-  }
-
-  .sidebar-footer__count {
-    font-family: var(--font-mono);
-    font-size: 12px;
-    color: var(--color-placeholder);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .sidebar-footer__chars {
-    opacity: 0.7;
-  }
-
-  .sidebar-footer__settings {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 24px;
-    height: 24px;
-    border: none;
-    border-radius: 5px;
-    background: transparent;
-    color: var(--color-placeholder);
-    cursor: pointer;
-    transition: color 150ms var(--ease-expo-out), background 150ms var(--ease-expo-out);
-  }
-
-  .sidebar-footer__settings:hover {
-    color: var(--color-muted-foreground);
-    background: var(--color-hover);
   }
 
 </style>
