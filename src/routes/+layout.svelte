@@ -672,11 +672,6 @@
         onsearch={handleSearch}
       />
 
-      <CalendarWidget
-        existingDates={journalDates}
-        onselect={handleDailyNote}
-      />
-
       <FileTree
         tree={files.tree}
         activeFilePath={files.activeFilePath}
@@ -686,6 +681,11 @@
         ondelete={handleDeleteFile}
         onmove={handleFileMove}
         onrename={handleInlineRename}
+      />
+
+      <CalendarWidget
+        existingDates={journalDates}
+        onselect={handleDailyNote}
       />
 
       {#snippet footer()}
