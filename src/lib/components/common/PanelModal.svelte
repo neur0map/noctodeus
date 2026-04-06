@@ -84,14 +84,12 @@
     if (visible) {
       activeTab = 'stats';
       requestAnimationFrame(() => {
-        if (backdropEl) {
-          animate(backdropEl, { opacity: [0, 1], duration: 200, ease: 'outQuad' });
-        }
         if (panelEl) {
           animate(panelEl, {
-            translateX: [320, 0],
+            translateY: [12, 0],
+            scale: [0.96, 1],
             opacity: [0, 1],
-            duration: 400,
+            duration: 300,
             ease: slideSpring,
           });
         }
@@ -231,28 +229,27 @@
   .sp__backdrop {
     position: fixed;
     inset: 0;
-    background: rgba(5, 8, 17, 0.4);
+    background: transparent;
     z-index: 50;
-    opacity: 0;
   }
 
   .sp {
     position: fixed;
-    top: 8px;
-    right: 8px;
-    bottom: 8px;
-    width: 340px;
+    bottom: 52px;
+    left: 16px;
+    width: 320px;
+    max-height: min(580px, calc(100vh - 80px));
     background: linear-gradient(
       180deg,
-      rgba(19, 22, 31, 0.98) 0%,
-      rgba(13, 16, 24, 0.99) 100%
+      rgba(19, 22, 31, 0.99) 0%,
+      rgba(13, 16, 24, 1) 100%
     );
     border-radius: 14px;
-    border: 1px solid rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.05);
     box-shadow:
-      0 0 0 1px rgba(0, 0, 0, 0.3),
-      -8px 0 32px rgba(0, 0, 0, 0.3),
-      -2px 0 8px rgba(0, 0, 0, 0.2);
+      0 0 0 1px rgba(0, 0, 0, 0.4),
+      0 -4px 16px rgba(0, 0, 0, 0.3),
+      0 -12px 48px rgba(0, 0, 0, 0.25);
     z-index: 51;
     display: flex;
     flex-direction: column;
