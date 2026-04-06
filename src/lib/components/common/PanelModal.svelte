@@ -1,10 +1,20 @@
 <script lang="ts">
-  import NoteDetailsPanel from "$lib/components/panels/NoteDetailsPanel.svelte";
+  import type { Editor } from '@tiptap/core';
   import OutlinePanel from "$lib/components/panels/OutlinePanel.svelte";
   import BacklinksPanel from "$lib/components/panels/BacklinksPanel.svelte";
   import { getFilesState } from "$lib/stores/files.svelte";
   import { getGraphState } from "$lib/stores/graph.svelte";
   import { getActiveEditorState } from "$lib/stores/active-editor.svelte";
+  import { animate, createSpring } from 'animejs';
+
+  import BarChart3 from '@lucide/svelte/icons/bar-chart-3';
+  import List from '@lucide/svelte/icons/list';
+  import Link from '@lucide/svelte/icons/link';
+  import MessageSquare from '@lucide/svelte/icons/message-square';
+  import LetterText from '@lucide/svelte/icons/letter-text';
+  import Pilcrow from '@lucide/svelte/icons/pilcrow';
+  import Clock from '@lucide/svelte/icons/clock';
+  import Calendar from '@lucide/svelte/icons/calendar';
 
   let {
     visible,
@@ -19,106 +29,371 @@
   const files = getFilesState();
   const graphState = getGraphState();
   const activeEditorState = getActiveEditorState();
+
+  type Tab = 'stats' | 'outline' | 'backlinks';
+  let activeTab = $state<Tab>('stats');
+  let panelEl: HTMLElement | undefined = $state();
+  let backdropEl: HTMLElement | undefined = $state();
+
+  const slideSpring = createSpring({ stiffness: 280, damping: 26, mass: 0.7 });
+
+  // Stats computation
+  let wordCount = $state(0);
+  let charCount = $state(0);
+  let paragraphCount = $state(0);
+  let readingTime = $state('0m');
+  let cleanup: (() => void) | null = null;
+
+  function updateCounts(ed: Editor) {
+    const text = ed.state.doc.textContent;
+    charCount = text.replace(/\s/g, '').length;
+    const words = text.split(/\s+/).filter(w => w.length > 0);
+    wordCount = words.length;
+    paragraphCount = ed.state.doc.content.childCount;
+    const minutes = Math.max(1, Math.ceil(wordCount / 200));
+    readingTime = `${minutes}m`;
+  }
+
+  $effect(() => {
+    cleanup?.();
+    cleanup = null;
+    const ed = activeEditorState.editor;
+    if (!ed) { wordCount = 0; charCount = 0; paragraphCount = 0; readingTime = '0m'; return; }
+    updateCounts(ed);
+    const handler = () => updateCounts(ed);
+    ed.on('update', handler);
+    cleanup = () => ed.off('update', handler);
+  });
+
+  function formatDateTime(unixSeconds: number | undefined): string {
+    if (!unixSeconds) return '—';
+    const d = new Date(unixSeconds * 1000);
+    const month = d.toLocaleDateString(undefined, { month: 'short' });
+    const day = d.getDate();
+    const year = d.getFullYear();
+    const time = d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+    return `${month} ${day}, ${year} at ${time}`;
+  }
+
+  let fileNode = $derived(
+    files.activeFilePath ? files.fileMap.get(files.activeFilePath) ?? null : null
+  );
+
+  // Entrance animation
+  $effect(() => {
+    if (visible) {
+      activeTab = 'stats';
+      requestAnimationFrame(() => {
+        if (backdropEl) {
+          animate(backdropEl, { opacity: [0, 1], duration: 200, ease: 'outQuad' });
+        }
+        if (panelEl) {
+          animate(panelEl, {
+            translateX: [320, 0],
+            opacity: [0, 1],
+            duration: 400,
+            ease: slideSpring,
+          });
+        }
+      });
+    }
+  });
+
+  // Animate stat cards when stats tab is shown
+  $effect(() => {
+    if (visible && activeTab === 'stats') {
+      requestAnimationFrame(() => {
+        const cards = panelEl?.querySelectorAll('.sp__card');
+        if (cards && cards.length > 0) {
+          animate(cards, {
+            opacity: [0, 1],
+            scale: [0.92, 1],
+            delay: (_, i) => 40 * i + 60,
+            duration: 300,
+            ease: 'outQuint',
+          });
+        }
+      });
+    }
+  });
 </script>
 
 {#if visible}
-  <div class="panel-modal__backdrop" role="presentation" onclick={onclose} onkeydown={(e) => { if (e.key === 'Escape') onclose(); }}></div>
-  <div class="panel-modal">
-    <div class="panel-modal__header">
-      <span class="panel-modal__title">Note Panel</span>
-      <button class="panel-modal__close" onclick={onclose}>&times;</button>
+  <!-- svelte-ignore a11y_no_static_element_interactions -->
+  <div
+    class="sp__backdrop"
+    bind:this={backdropEl}
+    onclick={onclose}
+    onkeydown={(e) => { if (e.key === 'Escape') onclose(); }}
+  ></div>
+
+  <div class="sp" bind:this={panelEl}>
+    <!-- Segmented tabs -->
+    <div class="sp__tabs">
+      <button
+        class="sp__tab"
+        class:sp__tab--active={activeTab === 'stats'}
+        onclick={() => activeTab = 'stats'}
+        title="Statistics"
+      >
+        <BarChart3 size={15} />
+      </button>
+      <button
+        class="sp__tab"
+        class:sp__tab--active={activeTab === 'outline'}
+        onclick={() => activeTab = 'outline'}
+        title="Outline"
+      >
+        <List size={15} />
+      </button>
+      <button
+        class="sp__tab"
+        class:sp__tab--active={activeTab === 'backlinks'}
+        onclick={() => activeTab = 'backlinks'}
+        title="Backlinks"
+      >
+        <Link size={15} />
+      </button>
     </div>
-    <div class="panel-modal__body">
-      <div class="panel-modal__section">
-        <NoteDetailsPanel
-          editor={activeEditorState.editor}
-          fileNode={files.activeFilePath ? files.fileMap.get(files.activeFilePath) ?? null : null}
-        />
-      </div>
-      <div class="panel-modal__section">
-        <OutlinePanel editor={activeEditorState.editor} />
-      </div>
-      <div class="panel-modal__section">
-        <BacklinksPanel
-          currentPath={files.activeFilePath}
-          currentTitle={files.activeFilePath ? (files.fileMap.get(files.activeFilePath)?.title ?? null) : null}
-          currentAliases={files.activeFilePath ? (files.fileMap.get(files.activeFilePath)?.aliases ?? []) : []}
-          nodes={graphState.nodes}
-          edges={graphState.edges}
-          onselect={(path) => { onclose(); onfileselect(path); }}
-        />
-      </div>
+
+    <!-- Tab content -->
+    <div class="sp__body">
+      {#if activeTab === 'stats'}
+        <div class="sp__section-title">Statistics</div>
+
+        <div class="sp__grid">
+          <div class="sp__card">
+            <div class="sp__card-top">
+              <span class="sp__card-value">{wordCount.toLocaleString()}</span>
+              <MessageSquare size={14} class="sp__card-icon" />
+            </div>
+            <span class="sp__card-label">Words</span>
+          </div>
+          <div class="sp__card">
+            <div class="sp__card-top">
+              <span class="sp__card-value">{charCount.toLocaleString()}</span>
+              <LetterText size={14} class="sp__card-icon" />
+            </div>
+            <span class="sp__card-label">Characters</span>
+          </div>
+          <div class="sp__card">
+            <div class="sp__card-top">
+              <span class="sp__card-value">{paragraphCount}</span>
+              <Pilcrow size={14} class="sp__card-icon" />
+            </div>
+            <span class="sp__card-label">Paragraphs</span>
+          </div>
+          <div class="sp__card">
+            <div class="sp__card-top">
+              <span class="sp__card-value">{readingTime}</span>
+              <Clock size={14} class="sp__card-icon" />
+            </div>
+            <span class="sp__card-label">Read Time</span>
+          </div>
+        </div>
+
+        {#if fileNode}
+          <div class="sp__dates">
+            <div class="sp__date-row">
+              <div class="sp__date-info">
+                <span class="sp__date-value">{formatDateTime(fileNode.modified_at)}</span>
+                <span class="sp__date-label">Modified</span>
+              </div>
+              <Calendar size={14} class="sp__date-icon" />
+            </div>
+          </div>
+        {/if}
+
+      {:else if activeTab === 'outline'}
+        <div class="sp__section-title">Outline</div>
+        <div class="sp__panel-content">
+          <OutlinePanel editor={activeEditorState.editor} />
+        </div>
+
+      {:else if activeTab === 'backlinks'}
+        <div class="sp__section-title">Backlinks</div>
+        <div class="sp__panel-content">
+          <BacklinksPanel
+            currentPath={files.activeFilePath}
+            currentTitle={files.activeFilePath ? (files.fileMap.get(files.activeFilePath)?.title ?? null) : null}
+            currentAliases={files.activeFilePath ? (files.fileMap.get(files.activeFilePath)?.aliases ?? []) : []}
+            nodes={graphState.nodes}
+            edges={graphState.edges}
+            onselect={(path) => { onclose(); onfileselect(path); }}
+          />
+        </div>
+      {/if}
     </div>
   </div>
 {/if}
 
 <style>
-  .panel-modal__backdrop {
+  .sp__backdrop {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(4px);
+    background: rgba(5, 8, 17, 0.4);
     z-index: 50;
+    opacity: 0;
   }
 
-  .panel-modal {
+  .sp {
     position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: min(80vw, 900px);
-    max-height: 80vh;
-    background: var(--surface-2, var(--color-popover));
-    border-radius: 12px;
-    box-shadow: var(--shadow-modal, 0 8px 32px rgba(0, 0, 0, 0.4));
+    top: 8px;
+    right: 8px;
+    bottom: 8px;
+    width: 340px;
+    background: linear-gradient(
+      180deg,
+      rgba(19, 22, 31, 0.98) 0%,
+      rgba(13, 16, 24, 0.99) 100%
+    );
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    box-shadow:
+      0 0 0 1px rgba(0, 0, 0, 0.3),
+      -8px 0 32px rgba(0, 0, 0, 0.3),
+      -2px 0 8px rgba(0, 0, 0, 0.2);
     z-index: 51;
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    opacity: 0;
   }
 
-  .panel-modal__header {
+  /* ── Segmented Tabs ── */
+  .sp__tabs {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    padding: 16px 20px 8px;
+  }
+
+  .sp__tab {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 0;
+    border: none;
+    background: transparent;
+    color: var(--text-muted, #6B7394);
+    cursor: pointer;
+    border-radius: 8px;
+    transition: background 150ms ease-out, color 150ms ease-out;
+  }
+
+  .sp__tab:hover {
+    color: var(--text-secondary, #A9B1D6);
+  }
+
+  .sp__tab--active {
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text-primary, #C0CAF5);
+  }
+
+  /* ── Body ── */
+  .sp__body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 16px 16px;
+  }
+
+  .sp__section-title {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary, #C0CAF5);
+    text-align: center;
+    padding: 8px 0 14px;
+  }
+
+  /* ── Stat Cards ── */
+  .sp__grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .sp__card {
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 10px;
+    padding: 14px 14px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    opacity: 0; /* anime.js animates in */
+  }
+
+  .sp__card-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+  }
+
+  .sp__card-value {
+    font-family: var(--font-mono);
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--text-primary, #C0CAF5);
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+  }
+
+  .sp__card :global(.sp__card-icon) {
+    color: var(--text-faint, #3B4261);
+    margin-top: 2px;
+  }
+
+  .sp__card-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-muted, #6B7394);
+    letter-spacing: 0.01em;
+  }
+
+  /* ── Date rows ── */
+  .sp__dates {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 12px;
+  }
+
+  .sp__date-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: var(--space-md, 12px) var(--space-lg, 20px);
-    border-bottom: 1px solid var(--border-subtle, var(--color-border));
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 10px;
+    padding: 12px 14px;
   }
 
-  .panel-modal__title {
+  .sp__date-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .sp__date-value {
     font-family: var(--font-mono);
     font-size: 13px;
-    font-weight: 600;
-    color: var(--text-primary, var(--color-foreground));
+    font-weight: 500;
+    color: var(--text-primary, #C0CAF5);
   }
 
-  .panel-modal__close {
-    background: none;
-    border: none;
-    color: var(--text-muted, var(--color-placeholder));
-    font-size: 18px;
-    cursor: pointer;
-    padding: 4px 8px;
-    border-radius: 4px;
-    transition: color 150ms ease-out, background 150ms ease-out;
+  .sp__date-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-muted, #6B7394);
   }
 
-  .panel-modal__close:hover {
-    color: var(--text-primary, var(--color-foreground));
-    background: var(--surface-3, var(--color-hover));
+  .sp__date-row :global(.sp__date-icon) {
+    color: var(--text-faint, #3B4261);
   }
 
-  .panel-modal__body {
-    flex: 1;
-    overflow-y: auto;
-    padding: var(--space-lg, 20px);
-  }
-
-  .panel-modal__section {
-    margin-bottom: var(--space-lg, 20px);
-  }
-
-  .panel-modal__section:last-child {
-    margin-bottom: 0;
+  /* ── Panel content (outline/backlinks) ── */
+  .sp__panel-content {
+    padding: 0 4px;
   }
 </style>
