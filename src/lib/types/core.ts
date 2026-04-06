@@ -22,6 +22,7 @@ export interface FileNode {
   modified_at: number;
   content_hash: string;
   is_directory: boolean;
+  aliases?: string[];
 }
 
 /** File content paired with its metadata. */
