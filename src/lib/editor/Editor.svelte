@@ -170,7 +170,15 @@
   function getWikiSuggestItems(): WikiSuggestItem[] {
     return Array.from(filesState.fileMap.values())
       .filter(f => !f.is_directory && !f.name.startsWith('.'))
-      .map(f => ({ path: f.path, name: f.name, title: f.title }));
+      .flatMap(f => {
+        const items: WikiSuggestItem[] = [{ path: f.path, name: f.name, title: f.title }];
+        if (f.aliases) {
+          for (const alias of f.aliases) {
+            items.push({ path: f.path, name: alias, title: f.title ? `${alias} → ${f.title}` : alias });
+          }
+        }
+        return items;
+      });
   }
 
   function createWikiPopup() {

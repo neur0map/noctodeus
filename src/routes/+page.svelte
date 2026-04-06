@@ -314,7 +314,9 @@
     const match = Array.from(files.fileMap.values()).find((f) => {
       if (f.is_directory) return false;
       const nameWithoutExt = f.name.replace(/\.(md|markdown)$/i, "");
-      return nameWithoutExt === target;
+      if (nameWithoutExt === target) return true;
+      if (f.aliases?.some(a => a === target)) return true;
+      return false;
     });
     if (match) {
       openFile(match.path);
