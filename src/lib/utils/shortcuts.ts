@@ -1,5 +1,6 @@
 export interface AppShortcuts {
   quick_open: string;
+  search: string;
   command_palette: string;
   new_note: string;
   toggle_sidebar: string;
@@ -15,6 +16,7 @@ const MOD = isMac ? "Meta" : "Ctrl";
 
 export const APP_SHORTCUTS: AppShortcuts = {
   quick_open: `${MOD}+P`,
+  search: `${MOD}+K`,
   command_palette: `${MOD}+Shift+P`,
   new_note: `${MOD}+N`,
   toggle_sidebar: `${MOD}+B`,

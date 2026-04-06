@@ -701,6 +701,7 @@
   {overlayOpen}
   keymap={APP_SHORTCUTS}
   onquickopen={() => ui.showQuickOpen()}
+  onsearch={() => ui.showQuickOpen()}
   oncommandpalette={() => ui.showCommandPalette()}
   onnewnote={handleNewNote}
   ontogglesidebar={() => ui.toggleSidebar()}
