@@ -57,6 +57,8 @@
   import Settings from "@lucide/svelte/icons/settings";
   import GitFork from "@lucide/svelte/icons/git-fork";
   import CoreSwitcher from "../lib/components/common/CoreSwitcher.svelte";
+  import TasksModal from "../lib/components/common/TasksModal.svelte";
+  import ListChecks from "@lucide/svelte/icons/list-checks";
 
   let { children }: { children: Snippet } = $props();
 
@@ -705,6 +707,14 @@
       </button>
       <button
         class="utility-rail__button"
+        class:utility-rail__button--active={ui.tasksVisible}
+        onclick={() => ui.showTasks()}
+        title="Tasks"
+      >
+        <ListChecks size={16} />
+      </button>
+      <button
+        class="utility-rail__button"
         class:utility-rail__button--active={ui.graphPanelVisible}
         onclick={() => ui.toggleGraphPanel()}
         title="Toggle graph"
@@ -805,6 +815,12 @@
   filePath={exportDialogPath}
   onexport={handleExport}
   oncancel={() => exportDialogVisible = false}
+/>
+
+<TasksModal
+  visible={ui.tasksVisible}
+  onclose={() => ui.hideTasks()}
+  onfileopen={(path) => { ui.hideTasks(); handleFileSelect(path); }}
 />
 
 <style>
