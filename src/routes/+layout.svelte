@@ -11,13 +11,12 @@
   import AppShell from "../lib/components/layout/AppShell.svelte";
   import SidebarContent from "../lib/components/layout/SidebarContent.svelte";
   import ContentArea from "../lib/components/layout/ContentArea.svelte";
-  import TabBar from "../lib/components/tabs/TabBar.svelte";
+  import TabBarContent from "../lib/components/layout/TabBarContent.svelte";
   import ContextMenu from "../lib/components/common/ContextMenu.svelte";
   import type { MenuItem } from "../lib/components/common/ContextMenu.svelte";
   import InputDialog from "../lib/components/common/InputDialog.svelte";
   import KeyboardManager from "../lib/components/common/KeyboardManager.svelte";
   import ToastContainer from "../lib/components/common/ToastContainer.svelte";
-  import SaveIndicator from "../lib/editor/SaveIndicator.svelte";
   import SettingsModal from "../lib/components/common/SettingsModal.svelte";
   import ExportDialog from "../lib/components/common/ExportDialog.svelte";
   import RightPanelContent from "../lib/components/layout/RightPanelContent.svelte";
@@ -757,19 +756,7 @@
   {#snippet content()}
     <ContentArea>
       {#snippet header()}
-        <TabBar
-          tabs={tabsState.tabs}
-          activeTabId={tabsState.activeTabId}
-          onactivate={(id) => tabsState.activateTab(id)}
-          onclose={(id) => tabsState.closeTab(id)}
-          onreorder={(from, to) => tabsState.reorderTabs(from, to)}
-        >
-          {#snippet trailing()}
-            {#if isMarkdownActive}
-              <SaveIndicator status={editor.saveStatus} />
-            {/if}
-          {/snippet}
-        </TabBar>
+        <TabBarContent {isMarkdownActive} />
       {/snippet}
 
       {@render children()}
