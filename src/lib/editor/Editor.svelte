@@ -446,6 +446,7 @@
     if (!editor) return;
     const el = editor.view.dom as HTMLElement;
     el.style.fontSize = `${appSettings.fontSize}px`;
+    el.style.maxWidth = `${appSettings.editorWidth}px`;
   });
 
   export function getEditor(): Editor | undefined {

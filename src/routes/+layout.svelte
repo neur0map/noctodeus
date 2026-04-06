@@ -83,6 +83,50 @@
     unwatchTheme = watchSystemTheme(mode, () => applyTheme(mode));
   });
 
+  // Apply custom appearance settings reactively
+  $effect(() => {
+    const root = document.documentElement;
+    const accent = appSettings.accentColor;
+    if (accent && accent !== '#6366f1') {
+      root.style.setProperty('--accent', accent);
+      root.style.setProperty('--primary', accent);
+      root.style.setProperty('--ring', accent);
+      root.style.setProperty('--sidebar-primary', accent);
+      root.style.setProperty('--sidebar-ring', accent);
+    } else {
+      root.style.removeProperty('--accent');
+      root.style.removeProperty('--primary');
+      root.style.removeProperty('--ring');
+      root.style.removeProperty('--sidebar-primary');
+      root.style.removeProperty('--sidebar-ring');
+    }
+
+    if (appSettings.fontMono) root.style.setProperty('--font-mono', `"${appSettings.fontMono}", ui-monospace, monospace`);
+    else root.style.removeProperty('--font-mono');
+
+    if (appSettings.fontSans) root.style.setProperty('--font-sans', `"${appSettings.fontSans}", ui-sans-serif, system-ui, sans-serif`);
+    else root.style.removeProperty('--font-sans');
+
+    if (appSettings.fontContent) root.style.setProperty('--font-content', `"${appSettings.fontContent}", ui-serif, serif`);
+    else root.style.removeProperty('--font-content');
+  });
+
+  // Apply custom CSS snippet
+  $effect(() => {
+    const css = appSettings.customCSS;
+    let styleEl = document.getElementById('noctodeus-custom-css') as HTMLStyleElement | null;
+    if (css) {
+      if (!styleEl) {
+        styleEl = document.createElement('style');
+        styleEl.id = 'noctodeus-custom-css';
+        document.head.appendChild(styleEl);
+      }
+      styleEl.textContent = css;
+    } else if (styleEl) {
+      styleEl.remove();
+    }
+  });
+
   let unlisteners: UnlistenFn[] = [];
   let overlayOpen = $derived(ui.quickOpenVisible || ui.commandPaletteVisible);
 

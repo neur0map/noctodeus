@@ -151,6 +151,40 @@
               </div>
               <div class="settings__row">
                 <div class="settings__row-info">
+                  <span class="settings__row-label">Accent color</span>
+                  <span class="settings__row-desc">Brand color for highlights, links, and active states.</span>
+                </div>
+                <div class="settings__color-row">
+                  {#each ['#6366f1', '#8b5cf6', '#ec4899', '#f43f5e', '#f97316', '#eab308', '#22c55e', '#06b6d4', '#3b82f6'] as color}
+                    <button
+                      class="settings__color-swatch"
+                      class:settings__color-swatch--active={settings.accentColor === color}
+                      style="background: {color}"
+                      onclick={() => settings.update('accentColor', color)}
+                      title={color}
+                    ></button>
+                  {/each}
+                </div>
+              </div>
+              <div class="settings__row">
+                <div class="settings__row-info">
+                  <span class="settings__row-label">Editor width</span>
+                  <span class="settings__row-desc">Maximum width of the editor content area.</span>
+                </div>
+                <select
+                  class="settings__select"
+                  value={String(settings.editorWidth)}
+                  onchange={(e) => settings.update('editorWidth', Number(e.currentTarget.value))}
+                >
+                  <option value="640">Narrow (640px)</option>
+                  <option value="780">Default (780px)</option>
+                  <option value="960">Wide (960px)</option>
+                  <option value="1200">Extra wide (1200px)</option>
+                  <option value="9999">Full width</option>
+                </select>
+              </div>
+              <div class="settings__row">
+                <div class="settings__row-info">
                   <span class="settings__row-label">Show character count</span>
                   <span class="settings__row-desc">Display character count in the sidebar footer.</span>
                 </div>
@@ -158,6 +192,57 @@
                   <input type="checkbox" checked={settings.showCharCount} onchange={(e) => settings.update('showCharCount', e.currentTarget.checked)} />
                   <span class="settings__toggle-track"></span>
                 </label>
+              </div>
+              <div class="settings__row settings__row--fonts">
+                <div class="settings__row-info">
+                  <span class="settings__row-label">Fonts</span>
+                  <span class="settings__row-desc">Override the default font families. Leave blank for defaults.</span>
+                </div>
+              </div>
+              <div class="settings__font-grid">
+                <div class="settings__font-field">
+                  <span class="settings__font-label">Mono (UI)</span>
+                  <input
+                    class="settings__font-input"
+                    type="text"
+                    placeholder="JetBrains Mono"
+                    value={settings.fontMono}
+                    onchange={(e) => settings.update('fontMono', e.currentTarget.value)}
+                  />
+                </div>
+                <div class="settings__font-field">
+                  <span class="settings__font-label">Sans (labels)</span>
+                  <input
+                    class="settings__font-input"
+                    type="text"
+                    placeholder="Inter"
+                    value={settings.fontSans}
+                    onchange={(e) => settings.update('fontSans', e.currentTarget.value)}
+                  />
+                </div>
+                <div class="settings__font-field">
+                  <span class="settings__font-label">Content (editor)</span>
+                  <input
+                    class="settings__font-input"
+                    type="text"
+                    placeholder="Source Serif 4"
+                    value={settings.fontContent}
+                    onchange={(e) => settings.update('fontContent', e.currentTarget.value)}
+                  />
+                </div>
+              </div>
+              <div class="settings__row settings__row--css">
+                <div class="settings__row-info">
+                  <span class="settings__row-label">Custom CSS</span>
+                  <span class="settings__row-desc">Advanced: inject custom styles. Changes apply instantly.</span>
+                </div>
+                <textarea
+                  class="settings__css-editor"
+                  placeholder="/* Custom styles */"
+                  value={settings.customCSS}
+                  onchange={(e) => settings.update('customCSS', e.currentTarget.value)}
+                  rows={5}
+                ></textarea>
               </div>
             </div>
 
@@ -535,6 +620,112 @@
     padding: 3px 8px;
     white-space: nowrap;
     flex-shrink: 0;
+  }
+
+  /* ── Color swatches ── */
+  .settings__color-row {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .settings__color-swatch {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: border-color 150ms var(--ease-expo-out), transform 150ms var(--ease-expo-out);
+  }
+
+  .settings__color-swatch:hover {
+    transform: scale(1.15);
+  }
+
+  .settings__color-swatch--active {
+    border-color: var(--color-foreground);
+    box-shadow: 0 0 0 2px var(--color-background), 0 0 0 4px currentColor;
+  }
+
+  /* ── Font fields ── */
+  .settings__row--fonts {
+    border-bottom: none;
+    padding-bottom: 4px;
+  }
+
+  .settings__font-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  }
+
+  .settings__font-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .settings__font-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--color-placeholder);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  .settings__font-input {
+    width: 100%;
+    padding: 5px 8px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--color-foreground);
+    background: var(--color-hover);
+    border: 1px solid transparent;
+    border-radius: 6px;
+    outline: none;
+    transition: border-color 150ms var(--ease-expo-out);
+  }
+
+  .settings__font-input:focus {
+    border-color: var(--color-accent);
+  }
+
+  .settings__font-input::placeholder {
+    color: var(--color-placeholder);
+  }
+
+  /* ── Custom CSS editor ── */
+  .settings__row--css {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .settings__css-editor {
+    width: 100%;
+    padding: 10px 12px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--color-foreground);
+    background: var(--color-background);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    outline: none;
+    resize: vertical;
+    min-height: 80px;
+    tab-size: 2;
+    transition: border-color 150ms var(--ease-expo-out);
+  }
+
+  .settings__css-editor:focus {
+    border-color: var(--color-accent);
+  }
+
+  .settings__css-editor::placeholder {
+    color: var(--color-placeholder);
   }
 
   @media (prefers-reduced-motion: reduce) {

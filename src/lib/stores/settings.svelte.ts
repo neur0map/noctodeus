@@ -9,8 +9,14 @@ export interface AppSettings {
   autoSave: boolean;
   // Appearance
   theme: ThemeMode;
+  accentColor: string;
   fontSize: number;
+  fontMono: string;
+  fontSans: string;
+  fontContent: string;
+  editorWidth: number;
   showCharCount: boolean;
+  customCSS: string;
   // Files
   defaultExtension: string;
   confirmBeforeDelete: boolean;
@@ -21,8 +27,14 @@ const DEFAULTS: AppSettings = {
   restoreLastSession: true,
   autoSave: true,
   theme: 'dark' as ThemeMode,
+  accentColor: '#6366f1',
   fontSize: 16,
+  fontMono: '',
+  fontSans: '',
+  fontContent: '',
+  editorWidth: 780,
   showCharCount: true,
+  customCSS: '',
   defaultExtension: '.md',
   confirmBeforeDelete: true,
   wikiStyleLinks: true,
@@ -56,8 +68,14 @@ export function getSettings() {
     get restoreLastSession() { return settings.restoreLastSession; },
     get autoSave() { return settings.autoSave; },
     get theme() { return settings.theme; },
+    get accentColor() { return settings.accentColor; },
     get fontSize() { return settings.fontSize; },
+    get fontMono() { return settings.fontMono; },
+    get fontSans() { return settings.fontSans; },
+    get fontContent() { return settings.fontContent; },
+    get editorWidth() { return settings.editorWidth; },
     get showCharCount() { return settings.showCharCount; },
+    get customCSS() { return settings.customCSS; },
     get defaultExtension() { return settings.defaultExtension; },
     get confirmBeforeDelete() { return settings.confirmBeforeDelete; },
     get wikiStyleLinks() { return settings.wikiStyleLinks; },
