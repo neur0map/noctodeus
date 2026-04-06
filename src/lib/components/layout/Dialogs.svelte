@@ -3,6 +3,8 @@
   import SettingsModal from '$lib/components/common/SettingsModal.svelte';
   import ExportDialog from '$lib/components/common/ExportDialog.svelte';
   import TasksModal from '$lib/components/common/TasksModal.svelte';
+  import PanelModal from '$lib/components/common/PanelModal.svelte';
+  import GraphModal from '$lib/components/common/GraphModal.svelte';
   import { getUiState } from '$lib/stores/ui.svelte';
 
   let {
@@ -40,4 +42,16 @@
   visible={ui.tasksVisible}
   onclose={() => ui.hideTasks()}
   onfileopen={onFileOpen}
+/>
+
+<PanelModal
+  visible={ui.panelModalVisible}
+  onclose={() => ui.hidePanelModal()}
+  onfileselect={onFileOpen}
+/>
+
+<GraphModal
+  visible={ui.graphPanelVisible}
+  onclose={() => ui.toggleGraphPanel()}
+  onfileselect={onFileOpen}
 />

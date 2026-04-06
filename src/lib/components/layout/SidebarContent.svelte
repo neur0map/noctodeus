@@ -1,20 +1,17 @@
 <script lang="ts">
-  import type { SearchHit, TreeNode } from "$lib/types/core";
-
   import { getUiState } from "$lib/stores/ui.svelte";
   import { getCoreState } from "$lib/stores/core.svelte";
   import { getFilesState } from "$lib/stores/files.svelte";
 
   import Sidebar from "$lib/components/layout/Sidebar.svelte";
-  import SearchBar from "$lib/components/search/SearchBar.svelte";
   import FileTree from "$lib/components/filetree/FileTree.svelte";
   import CalendarWidget from "$lib/components/sidebar/CalendarWidget.svelte";
   import CoreSwitcher from "$lib/components/common/CoreSwitcher.svelte";
   import Ellipsis from "@lucide/svelte/icons/ellipsis";
   import Settings from "@lucide/svelte/icons/settings";
+  import { nerdIcon } from "$lib/utils/nerd-icons";
 
   let {
-    searchResults,
     journalDates,
     onFileSelect,
     onDirToggle,
@@ -22,11 +19,9 @@
     onDelete,
     onMove,
     onRename,
-    onSearch,
     onDailyNote,
     onSidebarMenuOpen,
   }: {
-    searchResults: SearchHit[];
     journalDates: Set<string>;
     onFileSelect: (path: string) => void;
     onDirToggle: (path: string) => void;
@@ -34,7 +29,6 @@
     onDelete: () => void;
     onMove: (sourcePath: string, targetDir: string) => void;
     onRename: (oldPath: string, newName: string) => void;
-    onSearch: (query: string) => void;
     onDailyNote: (dateStr: string) => void;
     onSidebarMenuOpen: (e: MouseEvent) => void;
   } = $props();
@@ -50,14 +44,25 @@
       <button class="sidebar-header__btn" onclick={onSidebarMenuOpen} title="Actions">
         <Ellipsis size={14} />
       </button>
+      <div class="sidebar-header__spacer"></div>
+      <button
+        class="sidebar-header__btn"
+        class:sidebar-header__btn--active={ui.graphPanelVisible}
+        onclick={() => ui.toggleGraphPanel()}
+        title="Graph"
+      >
+        <span class="sidebar-header__nerd">{nerdIcon('graph')}</span>
+      </button>
+      <button
+        class="sidebar-header__btn"
+        class:sidebar-header__btn--active={ui.tasksVisible}
+        onclick={() => ui.showTasks()}
+        title="Tasks"
+      >
+        <span class="sidebar-header__nerd">{nerdIcon('tasks')}</span>
+      </button>
     </div>
   {/snippet}
-
-  <SearchBar
-    results={searchResults}
-    onselect={onFileSelect}
-    onsearch={onSearch}
-  />
 
   <FileTree
     tree={files.tree}
@@ -82,24 +87,38 @@
         onswitch={(c) => window.dispatchEvent(new CustomEvent('noctodeus-switch-core', { detail: c.path }))}
         onopen={() => window.dispatchEvent(new CustomEvent('noctodeus-open-core'))}
       />
-      <button
-        class="sidebar-footer__settings"
-        onclick={() => ui.showSettings()}
-        title="Settings"
-      >
-        <Settings size={15} />
-      </button>
+      <div class="sidebar-footer__actions">
+        <button
+          class="sidebar-footer__btn"
+          class:sidebar-footer__btn--active={ui.panelModalVisible}
+          onclick={() => ui.showPanelModal()}
+          title="Note panel"
+        >
+          <span class="sidebar-footer__nerd">{nerdIcon('info')}</span>
+        </button>
+        <button
+          class="sidebar-footer__btn"
+          onclick={() => ui.showSettings()}
+          title="Settings"
+        >
+          <Settings size={15} />
+        </button>
+      </div>
     </div>
   {/snippet}
 </Sidebar>
 
 <style>
-  /* ── Sidebar header ── */
+  /* -- Sidebar header -- */
   .sidebar-header {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    gap: 4px;
     height: 32px;
+  }
+
+  .sidebar-header__spacer {
+    flex: 1;
   }
 
   .sidebar-header__btn {
@@ -122,7 +141,17 @@
     background: var(--color-hover);
   }
 
-  /* ── Sidebar footer ── */
+  .sidebar-header__btn--active {
+    color: var(--accent-blue, var(--color-accent));
+  }
+
+  .sidebar-header__nerd {
+    font-family: var(--font-mono);
+    font-size: 14px;
+    line-height: 1;
+  }
+
+  /* -- Sidebar footer -- */
   .sidebar-footer {
     display: flex;
     align-items: center;
@@ -130,7 +159,13 @@
     height: 28px;
   }
 
-  .sidebar-footer__settings {
+  .sidebar-footer__actions {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .sidebar-footer__btn {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -144,8 +179,18 @@
     transition: color 150ms var(--ease-expo-out), background 150ms var(--ease-expo-out);
   }
 
-  .sidebar-footer__settings:hover {
+  .sidebar-footer__btn:hover {
     color: var(--color-muted-foreground);
     background: var(--color-hover);
+  }
+
+  .sidebar-footer__btn--active {
+    color: var(--accent-blue, var(--color-accent));
+  }
+
+  .sidebar-footer__nerd {
+    font-family: var(--font-mono);
+    font-size: 14px;
+    line-height: 1;
   }
 </style>

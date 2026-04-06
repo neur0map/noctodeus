@@ -3,6 +3,8 @@
   import SaveIndicator from '$lib/editor/SaveIndicator.svelte';
   import { getTabsState } from '$lib/stores/tabs.svelte';
   import { getEditorState } from '$lib/stores/editor.svelte';
+  import { getUiState } from '$lib/stores/ui.svelte';
+  import { nerdIcon } from '$lib/utils/nerd-icons';
 
   let {
     isMarkdownActive = false,
@@ -12,18 +14,81 @@
 
   const tabsState = getTabsState();
   const editor = getEditorState();
+  const ui = getUiState();
 </script>
 
-<TabBar
-  tabs={tabsState.tabs}
-  activeTabId={tabsState.activeTabId}
-  onactivate={(id) => tabsState.activateTab(id)}
-  onclose={(id) => tabsState.closeTab(id)}
-  onreorder={(from, to) => tabsState.reorderTabs(from, to)}
->
-  {#snippet trailing()}
-    {#if isMarkdownActive}
-      <SaveIndicator status={editor.saveStatus} />
-    {/if}
-  {/snippet}
-</TabBar>
+<div class="tab-bar-row">
+  <div class="tab-bar-row__tabs">
+    <TabBar
+      tabs={tabsState.tabs}
+      activeTabId={tabsState.activeTabId}
+      onactivate={(id) => tabsState.activateTab(id)}
+      onclose={(id) => tabsState.closeTab(id)}
+      onreorder={(from, to) => tabsState.reorderTabs(from, to)}
+    >
+      {#snippet trailing()}
+        {#if isMarkdownActive}
+          <SaveIndicator status={editor.saveStatus} />
+        {/if}
+      {/snippet}
+    </TabBar>
+  </div>
+  <button class="search-trigger" onclick={() => ui.showQuickOpen()} title="Search (Cmd+K)">
+    <span class="search-trigger__icon">{nerdIcon('search')}</span>
+    <span class="search-trigger__text">Search...</span>
+    <span class="search-trigger__shortcut">&#8984;K</span>
+  </button>
+</div>
+
+<style>
+  .tab-bar-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 36px;
+  }
+
+  .tab-bar-row__tabs {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .search-trigger {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    margin-right: 8px;
+    border: 1px solid var(--border-subtle, var(--color-border));
+    border-radius: 6px;
+    background: var(--surface-1, var(--color-card));
+    color: var(--text-muted, var(--color-placeholder));
+    font-family: var(--font-mono);
+    font-size: 11px;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: border-color 150ms ease-out, color 150ms ease-out, background 150ms ease-out;
+  }
+
+  .search-trigger:hover {
+    border-color: var(--border-active, var(--color-border));
+    color: var(--text-secondary, var(--color-muted-foreground));
+    background: var(--surface-2, var(--color-hover));
+  }
+
+  .search-trigger__icon {
+    font-size: 12px;
+    line-height: 1;
+  }
+
+  .search-trigger__text {
+    font-size: 11px;
+  }
+
+  .search-trigger__shortcut {
+    font-size: 10px;
+    opacity: 0.5;
+    margin-left: 4px;
+  }
+</style>

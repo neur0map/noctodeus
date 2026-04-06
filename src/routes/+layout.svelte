@@ -17,7 +17,6 @@
   import InputDialog from "../lib/components/common/InputDialog.svelte";
   import KeyboardManager from "../lib/components/common/KeyboardManager.svelte";
   import Dialogs from "../lib/components/layout/Dialogs.svelte";
-  import RightPanelContent from "../lib/components/layout/RightPanelContent.svelte";
   import { getSettings } from "../lib/stores/settings.svelte";
 
   import { getUiState } from "../lib/stores/ui.svelte";
@@ -40,7 +39,6 @@
   import { APP_SHORTCUTS } from "../lib/utils/shortcuts";
   import { sanitizeFileName } from "../lib/utils/files";
 
-  import UtilityRail from "../lib/components/layout/UtilityRail.svelte";
   import FocusManager from "../lib/components/common/FocusManager.svelte";
 
   let { children }: { children: Snippet } = $props();
@@ -106,7 +104,7 @@
   });
 
   let unlisteners: UnlistenFn[] = [];
-  let overlayOpen = $derived(ui.quickOpenVisible || ui.commandPaletteVisible);
+  let overlayOpen = $derived(ui.quickOpenVisible || ui.commandPaletteVisible || ui.panelModalVisible || ui.graphPanelVisible);
 
   // Calendar: scan journal/ folder for existing daily notes
   let journalDates = $derived(
@@ -706,7 +704,7 @@
   oncommandpalette={() => ui.showCommandPalette()}
   onnewnote={handleNewNote}
   ontogglesidebar={() => ui.toggleSidebar()}
-  ontogglerightpanel={() => ui.toggleRightPanel()}
+  ontogglerightpanel={() => ui.panelModalVisible ? ui.hidePanelModal() : ui.showPanelModal()}
   oncollapsesidebar={() => ui.toggleSidebarCollapse()}
   ondeletefile={handleDeleteFile}
   oncloseoverlay={() => ui.closeAllOverlays()}
@@ -715,11 +713,9 @@
 <AppShell
   sidebarVisible={ui.sidebarVisible}
   sidebarCollapsed={ui.sidebarCollapsed}
-  rightPanelVisible={ui.rightPanelVisible || ui.graphPanelVisible}
 >
   {#snippet sidebar()}
     <SidebarContent
-      {searchResults}
       {journalDates}
       onFileSelect={handleFileSelect}
       onDirToggle={handleDirToggle}
@@ -727,7 +723,6 @@
       onDelete={handleDeleteFile}
       onMove={handleFileMove}
       onRename={handleInlineRename}
-      onSearch={handleSearch}
       onDailyNote={handleDailyNote}
       onSidebarMenuOpen={(e) => {
         const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
@@ -747,13 +742,6 @@
     </ContentArea>
   {/snippet}
 
-  {#snippet utilityRail()}
-    <UtilityRail onNewNote={handleNewNote} />
-  {/snippet}
-
-  {#snippet rightPanel()}
-    <RightPanelContent onFileSelect={handleFileSelect} />
-  {/snippet}
 </AppShell>
 
 <ContextMenu
