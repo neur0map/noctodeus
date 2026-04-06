@@ -158,6 +158,8 @@
   const sidebarMenuItems: MenuItem[] = [
     { id: 'new-file', label: 'New File' },
     { id: 'new-folder', label: 'New Folder' },
+    { id: 'import-files', label: 'Import Files...' },
+    { id: 'import-folder', label: 'Import Folder...' },
     { id: 'sep1', label: '', separator: true },
     { id: 'sort-name-asc', label: 'Sort A \u2192 Z' },
     { id: 'sort-name-desc', label: 'Sort Z \u2192 A' },
@@ -181,6 +183,12 @@
       }
       case 'new-folder':
         await handleNewFolder();
+        break;
+      case 'import-files':
+        await handleImportFiles();
+        break;
+      case 'import-folder':
+        await handleImportFolder();
         break;
       case 'sort-name-asc': files.setSortMode('name-asc'); break;
       case 'sort-name-desc': files.setSortMode('name-desc'); break;
@@ -461,6 +469,116 @@
     } catch (err) {
       logger.error(`Create folder failed: ${err}`);
     }
+  }
+
+  async function handleImportFiles() {
+    try {
+      const { open: openFileDialog } = await import('@tauri-apps/plugin-dialog');
+      const { readFile: tauriReadFile } = await import('@tauri-apps/plugin-fs');
+      const { toast } = await import('../lib/stores/toast.svelte');
+
+      const selected = await openFileDialog({
+        multiple: true,
+        directory: false,
+        filters: [{ name: 'Markdown', extensions: ['md', 'markdown', 'mdx', 'txt'] }],
+        title: 'Import markdown files',
+      });
+      if (!selected) return;
+
+      const paths = Array.isArray(selected) ? selected : [selected];
+      let imported = 0;
+      for (const fp of paths) {
+        const ok = await importSingleFile(typeof fp === 'string' ? fp : String(fp), '', tauriReadFile);
+        if (ok) imported++;
+      }
+      if (imported > 0) toast.success(`Imported ${imported} file${imported > 1 ? 's' : ''}`);
+    } catch (err) {
+      logger.error(`Import files failed: ${err}`);
+    }
+  }
+
+  async function handleImportFolder() {
+    try {
+      const { open: openFileDialog } = await import('@tauri-apps/plugin-dialog');
+      const { readFile: tauriReadFile, readDir } = await import('@tauri-apps/plugin-fs');
+      const { toast } = await import('../lib/stores/toast.svelte');
+
+      const selected = await openFileDialog({
+        directory: true,
+        multiple: false,
+        title: 'Import folder of markdown files',
+      });
+      if (!selected) return;
+
+      const folderPath = typeof selected === 'string' ? selected : String(selected);
+      const imported = await importFolder(folderPath, '', tauriReadFile, readDir);
+      if (imported > 0) toast.success(`Imported ${imported} file${imported > 1 ? 's' : ''}`);
+    } catch (err) {
+      logger.error(`Import folder failed: ${err}`);
+    }
+  }
+
+  async function importSingleFile(
+    absPath: string,
+    relPrefix: string,
+    tauriReadFile: (path: string) => Promise<Uint8Array>,
+  ): Promise<boolean> {
+    try {
+      const fileName = absPath.split('/').pop() ?? absPath.split('\\').pop() ?? 'imported.md';
+      if (!/\.(md|markdown|mdx|txt)$/i.test(fileName)) return false;
+
+      const bytes = await tauriReadFile(absPath);
+      const content = new TextDecoder().decode(bytes);
+
+      let targetPath = relPrefix ? `${relPrefix}/${fileName}` : fileName;
+
+      // Avoid overwriting existing files
+      if (files.fileMap.has(targetPath)) {
+        const base = fileName.replace(/\.(md|markdown|mdx|txt)$/i, '');
+        const ext = fileName.slice(base.length);
+        targetPath = relPrefix ? `${relPrefix}/${base}-imported${ext}` : `${base}-imported${ext}`;
+      }
+
+      // Ensure parent dir exists
+      if (relPrefix) {
+        try { await createDir(relPrefix); } catch {}
+      }
+
+      const node = await createFile(targetPath, content);
+      files.addFile(node);
+      return true;
+    } catch (err) {
+      logger.error(`Failed to import ${absPath}: ${err}`);
+      return false;
+    }
+  }
+
+  async function importFolder(
+    folderPath: string,
+    relPrefix: string,
+    tauriReadFile: (path: string) => Promise<Uint8Array>,
+    readDir: (path: string) => Promise<any[]>,
+  ): Promise<number> {
+    let count = 0;
+    try {
+      const entries = await readDir(folderPath);
+      for (const entry of entries) {
+        const name = entry.name;
+        if (!name || name.startsWith('.')) continue;
+        const fullPath = `${folderPath}/${name}`;
+
+        if (entry.isDirectory) {
+          const subPrefix = relPrefix ? `${relPrefix}/${name}` : name;
+          count += await importFolder(fullPath, subPrefix, tauriReadFile, readDir);
+        } else if (/\.(md|markdown|mdx|txt)$/i.test(name)) {
+          const ok = await importSingleFile(fullPath, relPrefix, tauriReadFile);
+          if (ok) count++;
+        }
+      }
+    } catch (err) {
+      logger.error(`Failed to read folder ${folderPath}: ${err}`);
+    }
+    return count;
   }
 
   async function handleInlineRename(oldPath: string, rawNewName: string) {
