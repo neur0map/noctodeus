@@ -2,6 +2,29 @@
 
 A creative IDE for thought. Local-first, privacy-focused note-taking and knowledge management built as a native desktop application.
 
+![Editor](static/noctodeus-1.png)
+
+## Features
+
+- **Rich markdown editor** — TipTap 3 with tables, math (KaTeX), code blocks with syntax highlighting, task lists, images, video, audio, embeds
+- **Wiki links & graph view** — `[[link]]` syntax with backlinks, interactive knowledge graph, alias resolution
+- **Full-text search** — FTS5-powered search across file names, titles, and content with highlighted snippets
+- **Daily notes & calendar** — Month calendar widget in sidebar, click any date to create/open a journal entry
+- **Properties panel** — Collapsible YAML frontmatter editor with typed fields (text, tags, dates, checkboxes)
+- **Task extraction** — Consolidated view of all tasks across your vault, filterable by status
+- **Unlinked mentions** — Detects references to your notes that aren't linked yet, one-click to convert
+- **Multiple cores** — Switch between vaults instantly from the sidebar dropdown
+- **Find & replace** — In-editor search with match highlighting, case toggle, replace all
+- **Edit/view toggle** — Switch between WYSIWYG editing and rendered preview
+- **Export** — Markdown, HTML, CSV with optional media inclusion
+- **Customizable** — Accent colors, font families, editor width, custom CSS injection, dark/light/system themes
+
+![Graph & Editing](static/noctodeus-2.png)
+
+![Task Extraction](static/noctodeus-3.png)
+
+![Appearance Settings](static/noctodeus-4.png)
+
 ## Stack
 
 ### Core
@@ -20,16 +43,21 @@ A creative IDE for thought. Local-first, privacy-focused note-taking and knowled
 |---------|---------|
 | [TipTap 3](https://tiptap.dev) | Headless rich text editor framework |
 | [ProseMirror](https://prosemirror.net) | Document model and editing primitives |
-| [lowlight](https://github.com/wooorm/lowlight) | Syntax highlighting for code blocks |
-| [markdown-it](https://github.com/markdown-it/markdown-it) | Markdown parsing and HTML rendering |
+| [lowlight](https://github.com/wooorm/lowlight) | Syntax highlighting (atom-one-dark theme) |
+| [markdown-it](https://github.com/markdown-it/markdown-it) | Markdown parsing with plugins (mark, sub, sup, KaTeX) |
+| [KaTeX](https://katex.org) | LaTeX math rendering via @vscode/markdown-it-katex |
 
-### Animation
+TipTap Extensions: Starter Kit, Table, Highlight, Subscript, Superscript, Underline, TextAlign, Typography, TextStyle, Color, CharacterCount, Focus, Code Block Lowlight, Image, Link, Placeholder, Task List, Task Item, Suggestion
+
+### UI
 
 | Library | Purpose |
 |---------|---------|
-| [anime.js v4](https://animejs.com) | Page transitions, micro-interactions, staggered list entry, ambient motion |
-
-TipTap Extensions: Starter Kit, Code Block Lowlight, Image, Link, Placeholder, Task List, Task Item, Suggestion
+| [Tailwind CSS v4](https://tailwindcss.com) | Utility-first styling with CSS-native @theme tokens |
+| [shadcn-svelte](https://shadcn-svelte.com) | Accessible component primitives (Button, Dialog, Command, etc.) |
+| [Lucide](https://lucide.dev) | Icon library |
+| [anime.js v4](https://animejs.com) | Staggered entry animations, transitions, micro-interactions |
+| SCSS | Custom layout partials for shell, sidebar, panels |
 
 ### Data
 
@@ -85,20 +113,29 @@ noctodeus/
 │   ├── lib/
 │   │   ├── bridge/               # Tauri command wrappers
 │   │   ├── components/           # UI components
+│   │   │   ├── common/           # Modals, dialogs, menus, focus manager
+│   │   │   ├── editor/           # Properties panel
+│   │   │   ├── filetree/         # File tree with keyboard nav
+│   │   │   ├── graph/            # Knowledge graph visualization
+│   │   │   ├── layout/           # AppShell, Sidebar, ContentArea, Worksurface
+│   │   │   ├── panels/           # Note details, outline, backlinks
+│   │   │   ├── sidebar/          # Calendar widget
+│   │   │   ├── tabs/             # Tab bar with drag reorder
+│   │   │   └── ui/               # shadcn-svelte generated components
 │   │   ├── editor/               # TipTap editor, extensions, serializer
 │   │   ├── stores/               # Svelte 5 rune-based state
-│   │   ├── styles/               # Design tokens, typography, animations
+│   │   ├── styles/               # Tailwind theme, SCSS layout partials
 │   │   ├── types/                # TypeScript interfaces
-│   │   └── utils/                # Shortcuts, helpers
+│   │   └── utils/                # Shortcuts, theme, motion
 │   └── routes/                   # SvelteKit pages
 ├── src-tauri/                    # Backend (Rust)
 │   └── src/
 │       ├── commands/             # Tauri IPC command handlers
 │       ├── core/                 # Core (vault) state management
 │       ├── db/                   # SQLite schema, queries, migrations
-│       ├── indexer/              # FTS indexing, file scanning
+│       ├── indexer/              # FTS indexing, file scanning, alias extraction
 │       └── watcher/              # File system change detection
-└── static/                       # Static assets (logo, favicon)
+└── static/                       # Static assets (logo, favicon, screenshots)
 ```
 
 ## Development
