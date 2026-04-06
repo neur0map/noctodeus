@@ -58,6 +58,7 @@
   import GitFork from "@lucide/svelte/icons/git-fork";
   import CoreSwitcher from "../lib/components/common/CoreSwitcher.svelte";
   import TasksModal from "../lib/components/common/TasksModal.svelte";
+  import CalendarWidget from "../lib/components/sidebar/CalendarWidget.svelte";
   import ListChecks from "@lucide/svelte/icons/list-checks";
 
   let { children }: { children: Snippet } = $props();
@@ -83,6 +84,34 @@
 
   let unlisteners: UnlistenFn[] = [];
   let overlayOpen = $derived(ui.quickOpenVisible || ui.commandPaletteVisible);
+
+  // Calendar: scan journal/ folder for existing daily notes
+  let journalDates = $derived(
+    new Set(
+      Array.from(files.fileMap.keys())
+        .filter(p => p.startsWith('journal/') && p.endsWith('.md'))
+        .map(p => p.replace('journal/', '').replace('.md', ''))
+    )
+  );
+
+  async function handleDailyNote(dateStr: string) {
+    const path = `journal/${dateStr}.md`;
+    const existing = files.fileMap.get(path);
+    if (existing) {
+      handleFileSelect(path);
+      return;
+    }
+    try { await createDir('journal'); } catch {}
+    const d = new Date(dateStr + 'T12:00:00');
+    const weekday = d.toLocaleDateString('en-US', { weekday: 'long' });
+    const month = d.toLocaleDateString('en-US', { month: 'long' });
+    const day = d.getDate();
+    const year = d.getFullYear();
+    const content = `---\ntitle: "${dateStr}"\ntags: [journal, daily]\n---\n\n# ${weekday}, ${month} ${day} ${year}\n\n## Tasks\n\n- [ ] \n\n## Notes\n\n`;
+    const node = await createFile(path, content);
+    files.addFile(node);
+    handleFileSelect(path);
+  }
 
   // Context menu state
   let ctxVisible = $state(false);
@@ -641,6 +670,11 @@
         results={searchResults}
         onselect={handleFileSelect}
         onsearch={handleSearch}
+      />
+
+      <CalendarWidget
+        existingDates={journalDates}
+        onselect={handleDailyNote}
       />
 
       <FileTree
