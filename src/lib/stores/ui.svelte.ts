@@ -5,6 +5,7 @@ let quickOpenVisible = $state(false);
 let commandPaletteVisible = $state(false);
 let sidebarCollapsed = $state(false);
 let settingsVisible = $state(false);
+let tasksVisible = $state(false);
 
 export function getUiState() {
   return {
@@ -28,6 +29,9 @@ export function getUiState() {
     },
     get settingsVisible() {
       return settingsVisible;
+    },
+    get tasksVisible() {
+      return tasksVisible;
     },
 
     toggleSidebar() {
@@ -64,10 +68,19 @@ export function getUiState() {
     hideSettings() {
       settingsVisible = false;
     },
+    showTasks() {
+      tasksVisible = true;
+      quickOpenVisible = false;
+      commandPaletteVisible = false;
+    },
+    hideTasks() {
+      tasksVisible = false;
+    },
     closeAllOverlays() {
       quickOpenVisible = false;
       commandPaletteVisible = false;
       settingsVisible = false;
+      tasksVisible = false;
     },
 
     reset() {
@@ -78,6 +91,7 @@ export function getUiState() {
       commandPaletteVisible = false;
       sidebarCollapsed = false;
       settingsVisible = false;
+      tasksVisible = false;
     },
   };
 }
