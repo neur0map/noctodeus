@@ -137,7 +137,7 @@
         <s>S</s>
       </button>
       <button class="bt__btn bt__btn--highlight" class:bt__btn--active={isActive('highlight')} onclick={() => toggle('highlight')} title="Highlight">
-        <mark>H</mark>
+        H
       </button>
       <button class="bt__btn" class:bt__btn--active={isActive('code')} onclick={() => toggle('code')} title="Inline code">
         &lt;&gt;
@@ -171,11 +171,15 @@
   .bt {
     position: fixed;
     z-index: 200;
-    background: var(--color-popover);
-    border: 1px solid var(--color-border);
-    border-radius: 10px;
-    box-shadow: var(--shadow-float);
-    padding: 3px;
+    background: rgba(18, 18, 24, 0.92);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    box-shadow:
+      0 8px 32px rgba(0, 0, 0, 0.5),
+      inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    padding: 4px;
     animation: bt-in 250ms var(--ease-expo-out) both;
     user-select: none;
   }
@@ -188,14 +192,14 @@
   .bt__row {
     display: flex;
     align-items: center;
-    gap: 1px;
+    gap: 2px;
   }
 
   .bt__sep {
     width: 1px;
-    height: 18px;
-    background: var(--color-border);
-    margin: 0 2px;
+    height: 16px;
+    background: rgba(255, 255, 255, 0.06);
+    margin: 0 3px;
   }
 
   .bt__btn {
@@ -203,16 +207,16 @@
     align-items: center;
     justify-content: center;
     gap: 3px;
-    min-width: 28px;
-    height: 28px;
-    padding: 0 5px;
+    min-width: 30px;
+    height: 30px;
+    padding: 0 6px;
     border: none;
-    border-radius: 6px;
+    border-radius: 8px;
     background: transparent;
-    color: var(--color-muted-foreground);
-    font-family: var(--font-mono);
-    font-size: 12px;
-    font-weight: 600;
+    color: rgba(255, 255, 255, 0.5);
+    font-family: var(--font-sans);
+    font-size: 13px;
+    font-weight: 500;
     cursor: pointer;
     transition:
       background 150ms var(--ease-expo-out),
@@ -220,7 +224,7 @@
   }
 
   .bt__btn:hover {
-    background: var(--color-hover);
+    background: rgba(255, 255, 255, 0.08);
     color: var(--color-foreground);
   }
 
@@ -229,9 +233,20 @@
     color: var(--color-accent);
   }
 
+  .bt__btn--highlight {
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .bt__btn--highlight.bt__btn--active {
+    background: rgba(99, 102, 241, 0.15);
+    color: var(--color-accent);
+  }
+
   .bt__btn--type {
     min-width: 40px;
     font-size: 11px;
+    font-family: var(--font-mono);
   }
 
   .bt__btn--i {
@@ -246,9 +261,9 @@
 
   /* Block type dropdown */
   .bt__menu {
-    border-top: 1px solid var(--color-border);
-    margin-top: 3px;
-    padding: 3px 0 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    margin-top: 4px;
+    padding: 4px 0 0;
     display: flex;
     flex-direction: column;
     gap: 1px;
@@ -260,20 +275,20 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 5px 8px;
+    padding: 6px 8px;
     border: none;
     border-radius: 6px;
     background: transparent;
-    color: var(--color-muted-foreground);
+    color: rgba(255, 255, 255, 0.6);
     font-family: var(--font-sans);
     font-size: 13px;
     cursor: pointer;
     text-align: left;
-    transition: background 150ms var(--ease-expo-out);
+    transition: background 150ms var(--ease-expo-out), color 150ms var(--ease-expo-out);
   }
 
   .bt__menu-item:hover {
-    background: var(--color-hover);
+    background: rgba(255, 255, 255, 0.06);
     color: var(--color-foreground);
   }
 
@@ -287,7 +302,7 @@
     font-weight: 600;
     width: 22px;
     flex-shrink: 0;
-    color: var(--color-placeholder);
+    color: rgba(255, 255, 255, 0.3);
   }
 
   .bt__menu-item--active .bt__menu-icon {
