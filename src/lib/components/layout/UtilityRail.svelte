@@ -61,16 +61,16 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 4px;
-    padding-top: 12px;
+    gap: var(--space-sm, 8px);
+    padding-top: var(--space-lg, 20px);
   }
 
   .utility-rail__button {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 2px;
-    padding: 8px 4px;
+    gap: var(--space-xs, 4px);
+    padding: 10px 6px;
     color: var(--text-muted, var(--color-placeholder));
     transition: color 150ms ease-out;
     cursor: pointer;

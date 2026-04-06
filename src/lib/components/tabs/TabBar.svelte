@@ -158,9 +158,9 @@
   .tab-bar {
     display: flex;
     align-items: center;
-    height: 42px;
+    height: 44px;
     padding: 0 8px;
-    gap: 2px;
+    gap: var(--space-xs, 4px);
     border-bottom: 1px solid var(--color-border);
     background: var(--color-background);
     flex-shrink: 0;
@@ -170,7 +170,7 @@
   .tab-bar__tabs {
     display: flex;
     align-items: center;
-    gap: 2px;
+    gap: var(--space-xs, 4px);
     overflow-x: auto;
     overflow-y: hidden;
     flex: 1;

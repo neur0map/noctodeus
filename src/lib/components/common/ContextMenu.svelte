@@ -72,7 +72,7 @@
     border-radius: 8px;
     box-shadow: var(--shadow-float);
     backdrop-filter: blur(12px);
-    padding: 3px;
+    padding: 6px;
     animation: ctx-in 250ms var(--ease-expo-out) both;
   }
 
@@ -86,7 +86,7 @@
     align-items: center;
     gap: 8px;
     width: 100%;
-    padding: 6px 10px;
+    padding: var(--space-sm, 8px) var(--space-md, 12px);
     border: none;
     border-radius: 5px;
     background: transparent;
@@ -118,7 +118,7 @@
   .ctx-menu__sep {
     height: 1px;
     background: var(--color-border);
-    margin: 3px 6px;
+    margin: var(--space-xs, 4px) var(--space-sm, 8px);
   }
 
   @media (prefers-reduced-motion: reduce) {

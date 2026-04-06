@@ -66,7 +66,7 @@
   }
 
   .right-panel__section {
-    border-bottom: 1px solid var(--color-border);
+    margin-bottom: var(--space-sm, 8px);
   }
 
   .right-panel__section--graph {
@@ -86,7 +86,7 @@
   .right-panel__section--scroll::-webkit-scrollbar { display: none; }
 
   .right-panel__section-header {
-    padding: 8px 12px;
+    padding: var(--space-md, 12px);
   }
 
   .right-panel__section-label {
@@ -100,6 +100,6 @@
   .right-panel__graph-body {
     flex: 1;
     min-height: 0;
-    padding: 0 8px 8px;
+    padding: 0 var(--space-md, 12px) var(--space-md, 12px);
   }
 </style>

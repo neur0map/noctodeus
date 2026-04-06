@@ -83,13 +83,13 @@
 <style>
   .search-bar {
     position: relative;
-    padding: 0 12px;
-    margin-bottom: 4px;
+    padding: 0 var(--space-md, 12px);
+    margin-bottom: var(--space-sm, 8px);
   }
 
   .search-bar__input {
     width: 100%;
-    padding: 5px 8px;
+    padding: var(--space-sm, 8px) var(--space-md, 12px);
     font-family: var(--font-mono);
     font-size: 11px;
     color: var(--color-foreground);

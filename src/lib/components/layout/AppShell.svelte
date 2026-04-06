@@ -55,9 +55,12 @@
   .app-shell {
     display: grid;
     grid-template-columns: 276px 1fr 48px;
-    height: 100vh;
+    height: calc(100vh - 8px);
+    margin: 0 8px 8px 8px;
+    border-radius: 12px;
     background: var(--color-background);
     overflow: hidden;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
     transition: grid-template-columns 400ms cubic-bezier(0.16, 1, 0.3, 1);
   }
 

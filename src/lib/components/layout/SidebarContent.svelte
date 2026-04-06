@@ -99,15 +99,15 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    height: 28px;
+    height: 32px;
   }
 
   .sidebar-header__btn {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 22px;
-    height: 22px;
+    width: 28px;
+    height: 28px;
     border: none;
     border-radius: 4px;
     background: transparent;
@@ -127,15 +127,15 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    height: 24px;
+    height: 28px;
   }
 
   .sidebar-footer__settings {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 24px;
-    height: 24px;
+    width: 28px;
+    height: 28px;
     border: none;
     border-radius: 5px;
     background: transparent;

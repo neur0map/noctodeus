@@ -66,8 +66,8 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    height: 32px;
-    padding: 0 10px;
+    height: 34px;
+    padding: 0 var(--space-md, 12px);
     font-family: var(--font-mono);
     font-size: 12px;
     color: var(--text-muted, var(--color-placeholder));

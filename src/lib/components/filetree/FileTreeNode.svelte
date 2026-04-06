@@ -158,10 +158,10 @@
   .tree-node__row {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 6px;
     width: 100%;
-    height: 28px;
-    padding-right: 8px;
+    height: 32px;
+    padding-right: var(--space-md, 12px);
     font-family: var(--font-mono);
     font-size: 12px;
     color: var(--color-muted-foreground);
