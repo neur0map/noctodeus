@@ -2,6 +2,7 @@
   import SearchInput from './SearchInput.svelte';
   import ResultsList from './ResultsList.svelte';
   import type { QuickOpenItem } from '../../types/ui';
+  import { searchQuery } from '../../bridge/commands';
 
   let {
     visible = false,
@@ -17,8 +18,12 @@
 
   let query = $state('');
   let selectedIndex = $state(0);
+  let contentResults = $state<QuickOpenItem[]>([]);
+  let searching = $state(false);
+  let debounceTimer: ReturnType<typeof setTimeout> | undefined;
 
-  let filtered = $derived(
+  // File-name matches (instant, client-side)
+  let nameMatches = $derived(
     query.length === 0
       ? items
       : items.filter((item) => {
@@ -31,11 +36,58 @@
         })
   );
 
+  // Merged results: name matches first, then content-only matches
+  let filtered = $derived.by(() => {
+    if (query.length === 0) return items;
+    const namePaths = new Set(nameMatches.map(m => m.path));
+    const contentOnly = contentResults.filter(r => !namePaths.has(r.path));
+    return [...nameMatches, ...contentOnly];
+  });
+
+  // FTS search with debounce
+  $effect(() => {
+    const q = query;
+    if (debounceTimer) clearTimeout(debounceTimer);
+
+    if (q.length < 2) {
+      contentResults = [];
+      searching = false;
+      return;
+    }
+
+    searching = true;
+    debounceTimer = setTimeout(async () => {
+      try {
+        // Sanitize query for FTS5: strip characters that break MATCH syntax
+        const sanitized = q.replace(/['"()\-{}[\]:^~@!]/g, ' ').trim();
+        if (!sanitized) {
+          contentResults = [];
+          searching = false;
+          return;
+        }
+        const ftsQuery = sanitized.split(/\s+/).filter(Boolean).map(w => `${w}*`).join(' ');
+        const hits = await searchQuery(ftsQuery);
+        contentResults = hits.map(h => ({
+          path: h.path,
+          name: h.path.split('/').pop() ?? h.path,
+          title: h.title,
+          snippet: h.snippet,
+          parentPath: h.path.includes('/') ? h.path.slice(0, h.path.lastIndexOf('/')) : undefined,
+        }));
+      } catch {
+        contentResults = [];
+      }
+      searching = false;
+    }, 200);
+  });
+
   // Reset state when toggling visibility
   $effect(() => {
     if (visible) {
       query = '';
       selectedIndex = 0;
+      contentResults = [];
+      searching = false;
     }
   });
 
@@ -77,7 +129,10 @@
     onclick={handleBackdropClick}
   >
     <div class="quick-open" role="dialog" aria-label="Quick open">
-      <SearchInput bind:value={query} placeholder="Search files..." />
+      <SearchInput bind:value={query} placeholder="Search files and content..." />
+      {#if searching}
+        <div class="quick-open__searching">Searching...</div>
+      {/if}
       <ResultsList
         items={filtered}
         {selectedIndex}
@@ -127,6 +182,14 @@
       opacity: 1;
       transform: scale(1) translateY(0);
     }
+  }
+
+  .quick-open__searching {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--color-placeholder);
+    padding: 2px 16px 4px;
+    opacity: 0.7;
   }
 
   @media (prefers-reduced-motion: reduce) {

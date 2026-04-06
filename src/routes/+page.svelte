@@ -161,8 +161,8 @@
     },
     {
       id: "open-file",
-      label: "Open File",
-      shortcut: formatShortcutLabel(APP_SHORTCUTS.quick_open),
+      label: "Search Files",
+      shortcut: formatShortcutLabel(APP_SHORTCUTS.search),
       action: () => {
         ui.hideCommandPalette();
         ui.showQuickOpen();
