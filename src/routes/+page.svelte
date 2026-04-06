@@ -31,6 +31,7 @@
   import { APP_SHORTCUTS, formatShortcutLabel } from "../lib/utils/shortcuts";
   import type { FileNode } from "../lib/types/core";
   import { parseMarkdown } from "../lib/editor/serializer";
+  import PropertiesPanel from "../lib/components/editor/PropertiesPanel.svelte";
   import Eye from "@lucide/svelte/icons/eye";
   import PencilLine from "@lucide/svelte/icons/pencil-line";
 
@@ -123,6 +124,17 @@
       inlineTitle = currentMetadata?.title || currentMetadata?.name.replace(/\.(md|markdown)$/i, '') || '';
       (e.target as HTMLInputElement).blur();
     }
+  }
+
+  async function handlePropertiesUpdate(newFrontmatter: string) {
+    if (!currentFilePath || currentContent === null) return;
+    const body = currentContent.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, '');
+    const newContent = newFrontmatter + body;
+    currentContent = newContent;
+    try {
+      const { writeFile } = await import('../lib/bridge/commands');
+      await writeFile(currentFilePath, newContent);
+    } catch {}
   }
 
   let isMarkdown = $derived(
@@ -418,6 +430,10 @@
           </button>
         </div>
       {/snippet}
+      <PropertiesPanel
+        content={currentContent ?? ''}
+        onupdate={handlePropertiesUpdate}
+      />
       {#if viewMode}
         <div class="rendered-view">
           {@html renderedHtml}
