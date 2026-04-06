@@ -3,7 +3,7 @@
 
   let {
     value = $bindable(''),
-    placeholder = 'Search files...',
+    placeholder = 'Search files and content...',
     prefix = '',
   }: {
     value?: string;
@@ -18,60 +18,88 @@
   });
 </script>
 
-<div class="search-input">
-  <span class="search-input__icon">{nerdIcon('search')}</span>
+<div class="si">
   {#if prefix}
-    <span class="search-input__prefix">{prefix}</span>
+    <span class="si__prefix">{prefix}</span>
+  {:else}
+    <span class="si__glyph">{nerdIcon('search')}</span>
   {/if}
   <input
     bind:this={inputEl}
     bind:value
     type="text"
-    class="search-input__field"
+    class="si__input"
     {placeholder}
     autocomplete="off"
     spellcheck="false"
   />
+  {#if value}
+    <button class="si__clear" onclick={() => value = ''} aria-label="Clear search">×</button>
+  {/if}
 </div>
 
 <style>
-  .search-input {
+  .si {
     display: flex;
     align-items: center;
-    padding: 0 16px;
-    border-bottom: 1px solid var(--border-subtle, var(--color-border));
+    gap: 12px;
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
   }
 
-  .search-input__icon {
+  .si__glyph {
+    font-family: var(--font-mono);
+    font-size: 18px;
+    color: var(--accent-blue, #7AA2F7);
+    flex-shrink: 0;
+    opacity: 0.7;
+  }
+
+  .si__input {
+    flex: 1;
     font-family: var(--font-mono);
     font-size: 16px;
-    color: var(--text-muted, var(--color-placeholder));
-    margin-right: 10px;
-    flex-shrink: 0;
-  }
-
-  .search-input__prefix {
-    font-family: var(--font-mono);
-    font-size: 18px;
+    font-weight: 400;
+    letter-spacing: -0.01em;
     line-height: 1.4;
-    color: var(--color-placeholder);
-    margin-right: 4px;
-    user-select: none;
-  }
-
-  .search-input__field {
-    flex: 1;
-    padding: 16px 0;
-    font-family: var(--font-mono);
-    font-size: 18px;
-    line-height: 1.4;
-    color: var(--color-foreground);
+    color: var(--text-primary, #C0CAF5);
     background: transparent;
     border: none;
     outline: none;
+    caret-color: var(--accent-blue, #7AA2F7);
   }
 
-  .search-input__field::placeholder {
-    color: var(--color-placeholder);
+  .si__input::placeholder {
+    color: var(--text-faint, #3B4261);
+  }
+
+  .si__clear {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border: none;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text-muted, #6B7394);
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 150ms ease-out, color 150ms ease-out;
+    flex-shrink: 0;
+  }
+
+  .si__clear:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary, #C0CAF5);
+  }
+
+  .si__prefix {
+    font-family: var(--font-mono);
+    font-size: 18px;
+    color: var(--accent-blue, #7AA2F7);
+    opacity: 0.7;
+    user-select: none;
+    flex-shrink: 0;
   }
 </style>

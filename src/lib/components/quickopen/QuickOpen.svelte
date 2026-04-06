@@ -41,8 +41,8 @@
       .replace(/\s+/g, ' ')
       .trim();
 
-    // Restore <b> tags
-    cleaned = cleaned.replace(/\x00(\d+)\x00/g, (_, i) => `<b>${preserved[parseInt(i)]}</b>`);
+    // Restore as <span class="hl"> — avoids global <b>/bold/yellow styles
+    cleaned = cleaned.replace(/\x00(\d+)\x00/g, (_, i) => `<span class="hl">${preserved[parseInt(i)]}</span>`);
 
     return cleaned;
   }
@@ -191,34 +191,43 @@
     display: flex;
     align-items: flex-start;
     justify-content: center;
-    padding-top: 20vh;
-    background: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(8px);
+    padding-top: 15vh;
+    background: rgba(5, 8, 17, 0.7);
+    backdrop-filter: blur(12px) saturate(0.8);
     z-index: 100;
-    animation: quick-open-backdrop-in 300ms ease both;
+    animation: qo-fade 200ms ease both;
   }
 
-  @keyframes quick-open-backdrop-in {
+  @keyframes qo-fade {
     from { opacity: 0; }
     to { opacity: 1; }
   }
 
   .quick-open {
-    width: min(600px, 90vw);
-    max-height: 480px;
-    background: var(--surface-2, var(--color-popover));
-    border-radius: 12px;
-    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.04);
+    width: min(620px, 90vw);
+    max-height: 520px;
+    background: linear-gradient(
+      180deg,
+      rgba(26, 30, 46, 0.98) 0%,
+      rgba(19, 22, 31, 0.99) 100%
+    );
+    border-radius: 14px;
+    border: 1px solid rgba(122, 162, 247, 0.06);
+    box-shadow:
+      0 0 0 1px rgba(0, 0, 0, 0.3),
+      0 8px 24px rgba(0, 0, 0, 0.4),
+      0 24px 64px rgba(0, 0, 0, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.03);
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    animation: quick-open-enter 450ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: qo-enter 350ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
-  @keyframes quick-open-enter {
+  @keyframes qo-enter {
     from {
       opacity: 0;
-      transform: scale(0.95) translateY(8px);
+      transform: scale(0.97) translateY(6px);
     }
     to {
       opacity: 1;
@@ -229,9 +238,9 @@
   .quick-open__searching {
     font-family: var(--font-mono);
     font-size: 11px;
-    color: var(--color-placeholder);
-    padding: 2px 16px 4px;
-    opacity: 0.7;
+    color: var(--text-muted, #6B7394);
+    padding: 4px 20px 2px;
+    letter-spacing: 0.02em;
   }
 
   @media (prefers-reduced-motion: reduce) {

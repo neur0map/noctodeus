@@ -14,147 +14,185 @@
 
   let listEl: HTMLElement | undefined = $state();
 
-  // Scroll selected item into view
   $effect(() => {
     if (!listEl) return;
-    const selected = listEl.querySelector('.results-list__item--selected');
+    const selected = listEl.querySelector('.rl__item--sel');
     if (selected) {
       selected.scrollIntoView({ block: 'nearest' });
     }
   });
 
-  function getDisplayName(item: QuickOpenItem): string {
-    return item.title || item.name;
+  function displayName(item: QuickOpenItem): string {
+    return item.title || item.name.replace(/\.\w+$/, '');
   }
 
-  function getDisplayPath(item: QuickOpenItem): string {
+  function shortPath(item: QuickOpenItem): string {
     const p = item.parentPath || item.path;
-    const parts = p.split('/');
-    if (parts.length <= 2) return p;
+    const parts = p.split('/').filter(Boolean);
+    if (parts.length <= 1) return parts[0] || '';
     return parts.slice(-2).join('/');
   }
 </script>
 
-<div class="results-list" role="listbox" bind:this={listEl}>
+<div class="rl" role="listbox" bind:this={listEl}>
   {#if items.length === 0}
-    <div class="results-list__empty">No results</div>
+    <div class="rl__empty">
+      <span class="rl__empty-icon">⌕</span>
+      <span>No matches found</span>
+    </div>
   {:else}
-    {#each items as item, i (item.path)}
+    {#each items as item, i (item.path + i)}
       <button
-        class="results-list__item"
-        class:results-list__item--selected={i === selectedIndex}
+        class="rl__item"
+        class:rl__item--sel={i === selectedIndex}
         role="option"
         aria-selected={i === selectedIndex}
         onclick={() => onselect(item.path)}
       >
-        <div class="results-list__row">
-          <span class="results-list__icon">{fileIcon(item.name)}</span>
-          <span class="results-list__name">{getDisplayName(item)}</span>
-          <span class="results-list__path">{getDisplayPath(item)}</span>
+        <span class="rl__icon">{fileIcon(item.name)}</span>
+        <div class="rl__content">
+          <div class="rl__top">
+            <span class="rl__name">{displayName(item)}</span>
+            <span class="rl__path">{shortPath(item)}</span>
+          </div>
+          {#if item.snippet}
+            <div class="rl__snippet">{@html item.snippet}</div>
+          {/if}
         </div>
-        {#if item.snippet}
-          <div class="results-list__snippet">{@html item.snippet}</div>
-        {/if}
       </button>
     {/each}
   {/if}
 </div>
 
 <style>
-  .results-list {
+  .rl {
     overflow-y: auto;
-    max-height: 400px;
-    padding: 6px 0;
+    max-height: 420px;
+    padding: 8px;
   }
 
-  .results-list__empty {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 32px 16px;
-    font-family: var(--font-mono);
-    font-size: 13px;
-    color: var(--color-placeholder);
-  }
-
-  .results-list__item {
+  .rl__empty {
     display: flex;
     flex-direction: column;
-    gap: 2px;
-    width: calc(100% - 12px);
-    padding: 10px 16px;
-    margin: 2px 6px;
+    align-items: center;
+    gap: 8px;
+    padding: 40px 16px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--text-faint, #3B4261);
+  }
+
+  .rl__empty-icon {
+    font-size: 24px;
+    opacity: 0.5;
+  }
+
+  .rl__item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    width: 100%;
+    padding: 10px 12px;
     background: transparent;
     border: none;
     border-radius: 8px;
     cursor: pointer;
     text-align: left;
-    transition: background 150ms ease-out;
+    transition: background 120ms ease-out;
+    position: relative;
   }
 
-  .results-list__row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    width: 100%;
+  .rl__item:hover {
+    background: rgba(255, 255, 255, 0.03);
   }
 
-  .results-list__item:hover {
-    background: var(--surface-3, var(--color-hover));
+  .rl__item--sel {
+    background: rgba(122, 162, 247, 0.08);
   }
 
-  .results-list__item--selected {
-    background: var(--surface-3, var(--color-hover));
-    box-shadow: inset 3px 0 0 var(--accent-blue, #7AA2F7);
+  .rl__item--sel::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 6px;
+    bottom: 6px;
+    width: 3px;
+    border-radius: 2px;
+    background: var(--accent-blue, #7AA2F7);
   }
 
-  .results-list__icon {
+  .rl__icon {
     flex-shrink: 0;
-    width: 18px;
+    width: 20px;
     font-family: var(--font-mono);
-    font-size: 14px;
-    color: var(--text-muted, var(--color-placeholder));
+    font-size: 15px;
+    color: var(--text-muted, #6B7394);
     text-align: center;
+    line-height: 1.4;
+    padding-top: 1px;
   }
 
-  .results-list__name {
+  .rl__content {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .rl__top {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+  }
+
+  .rl__name {
     font-family: var(--font-mono);
     font-size: 13px;
-    line-height: 1.5;
-    color: var(--color-foreground);
+    font-weight: 500;
+    line-height: 1.4;
+    color: var(--text-primary, #C0CAF5);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
-  .results-list__path {
-    flex: 1;
+  .rl__item--sel .rl__name {
+    color: var(--accent-blue, #7AA2F7);
+  }
+
+  .rl__path {
+    flex-shrink: 0;
     font-family: var(--font-mono);
     font-size: 11px;
     line-height: 1.4;
-    color: var(--text-muted, var(--color-placeholder));
-    opacity: 0.7;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    text-align: right;
+    color: var(--text-faint, #3B4261);
+    margin-left: auto;
   }
 
-  .results-list__snippet {
+  .rl__snippet {
     font-family: var(--font-mono);
     font-size: 11px;
     line-height: 1.5;
-    color: var(--text-muted, var(--color-placeholder));
-    padding-left: 28px;
+    color: var(--text-muted, #6B7394);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    opacity: 0.8;
   }
 
-  /* Highlight matched terms in snippet */
-  .results-list__snippet :global(b) {
+  /* Highlight matched terms — uses <span class="hl"> to avoid global <b> style conflicts */
+  .rl__snippet :global(.hl) {
     color: var(--accent-blue, #7AA2F7);
-    font-weight: 600;
-    background: none;
+    font-weight: 500;
+  }
+
+  /* Fallback: also override <b> in case any slip through */
+  .rl__snippet :global(b),
+  .rl__snippet :global(strong) {
+    color: var(--accent-blue, #7AA2F7);
+    font-weight: 500;
+    background: none !important;
+    background-color: transparent !important;
   }
 </style>
