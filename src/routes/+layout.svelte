@@ -1,6 +1,7 @@
 <script lang="ts">
   import "../lib/styles/app.css";
   import "../lib/styles/app.scss";
+  import "../lib/styles/fonts.css";
 
   import type { Snippet } from "svelte";
   import { onMount, onDestroy } from "svelte";
