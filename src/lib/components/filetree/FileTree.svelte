@@ -22,7 +22,25 @@
     onrename?: (oldPath: string, newName: string) => void;
   } = $props();
 
+  import { onMount } from 'svelte';
+
   let container: HTMLElement | undefined = $state();
+  let zoneActive = $state(false);
+
+  onMount(() => {
+    function handleZoneChange(e: Event) {
+      const zone = (e as CustomEvent).detail;
+      zoneActive = zone === 'filetree';
+      if (zoneActive && container) {
+        // Focus the active file or first item
+        const active = container.querySelector<HTMLElement>('.tree-node__row--active') ??
+          container.querySelector<HTMLElement>('button[tabindex="0"]');
+        active?.focus();
+      }
+    }
+    window.addEventListener('noctodeus-zone-change', handleZoneChange);
+    return () => window.removeEventListener('noctodeus-zone-change', handleZoneChange);
+  });
 
   // Drag state shared with all tree nodes
   let dragState = $state<{ dragging: string | null; overDir: string | null }>({
@@ -142,6 +160,7 @@
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
   class="file-tree"
+  class:file-tree--zone-active={zoneActive}
   role="tree"
   tabindex="0"
   aria-label="File tree"
@@ -181,6 +200,11 @@
     font-family: var(--font-mono);
     font-size: 13px;
     color: var(--color-placeholder);
+  }
+
+  .file-tree--zone-active :global(.tree-node__row:focus) {
+    outline: 2px solid var(--color-accent);
+    outline-offset: -2px;
   }
 
   :global(.file-drag-ghost) {
