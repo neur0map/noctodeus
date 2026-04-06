@@ -238,7 +238,7 @@
     bottom: 52px;
     left: 16px;
     width: 320px;
-    max-height: min(580px, calc(100vh - 80px));
+    height: min(520px, calc(100vh - 80px));
     background: linear-gradient(
       180deg,
       rgba(19, 22, 31, 0.99) 0%,
