@@ -261,9 +261,11 @@
   .sp__tabs {
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 0;
-    padding: 16px 20px 8px;
+    gap: 2px;
+    padding: 14px 18px 6px;
+    background: rgba(255, 255, 255, 0.015);
+    border-radius: 10px;
+    margin: 12px 14px 0;
   }
 
   .sp__tab {
@@ -271,55 +273,66 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 8px 0;
+    padding: 7px 0;
     border: none;
     background: transparent;
     color: var(--text-muted, #6B7394);
     cursor: pointer;
-    border-radius: 8px;
+    border-radius: 7px;
     transition: background 150ms ease-out, color 150ms ease-out;
   }
 
   .sp__tab:hover {
     color: var(--text-secondary, #A9B1D6);
+    background: rgba(255, 255, 255, 0.03);
   }
 
   .sp__tab--active {
-    background: rgba(255, 255, 255, 0.06);
+    background: rgba(255, 255, 255, 0.07);
     color: var(--text-primary, #C0CAF5);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
   }
 
   /* ── Body ── */
   .sp__body {
     flex: 1;
     overflow-y: auto;
-    padding: 8px 16px 16px;
+    padding: 6px 14px 18px;
   }
 
   .sp__section-title {
     font-family: var(--font-mono);
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 500;
-    color: var(--text-primary, #C0CAF5);
+    color: var(--text-secondary, #A9B1D6);
     text-align: center;
-    padding: 8px 0 14px;
+    padding: 10px 0 12px;
+    letter-spacing: 0.03em;
   }
 
   /* ── Stat Cards ── */
   .sp__grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 8px;
+    gap: 7px;
   }
 
   .sp__card {
-    background: rgba(255, 255, 255, 0.04);
-    border-radius: 10px;
-    padding: 14px 14px 12px;
+    background: rgba(255, 255, 255, 0.035);
+    border-radius: 11px;
+    padding: 13px 13px 10px;
     display: flex;
     flex-direction: column;
-    gap: 4px;
-    opacity: 0; /* anime.js animates in */
+    gap: 5px;
+    opacity: 0;
+  }
+
+  .sp__card:nth-child(2) {
+    padding-top: 15px;
+  }
+
+  .sp__card:nth-child(3) {
+    padding-bottom: 12px;
   }
 
   .sp__card-top {
@@ -330,16 +343,21 @@
 
   .sp__card-value {
     font-family: var(--font-mono);
-    font-size: 22px;
+    font-size: 21px;
     font-weight: 600;
     color: var(--text-primary, #C0CAF5);
-    letter-spacing: -0.02em;
-    line-height: 1.2;
+    letter-spacing: -0.03em;
+    line-height: 1.15;
+  }
+
+  .sp__card:nth-child(odd) .sp__card-value {
+    font-size: 22px;
   }
 
   .sp__card :global(.sp__card-icon) {
     color: var(--text-faint, #3B4261);
-    margin-top: 2px;
+    margin-top: 1px;
+    opacity: 0.7;
   }
 
   .sp__card-label {
@@ -349,21 +367,18 @@
     letter-spacing: 0.01em;
   }
 
-  /* ── Date rows ── */
+  /* ── Date row ── */
   .sp__dates {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    margin-top: 12px;
+    margin-top: 10px;
   }
 
   .sp__date-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background: rgba(255, 255, 255, 0.04);
-    border-radius: 10px;
-    padding: 12px 14px;
+    background: rgba(255, 255, 255, 0.035);
+    border-radius: 11px;
+    padding: 11px 13px;
   }
 
   .sp__date-info {
@@ -374,23 +389,25 @@
 
   .sp__date-value {
     font-family: var(--font-mono);
-    font-size: 13px;
+    font-size: 12.5px;
     font-weight: 500;
     color: var(--text-primary, #C0CAF5);
+    letter-spacing: -0.01em;
   }
 
   .sp__date-label {
     font-family: var(--font-mono);
-    font-size: 11px;
+    font-size: 10.5px;
     color: var(--text-muted, #6B7394);
   }
 
   .sp__date-row :global(.sp__date-icon) {
     color: var(--text-faint, #3B4261);
+    opacity: 0.6;
   }
 
   /* ── Panel content (outline/backlinks) ── */
   .sp__panel-content {
-    padding: 0 4px;
+    padding: 0 2px;
   }
 </style>
