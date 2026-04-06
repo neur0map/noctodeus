@@ -30,6 +30,9 @@
   import { logger } from "../lib/logger";
   import { APP_SHORTCUTS, formatShortcutLabel } from "../lib/utils/shortcuts";
   import type { FileNode } from "../lib/types/core";
+  import { parseMarkdown } from "../lib/editor/serializer";
+  import Eye from "@lucide/svelte/icons/eye";
+  import PencilLine from "@lucide/svelte/icons/pencil-line";
 
   const ui = getUiState();
   const core = getCoreState();
@@ -52,6 +55,19 @@
   );
   const pinned = getPinnedState();
   let editorRef: EditorComponent | undefined = $state();
+
+  // Edit/View mode toggle
+  let viewMode = $state(false);
+  let renderedHtml = $state('');
+
+  function toggleViewMode() {
+    if (!viewMode) {
+      // Flush editor content before switching to view
+      editorRef?.flush();
+      renderedHtml = parseMarkdown(currentContent ?? '');
+    }
+    viewMode = !viewMode;
+  }
 
   // Inline title editing
   let inlineTitle = $state('');
@@ -393,18 +409,31 @@
             onkeydown={handleTitleKeydown}
             spellcheck="false"
           />
+          <button class="view-toggle" onclick={toggleViewMode} title={viewMode ? 'Edit' : 'Preview'}>
+            {#if viewMode}
+              <PencilLine size={14} />
+            {:else}
+              <Eye size={14} />
+            {/if}
+          </button>
         </div>
       {/snippet}
-      {#key viewKey}
-        <div class="view-enter">
-          <EditorComponent
-            path={currentFilePath}
-            initialContent={currentContent}
-            onnavigate={handleWikiLinkNavigate}
-            bind:this={editorRef}
-          />
+      {#if viewMode}
+        <div class="rendered-view">
+          {@html renderedHtml}
         </div>
-      {/key}
+      {:else}
+        {#key viewKey}
+          <div class="view-enter">
+            <EditorComponent
+              path={currentFilePath}
+              initialContent={currentContent}
+              onnavigate={handleWikiLinkNavigate}
+              bind:this={editorRef}
+            />
+          </div>
+        {/key}
+      {/if}
     </Worksurface>
   {:else}
     <Worksurface>
@@ -467,6 +496,9 @@
 
 <style>
   .inline-title-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     padding: 20px 28px 0;
     max-width: 780px;
     margin: 0 auto;
@@ -496,6 +528,99 @@
     padding-bottom: 4px;
     margin-bottom: -5px;
   }
+
+  .view-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--color-placeholder);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: color 150ms var(--ease-expo-out), background 150ms var(--ease-expo-out);
+  }
+
+  .view-toggle:hover {
+    color: var(--color-foreground);
+    background: var(--color-hover);
+  }
+
+  .rendered-view {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 28px 40px;
+    max-width: 780px;
+    margin: 0 auto;
+    width: 100%;
+    font-family: var(--font-content);
+    font-size: 14px;
+    line-height: 1.8;
+    color: var(--color-foreground);
+    animation: content-fade 250ms var(--ease-expo-out) both;
+  }
+
+  .rendered-view :global(h1),
+  .rendered-view :global(h2),
+  .rendered-view :global(h3) {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    line-height: 1.3;
+  }
+
+  .rendered-view :global(h1) { font-size: clamp(2rem, 3vw, 2.8rem); margin: 24px 0 16px; letter-spacing: -0.04em; }
+  .rendered-view :global(h2) { font-size: 20px; margin: 24px 0 12px; letter-spacing: -0.03em; }
+  .rendered-view :global(h3) { font-size: 18px; margin: 20px 0 8px; }
+
+  .rendered-view :global(p) { margin-bottom: 12px; }
+  .rendered-view :global(a) { color: var(--color-accent); text-decoration: none; }
+  .rendered-view :global(a:hover) { text-decoration: underline; }
+
+  .rendered-view :global(pre) {
+    background: var(--color-card);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: 16px;
+    overflow-x: auto;
+    margin: 16px 0;
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+  }
+
+  .rendered-view :global(code) {
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+    background: var(--color-hover);
+    border-radius: 4px;
+    padding: 2px 6px;
+  }
+
+  .rendered-view :global(pre code) { background: none; padding: 0; }
+
+  .rendered-view :global(blockquote) {
+    border-left: 2px solid var(--color-border);
+    padding-left: 16px;
+    color: var(--color-muted-foreground);
+    margin: 16px 0;
+    font-style: italic;
+  }
+
+  .rendered-view :global(table) { border-collapse: collapse; width: 100%; margin: 16px 0; }
+  .rendered-view :global(th),
+  .rendered-view :global(td) { border: 1px solid var(--color-border); padding: 8px 12px; text-align: left; }
+  .rendered-view :global(th) { background: var(--color-card); font-weight: 600; }
+
+  .rendered-view :global(hr) { border: none; border-top: 1px solid var(--color-border); margin: 32px 0; }
+
+  .rendered-view :global(ul),
+  .rendered-view :global(ol) { padding-left: 24px; margin: 12px 0; }
+
+  .rendered-view :global(mark) { background: rgba(253, 224, 71, 0.65); border-radius: 3px; padding: 1px 4px; }
+
+  .rendered-view :global(img) { max-width: 100%; border-radius: 8px; margin: 16px 0; }
 
   .view-enter {
     height: 100%;
