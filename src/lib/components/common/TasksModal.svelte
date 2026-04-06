@@ -193,12 +193,12 @@
   .tasks-modal {
     display: flex;
     flex-direction: column;
-    width: min(640px, 90vw);
-    max-height: min(520px, 80vh);
-    background: var(--color-popover);
-    border: 1px solid var(--color-border);
+    width: min(80vw, 900px);
+    max-height: 80vh;
+    background: var(--surface-2, var(--color-popover));
+    border: none;
     border-radius: 12px;
-    box-shadow: var(--shadow-float);
+    box-shadow: var(--shadow-modal, 0 8px 32px rgba(0,0,0,0.4));
     overflow: hidden;
     animation: tasks-modal-in 450ms var(--ease-expo-out) both;
   }
@@ -251,26 +251,24 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 5px 12px;
+    padding: 4px 12px;
     font-family: var(--font-mono);
     font-size: 12px;
-    color: var(--color-muted-foreground);
-    background: transparent;
-    border: 1px solid var(--color-border);
-    border-radius: 6px;
+    color: var(--text-muted, var(--color-placeholder));
+    background: var(--surface-3, var(--color-hover));
+    border: none;
+    border-radius: 16px;
     cursor: pointer;
-    transition: all 150ms var(--ease-expo-out);
+    transition: all 150ms ease-out;
   }
 
   .tasks-modal__filter:hover {
-    border-color: var(--color-muted-foreground);
-    color: var(--color-foreground);
+    color: var(--text-secondary, var(--color-foreground));
   }
 
   .tasks-modal__filter--active {
-    background: rgba(99, 102, 241, 0.12);
-    border-color: var(--color-accent);
-    color: var(--color-accent);
+    background: var(--accent-blue, var(--color-accent));
+    color: var(--base, var(--color-background));
   }
 
   .tasks-modal__badge {
@@ -304,8 +302,8 @@
     padding: 4px 0;
     font-family: var(--font-mono);
     font-size: 10px;
-    color: var(--color-placeholder);
-    text-transform: uppercase;
+    color: var(--text-muted, var(--color-placeholder));
+    font-variant: small-caps;
     letter-spacing: 0.04em;
     border: none;
     background: transparent;
@@ -320,9 +318,10 @@
 
   .tasks-modal__task {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     gap: 8px;
     width: 100%;
+    min-height: 40px;
     padding: 5px 8px;
     border: none;
     border-radius: 4px;
@@ -333,16 +332,26 @@
     transition: background 150ms var(--ease-expo-out);
   }
 
+  .tasks-modal__task :global(svg) {
+    color: var(--border-active, var(--color-muted-foreground));
+    flex-shrink: 0;
+  }
+
   .tasks-modal__task:hover {
     background: var(--color-hover);
   }
 
   .tasks-modal__task--done {
-    color: var(--color-placeholder);
+    color: var(--text-muted, var(--color-placeholder));
+  }
+
+  .tasks-modal__task--done :global(svg) {
+    color: var(--accent-green, #9ECE6A);
   }
 
   .tasks-modal__task--done .tasks-modal__task-text {
     text-decoration: line-through;
+    color: var(--text-muted, var(--color-placeholder));
   }
 
   .tasks-modal__task-text {

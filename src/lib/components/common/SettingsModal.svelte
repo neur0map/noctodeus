@@ -155,13 +155,20 @@
                   <span class="settings__row-desc">Brand color for highlights, links, and active states.</span>
                 </div>
                 <div class="settings__color-row">
-                  {#each ['#6366f1', '#8b5cf6', '#ec4899', '#f43f5e', '#f97316', '#eab308', '#22c55e', '#06b6d4', '#3b82f6'] as color}
+                  {#each [
+                    { color: '#7AA2F7', label: 'Blue' },
+                    { color: '#BB9AF7', label: 'Purple' },
+                    { color: '#7DCFFF', label: 'Cyan' },
+                    { color: '#9ECE6A', label: 'Green' },
+                    { color: '#F7768E', label: 'Red' },
+                    { color: '#FF9E64', label: 'Orange' },
+                  ] as swatch}
                     <button
                       class="settings__color-swatch"
-                      class:settings__color-swatch--active={settings.accentColor === color}
-                      style="background: {color}"
-                      onclick={() => settings.update('accentColor', color)}
-                      title={color}
+                      class:settings__color-swatch--active={settings.accentColor === swatch.color}
+                      style="background: {swatch.color}"
+                      onclick={() => settings.update('accentColor', swatch.color)}
+                      title={swatch.label}
                     ></button>
                   {/each}
                 </div>
@@ -341,7 +348,7 @@
   .settings-backdrop {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.55);
+    background: rgba(0, 0, 0, 0.6);
     backdrop-filter: blur(8px);
     z-index: 500;
     display: flex;
@@ -359,10 +366,10 @@
     display: flex;
     width: min(860px, 90vw);
     height: min(580px, 80vh);
-    background: var(--color-popover);
-    border: 1px solid var(--color-border);
+    background: var(--surface-2, var(--color-popover));
+    border: none;
     border-radius: 14px;
-    box-shadow: var(--shadow-float);
+    box-shadow: var(--shadow-modal, 0 8px 32px rgba(0,0,0,0.4));
     overflow: hidden;
     animation: settings-in 450ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
@@ -425,7 +432,8 @@
 
   .settings__nav-item--active {
     color: var(--color-foreground);
-    background: rgba(99, 102, 241, 0.12);
+    background: var(--surface-3, var(--color-hover));
+    border-left: 2px solid var(--accent-blue, var(--color-accent));
   }
 
   .settings__nav-icon {
@@ -518,10 +526,10 @@
   }
 
   .settings__row-label {
-    font-family: var(--font-sans);
-    font-size: 13px;
+    font-family: var(--font-mono);
+    font-size: 11px;
     font-weight: 500;
-    color: var(--color-foreground);
+    color: var(--text-muted, var(--color-placeholder));
   }
 
   .settings__row-desc {

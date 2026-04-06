@@ -85,7 +85,7 @@
   $effect(() => {
     const root = document.documentElement;
     const accent = appSettings.accentColor;
-    if (accent && accent !== '#6366f1') {
+    if (accent && accent !== '#7AA2F7') {
       root.style.setProperty('--accent', accent);
       root.style.setProperty('--primary', accent);
       root.style.setProperty('--ring', accent);
