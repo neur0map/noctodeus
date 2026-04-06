@@ -2,12 +2,9 @@
   import type { TreeNode } from "../../types/core";
   import FileTreeNode from "./FileTreeNode.svelte";
   import ChevronRight from "@lucide/svelte/icons/chevron-right";
-  import FileTextIcon from "@lucide/svelte/icons/file-text";
-  import FileIcon from "@lucide/svelte/icons/file";
-  import FolderIcon from "@lucide/svelte/icons/folder";
-  import FolderOpenIcon from "@lucide/svelte/icons/folder-open";
   import StarIcon from "@lucide/svelte/icons/star";
   import { getPinnedState } from "../../stores/pinned.svelte";
+  import { nerdIcon, fileIcon } from "../../utils/nerd-icons";
 
   let {
     node,
@@ -106,21 +103,9 @@
       >
         <ChevronRight size={12} />
       </span>
-      <span class="tree-node__icon">
-        {#if node.expanded}
-          <FolderOpenIcon size={14} />
-        {:else}
-          <FolderIcon size={14} />
-        {/if}
-      </span>
+      <span class="tree-node__icon tree-node__icon--nerd">{node.expanded ? nerdIcon('folder-open') : nerdIcon('folder-closed')}</span>
     {:else}
-      <span class="tree-node__icon">
-        {#if node.extension === 'md' || node.extension === 'markdown' || node.extension === 'mdx'}
-          <FileTextIcon size={14} />
-        {:else}
-          <FileIcon size={14} />
-        {/if}
-      </span>
+      <span class="tree-node__icon tree-node__icon--nerd">{fileIcon(node.name)}</span>
     {/if}
     {#if editing}
       <input
@@ -182,25 +167,27 @@
     color: var(--color-muted-foreground);
     background: transparent;
     border: none;
+    border-left: 3px solid transparent;
     border-radius: 4px;
     cursor: pointer;
     user-select: none;
     text-align: left;
-    transition: background 150ms var(--ease-expo-out), color 150ms var(--ease-expo-out);
+    transition: background 150ms ease-out, color 150ms ease-out, border-color 150ms ease-out;
   }
 
   .tree-node__row:hover {
-    background: var(--color-hover);
+    background: var(--surface-3, var(--color-hover));
     color: var(--color-foreground);
   }
 
   .tree-node__row:focus-visible {
-    outline: 2px solid var(--color-accent);
-    outline-offset: -2px;
+    outline: none;
+    box-shadow: var(--glow-focus, 0 0 0 2px rgba(122, 162, 247, 0.15));
   }
 
   .tree-node__row--active {
-    background: rgba(99, 102, 241, 0.1);
+    background: var(--surface-3, var(--color-hover));
+    border-left-color: var(--accent-blue, var(--color-accent));
     color: var(--color-foreground);
   }
 
@@ -209,7 +196,7 @@
   }
 
   .tree-node__row--drop-target {
-    background: rgba(99, 102, 241, 0.12);
+    background: var(--surface-3, var(--color-hover));
     color: var(--color-foreground);
   }
 
@@ -236,6 +223,12 @@
     height: 16px;
     flex-shrink: 0;
     color: var(--color-placeholder);
+  }
+
+  .tree-node__icon--nerd {
+    font-family: var(--font-mono);
+    font-size: 14px;
+    line-height: 1;
   }
 
   .tree-node__name {

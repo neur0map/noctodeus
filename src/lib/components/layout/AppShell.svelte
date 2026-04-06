@@ -83,8 +83,8 @@
 
   .app-shell__sidebar {
     overflow: hidden;
-    border-right: 1px solid var(--color-border);
-    background: var(--color-card);
+    border-right: 1px solid var(--border-subtle, var(--color-border));
+    background: var(--surface-1, var(--color-card));
     transition: width 150ms var(--ease-expo-out);
   }
 
@@ -99,13 +99,13 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    border-left: 1px solid var(--color-border);
-    background: var(--color-background);
+    border-left: 1px solid var(--border-subtle, var(--color-border));
+    background: var(--surface-1, var(--color-card));
   }
 
   .app-shell__right {
-    border-left: 1px solid var(--color-border);
-    background: var(--color-card);
+    border-left: 1px solid var(--border-subtle, var(--color-border));
+    background: var(--surface-2, var(--color-popover));
     overflow: hidden;
   }
 

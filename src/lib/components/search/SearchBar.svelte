@@ -93,19 +93,20 @@
     font-family: var(--font-mono);
     font-size: 11px;
     color: var(--color-foreground);
-    background: var(--color-hover);
-    border: 1px solid transparent;
+    background: var(--surface-2, var(--color-hover));
+    border: none;
     border-radius: 6px;
     outline: none;
-    transition: border-color 150ms ease;
+    transition: box-shadow 150ms ease;
   }
 
   .search-bar__input:focus {
-    border-color: var(--color-accent);
+    box-shadow: var(--glow-focus, 0 0 0 2px rgba(122, 162, 247, 0.15));
   }
 
   .search-bar__input::placeholder {
-    color: var(--color-placeholder);
+    color: var(--text-muted, var(--color-placeholder));
+    font-family: var(--font-mono);
   }
 
   .search-bar__results {
@@ -169,7 +170,7 @@
   }
 
   .search-bar__result-snippet :global(mark) {
-    background: rgba(99, 102, 241, 0.25);
+    background: rgba(122, 162, 247, 0.2);
     color: var(--color-foreground);
     border-radius: 2px;
     padding: 0 1px;

@@ -52,16 +52,13 @@
 
   import Ellipsis from "@lucide/svelte/icons/ellipsis";
 
-  import Menu from "@lucide/svelte/icons/menu";
-  import PanelRight from "@lucide/svelte/icons/panel-right";
   import Plus from "@lucide/svelte/icons/plus";
   import Settings from "@lucide/svelte/icons/settings";
-  import GitFork from "@lucide/svelte/icons/git-fork";
   import CoreSwitcher from "../lib/components/common/CoreSwitcher.svelte";
   import TasksModal from "../lib/components/common/TasksModal.svelte";
   import CalendarWidget from "../lib/components/sidebar/CalendarWidget.svelte";
   import FocusManager from "../lib/components/common/FocusManager.svelte";
-  import ListChecks from "@lucide/svelte/icons/list-checks";
+  import { nerdIcon } from "../lib/utils/nerd-icons";
 
   let { children }: { children: Snippet } = $props();
 
@@ -837,7 +834,8 @@
         onclick={() => ui.showCommandPalette()}
         title="Command palette"
       >
-        <Menu size={16} />
+        <span class="utility-rail__icon">{nerdIcon('search')}</span>
+        <span class="utility-rail__label">cmd</span>
       </button>
       <button
         class="utility-rail__button"
@@ -845,7 +843,8 @@
         onclick={() => ui.showTasks()}
         title="Tasks"
       >
-        <ListChecks size={16} />
+        <span class="utility-rail__icon">{nerdIcon('tasks')}</span>
+        <span class="utility-rail__label">tasks</span>
       </button>
       <button
         class="utility-rail__button"
@@ -853,7 +852,8 @@
         onclick={() => ui.toggleGraphPanel()}
         title="Toggle graph"
       >
-        <GitFork size={16} />
+        <span class="utility-rail__icon">{nerdIcon('graph')}</span>
+        <span class="utility-rail__label">graph</span>
       </button>
       <button
         class="utility-rail__button"
@@ -861,7 +861,8 @@
         onclick={() => ui.toggleRightPanel()}
         title="Toggle detail rail"
       >
-        <PanelRight size={16} />
+        <span class="utility-rail__icon">{nerdIcon('info')}</span>
+        <span class="utility-rail__label">panel</span>
       </button>
       <button
         class="utility-rail__button"
@@ -869,6 +870,7 @@
         title="New note"
       >
         <Plus size={16} />
+        <span class="utility-rail__label">new</span>
       </button>
     </div>
   {/snippet}
@@ -1064,22 +1066,36 @@
 
   .utility-rail__button {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    justify-content: center;
-    width: 34px;
-    height: 34px;
-    border-radius: 6px;
-    border: none;
-    background: transparent;
-    color: var(--color-placeholder);
+    gap: 2px;
+    padding: 8px 4px;
+    color: var(--text-muted, var(--color-placeholder));
+    transition: color 150ms ease-out;
     cursor: pointer;
-    transition: color 150ms var(--ease-expo-out), background 150ms var(--ease-expo-out);
+    background: none;
+    border: none;
+    width: 100%;
   }
 
-  .utility-rail__button:hover,
+  .utility-rail__button:hover {
+    color: var(--text-secondary, var(--color-muted-foreground));
+  }
+
   .utility-rail__button--active {
-    color: var(--color-foreground);
-    background: var(--color-hover);
+    color: var(--accent-blue, var(--color-accent));
+  }
+
+  .utility-rail__icon {
+    font-family: var(--font-mono);
+    font-size: 16px;
+    line-height: 1;
+  }
+
+  .utility-rail__label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    line-height: 1;
   }
 
   /* ── Right panel ── */

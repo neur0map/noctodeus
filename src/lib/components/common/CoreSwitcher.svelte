@@ -6,6 +6,7 @@
   import FolderOpen from '@lucide/svelte/icons/folder-open';
   import { toast } from '../../stores/toast.svelte';
   import { logger } from '../../logger';
+  import { nerdIcon } from '../../utils/nerd-icons';
 
   let {
     activeCore = null,
@@ -56,6 +57,7 @@
 
 <div class="core-switcher" bind:this={dropdownEl}>
   <button class="core-switcher__trigger" onclick={handleToggle} title="Switch core">
+    <span class="core-switcher__vault-icon">{nerdIcon('vault')}</span>
     <span class="core-switcher__name">{activeCore?.name ?? 'No core open'}</span>
     <ChevronsUpDown size={12} />
   </button>
@@ -99,7 +101,7 @@
     padding: 0;
     border: none;
     background: transparent;
-    color: var(--color-muted-foreground);
+    color: var(--text-muted, var(--color-muted-foreground));
     font-family: var(--font-mono);
     font-size: 12px;
     cursor: pointer;
@@ -107,7 +109,14 @@
   }
 
   .core-switcher__trigger:hover {
-    color: var(--color-foreground);
+    color: var(--text-secondary, var(--color-foreground));
+  }
+
+  .core-switcher__vault-icon {
+    font-family: var(--font-mono);
+    font-size: 14px;
+    line-height: 1;
+    flex-shrink: 0;
   }
 
   .core-switcher__name {
