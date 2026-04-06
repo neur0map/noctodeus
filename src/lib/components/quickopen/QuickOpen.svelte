@@ -3,6 +3,7 @@
   import ResultsList from './ResultsList.svelte';
   import type { QuickOpenItem } from '../../types/ui';
   import { searchQuery } from '../../bridge/commands';
+  import { animate, stagger, createSpring } from 'animejs';
 
   let {
     visible = false,
@@ -21,6 +22,11 @@
   let contentResults = $state<QuickOpenItem[]>([]);
   let searching = $state(false);
   let debounceTimer: ReturnType<typeof setTimeout> | undefined;
+  let modalEl: HTMLElement | undefined = $state();
+  let backdropEl: HTMLElement | undefined = $state();
+  let prevResultCount = 0;
+
+  const entrySpring = createSpring({ stiffness: 260, damping: 22, mass: 0.7 });
 
   /** Strip common markdown syntax from snippet text while preserving <b> highlight tags. */
   function cleanSnippet(s: string): string {
@@ -123,14 +129,55 @@
     }, 200);
   });
 
-  // Reset state when toggling visibility
+  // Reset state when toggling visibility + entrance animation
   $effect(() => {
     if (visible) {
       query = '';
       selectedIndex = 0;
       contentResults = [];
       searching = false;
+      prevResultCount = 0;
+
+      // Animate entrance with anime.js
+      requestAnimationFrame(() => {
+        if (backdropEl) {
+          animate(backdropEl, {
+            opacity: [0, 1],
+            duration: 200,
+            ease: 'outQuad',
+          });
+        }
+        if (modalEl) {
+          animate(modalEl, {
+            opacity: [0, 1],
+            scale: [0.96, 1],
+            translateY: [8, 0],
+            duration: 350,
+            ease: entrySpring,
+          });
+        }
+      });
     }
+  });
+
+  // Stagger-animate new results when they appear
+  $effect(() => {
+    const count = filtered.length;
+    if (count > 0 && count !== prevResultCount) {
+      requestAnimationFrame(() => {
+        const items = modalEl?.querySelectorAll('.rl__item');
+        if (items && items.length > 0) {
+          animate(items, {
+            opacity: [0, 1],
+            translateY: [6, 0],
+            delay: stagger(30, { start: 20 }),
+            duration: 250,
+            ease: 'outQuint',
+          });
+        }
+      });
+    }
+    prevResultCount = count;
   });
 
   function handleKeydown(e: KeyboardEvent) {
@@ -167,10 +214,11 @@
   <!-- svelte-ignore a11y_no_static_element_interactions -->
   <div
     class="quick-open__backdrop"
+    bind:this={backdropEl}
     onkeydown={handleKeydown}
     onclick={handleBackdropClick}
   >
-    <div class="quick-open" role="dialog" aria-label="Quick open">
+    <div class="quick-open" bind:this={modalEl} role="dialog" aria-label="Quick open">
       <SearchInput bind:value={query} placeholder="Search files and content..." />
       {#if searching}
         <div class="quick-open__searching">Searching...</div>
@@ -195,12 +243,7 @@
     background: rgba(5, 8, 17, 0.7);
     backdrop-filter: blur(12px) saturate(0.8);
     z-index: 100;
-    animation: qo-fade 200ms ease both;
-  }
-
-  @keyframes qo-fade {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    opacity: 0; /* anime.js handles entrance */
   }
 
   .quick-open {
@@ -221,18 +264,7 @@
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    animation: qo-enter 350ms cubic-bezier(0.16, 1, 0.3, 1) both;
-  }
-
-  @keyframes qo-enter {
-    from {
-      opacity: 0;
-      transform: scale(0.97) translateY(6px);
-    }
-    to {
-      opacity: 1;
-      transform: scale(1) translateY(0);
-    }
+    opacity: 0; /* anime.js handles entrance */
   }
 
   .quick-open__searching {

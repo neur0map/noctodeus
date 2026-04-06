@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { QuickOpenItem } from '../../types/ui';
   import { fileIcon } from '$lib/utils/nerd-icons';
+  import { animate } from 'animejs';
 
   let {
     items = [],
@@ -32,6 +33,17 @@
     if (parts.length <= 1) return parts[0] || '';
     return parts.slice(-2).join('/');
   }
+
+  /** Micro-press on click — gives tactile feedback */
+  function handleItemClick(e: MouseEvent, path: string) {
+    const el = (e.currentTarget as HTMLElement);
+    animate(el, {
+      scale: [1, 0.97, 1],
+      duration: 200,
+      ease: 'outQuint',
+    });
+    setTimeout(() => onselect(path), 100);
+  }
 </script>
 
 <div class="rl" role="listbox" bind:this={listEl}>
@@ -47,7 +59,7 @@
         class:rl__item--sel={i === selectedIndex}
         role="option"
         aria-selected={i === selectedIndex}
-        onclick={() => onselect(item.path)}
+        onclick={(e) => handleItemClick(e, item.path)}
       >
         <span class="rl__icon">{fileIcon(item.name)}</span>
         <div class="rl__content">
@@ -100,6 +112,7 @@
     text-align: left;
     transition: background 120ms ease-out;
     position: relative;
+    will-change: transform, opacity;
   }
 
   .rl__item:hover {

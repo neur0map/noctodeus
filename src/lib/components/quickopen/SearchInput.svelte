@@ -1,5 +1,6 @@
 <script lang="ts">
   import Search from '@lucide/svelte/icons/search';
+  import { animate, createSpring } from 'animejs';
 
   let {
     value = $bindable(''),
@@ -12,17 +13,45 @@
   } = $props();
 
   let inputEl: HTMLInputElement | undefined = $state();
+  let iconEl: HTMLElement | undefined = $state();
+  let containerEl: HTMLElement | undefined = $state();
+
+  const soft = createSpring({ stiffness: 200, damping: 18, mass: 0.8 });
 
   $effect(() => {
     inputEl?.focus();
+
+    // Micro-animation: icon scales in, input slides from left
+    requestAnimationFrame(() => {
+      if (iconEl) {
+        animate(iconEl, {
+          opacity: [0, 0.6],
+          scale: [0.5, 1],
+          rotate: [-20, 0],
+          duration: 400,
+          ease: soft,
+        });
+      }
+      if (inputEl) {
+        animate(inputEl, {
+          opacity: [0, 1],
+          translateX: [-8, 0],
+          duration: 300,
+          ease: 'outQuint',
+          delay: 80,
+        });
+      }
+    });
   });
 </script>
 
-<div class="si">
+<div class="si" bind:this={containerEl}>
   {#if prefix}
     <span class="si__prefix">{prefix}</span>
   {:else}
-    <Search size={18} class="si__icon" />
+    <span class="si__icon-wrap" bind:this={iconEl}>
+      <Search size={18} />
+    </span>
   {/if}
   <input
     bind:this={inputEl}
@@ -47,10 +76,13 @@
     border-bottom: 1px solid rgba(255, 255, 255, 0.04);
   }
 
-  .si :global(.si__icon) {
+  .si__icon-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     color: var(--accent-blue, #7AA2F7);
     flex-shrink: 0;
-    opacity: 0.6;
+    opacity: 0; /* anime.js animates in */
   }
 
   .si__input {
@@ -65,6 +97,7 @@
     border: none;
     outline: none;
     caret-color: var(--accent-blue, #7AA2F7);
+    opacity: 0; /* anime.js animates in */
   }
 
   .si__input::placeholder {
