@@ -142,9 +142,6 @@
       <button class="bt__btn" class:bt__btn--active={isActive('code')} onclick={() => toggle('code')} title="Inline code">
         &lt;&gt;
       </button>
-      <button class="bt__btn" class:bt__btn--active={isActive('link')} onclick={() => toggle('link')} title="Link">
-        ⌁
-      </button>
     </div>
 
     {#if showTypeMenu}
