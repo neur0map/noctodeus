@@ -65,24 +65,36 @@ export const ExecutableBlockNode = Node.create({
         initialTabs = [{ id: 'init', name: 'main.py', language: 'python', content: '' }];
       }
 
+      // Debounce syncing tabs back to ProseMirror — prevents the auto-save
+      // from triggering on every keystroke and destroying/recreating the node view
+      let syncTimer: ReturnType<typeof setTimeout> | undefined;
+      let latestTabs: CodeTab[] = initialTabs;
+
+      function syncToProseMirror() {
+        const pos = typeof getPos === 'function' ? getPos() : null;
+        if (pos !== null && pos !== undefined) {
+          editor
+            .chain()
+            .command(({ tr }) => {
+              tr.setNodeMarkup(pos, undefined, {
+                ...node.attrs,
+                tabs: JSON.stringify(latestTabs),
+              });
+              return true;
+            })
+            .run();
+        }
+      }
+
       const instance = mount(ExecutableBlock, {
         target: dom,
         props: {
           initialTabs,
           onupdate: (tabs: CodeTab[]) => {
-            const pos = typeof getPos === 'function' ? getPos() : null;
-            if (pos !== null && pos !== undefined) {
-              editor
-                .chain()
-                .command(({ tr }) => {
-                  tr.setNodeMarkup(pos, undefined, {
-                    ...node.attrs,
-                    tabs: JSON.stringify(tabs),
-                  });
-                  return true;
-                })
-                .run();
-            }
+            latestTabs = tabs;
+            // Debounce: only sync to ProseMirror after 1.5s of inactivity
+            if (syncTimer) clearTimeout(syncTimer);
+            syncTimer = setTimeout(syncToProseMirror, 1500);
           },
         },
       });
@@ -97,6 +109,11 @@ export const ExecutableBlockNode = Node.create({
         // The Svelte component manages its own DOM — ProseMirror shouldn't react to it.
         ignoreMutation: () => true,
         destroy() {
+          // Flush any pending sync before destroying
+          if (syncTimer) {
+            clearTimeout(syncTimer);
+            syncToProseMirror();
+          }
           unmount(instance);
         },
       };
