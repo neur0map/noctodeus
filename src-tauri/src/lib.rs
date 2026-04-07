@@ -4,7 +4,6 @@ pub mod db;
 pub mod errors;
 pub mod events;
 pub mod indexer;
-pub mod kernel;
 pub mod logging;
 pub mod watcher;
 
@@ -33,7 +32,6 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .manage(AppState::new())
-        .manage(kernel::manager::KernelManager::new())
         .invoke_handler(tauri::generate_handler![
             // Core commands
             commands::core_create,
@@ -68,12 +66,6 @@ pub fn run() {
             commands::log_clear,
             // Media commands
             commands::media_copy,
-            // Kernel commands
-            commands::kernel_start,
-            commands::kernel_execute,
-            commands::kernel_stop,
-            commands::kernel_status,
-            commands::kernel_restart,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

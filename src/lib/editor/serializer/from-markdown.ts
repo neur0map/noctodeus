@@ -167,75 +167,11 @@ function preprocessImageWidths(text: string): string {
   });
 }
 
-/**
- * Pre-process ```exec blocks into HTML divs that TipTap's executableBlock
- * node can parse.
- *
- * Format:
- *   ```exec
- *   --- filename.py [python] ---
- *   code
- *   --- style.css [css] ---
- *   code
- *   ```
- */
-function preprocessExecBlocks(text: string): string {
-  const EXEC_BLOCK_RE = /```exec\n([\s\S]*?)```/g;
-  const TAB_HEADER_RE = /^---\s+(.+?)\s+\[(\w+)\]\s+---$/;
-
-  return text.replace(EXEC_BLOCK_RE, (_match, body: string) => {
-    const lines = body.split('\n');
-    const tabs: { id: string; name: string; language: string; content: string }[] = [];
-    let current: { id: string; name: string; language: string; content: string[] } | null = null;
-
-    for (const line of lines) {
-      const headerMatch = line.match(TAB_HEADER_RE);
-      if (headerMatch) {
-        // Flush previous tab
-        if (current) {
-          tabs.push({ ...current, content: current.content.join('\n') });
-        }
-        current = {
-          id: Math.random().toString(36).slice(2, 10),
-          name: headerMatch[1],
-          language: headerMatch[2],
-          content: [],
-        };
-      } else if (current) {
-        current.content.push(line);
-      } else {
-        // Content before any tab header — treat as Python tab
-        if (line.trim()) {
-          current = {
-            id: Math.random().toString(36).slice(2, 10),
-            name: 'main.py',
-            language: 'python',
-            content: [line],
-          };
-        }
-      }
-    }
-
-    // Flush last tab
-    if (current) {
-      tabs.push({ ...current, content: current.content.join('\n').replace(/\n+$/, '') });
-    }
-
-    if (tabs.length === 0) {
-      tabs.push({ id: 'init', name: 'main.py', language: 'python', content: '' });
-    }
-
-    const escaped = JSON.stringify(tabs).replace(/&/g, '&amp;').replace(/"/g, '&quot;');
-    return `<div data-exec-block data-tabs="${escaped}"></div>`;
-  });
-}
-
 /** Strip YAML frontmatter before rendering. */
 export function parseMarkdown(markdown: string): string {
   imageWidths.clear();
   const body = markdown.replace(FRONTMATTER_RE, '');
-  const withExec = preprocessExecBlocks(body);
-  const preprocessed = preprocessImageWidths(withExec);
+  const preprocessed = preprocessImageWidths(body);
   return md.render(preprocessed);
 }
 

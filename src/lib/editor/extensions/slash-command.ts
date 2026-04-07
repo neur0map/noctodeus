@@ -186,18 +186,6 @@ const COMMANDS: SlashCommandItem[] = [
     },
   },
   {
-    id: 'exec-block',
-    label: 'Code block (executable)',
-    icon: '▷',
-    description: 'Run Python, HTML, CSS, or JS',
-    shortcut: '```exec',
-    group: 'Advanced',
-    command: (editor, range) => {
-      editor.chain().focus().deleteRange(range).run();
-      (editor.commands as any).insertExecutableBlock();
-    },
-  },
-  {
     id: 'embed-url',
     label: 'Embed URL',
     icon: '⊞',

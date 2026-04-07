@@ -10,14 +10,11 @@
   import BarChart3 from '@lucide/svelte/icons/bar-chart-3';
   import List from '@lucide/svelte/icons/list';
   import Link from '@lucide/svelte/icons/link';
-  import Terminal from '@lucide/svelte/icons/terminal';
   import MessageSquare from '@lucide/svelte/icons/message-square';
   import LetterText from '@lucide/svelte/icons/letter-text';
   import Pilcrow from '@lucide/svelte/icons/pilcrow';
   import Clock from '@lucide/svelte/icons/clock';
   import Calendar from '@lucide/svelte/icons/calendar';
-  import StatusDot from "$lib/components/codeblock/StatusDot.svelte";
-  import { kernelStatus, kernelRestart, kernelStop } from "$lib/bridge/commands";
 
   let {
     visible,
@@ -33,55 +30,10 @@
   const graphState = getGraphState();
   const activeEditorState = getActiveEditorState();
 
-  type Tab = 'stats' | 'outline' | 'backlinks' | 'kernel';
+  type Tab = 'stats' | 'outline' | 'backlinks';
   let activeTab = $state<Tab>('stats');
   let panelEl: HTMLElement | undefined = $state();
   let backdropEl: HTMLElement | undefined = $state();
-
-  // Kernel tab state
-  let kernelRunning = $state(false);
-  let kernelUptime = $state(0);
-  let kernelPollTimer: ReturnType<typeof setInterval> | null = null;
-
-  async function pollKernelStatus() {
-    const path = files.activeFilePath;
-    if (!path) { kernelRunning = false; kernelUptime = 0; return; }
-    try {
-      const status = await kernelStatus(path);
-      kernelRunning = status.running;
-      kernelUptime = status.uptime_seconds;
-    } catch {
-      kernelRunning = false;
-      kernelUptime = 0;
-    }
-  }
-
-  async function handleRestart() {
-    const path = files.activeFilePath;
-    if (!path) return;
-    try { await kernelRestart(path); } catch {}
-    await pollKernelStatus();
-  }
-
-  async function handleStop() {
-    const path = files.activeFilePath;
-    if (!path) return;
-    try { await kernelStop(path); } catch {}
-    await pollKernelStatus();
-  }
-
-  // Poll kernel status every 2s when kernel tab is active
-  $effect(() => {
-    if (visible && activeTab === 'kernel') {
-      pollKernelStatus();
-      kernelPollTimer = setInterval(pollKernelStatus, 2000);
-      return () => {
-        if (kernelPollTimer) { clearInterval(kernelPollTimer); kernelPollTimer = null; }
-      };
-    } else {
-      if (kernelPollTimer) { clearInterval(kernelPollTimer); kernelPollTimer = null; }
-    }
-  });
 
   const slideSpring = createSpring({ stiffness: 280, damping: 26, mass: 0.7 });
 
@@ -200,14 +152,6 @@
       >
         <Link size={15} />
       </button>
-      <button
-        class="sp__tab"
-        class:sp__tab--active={activeTab === 'kernel'}
-        onclick={() => activeTab = 'kernel'}
-        title="Kernel"
-      >
-        <Terminal size={15} />
-      </button>
     </div>
 
     <!-- Tab content -->
@@ -277,21 +221,6 @@
           />
         </div>
 
-      {:else if activeTab === 'kernel'}
-        <div class="sp__section-title">Kernel</div>
-        <div class="sp__kernel">
-          <div class="sp__kernel-status">
-            <StatusDot status={kernelRunning ? 'success' : 'idle'} />
-            <span class="sp__kernel-status-text">{kernelRunning ? 'Running' : 'Stopped'}</span>
-            {#if kernelRunning && kernelUptime > 0}
-              <span class="sp__kernel-uptime">{kernelUptime}s</span>
-            {/if}
-          </div>
-          <div class="sp__kernel-actions">
-            <button class="sp__kernel-btn" onclick={handleRestart}>Restart Kernel</button>
-            <button class="sp__kernel-btn sp__kernel-btn--stop" onclick={handleStop}>Stop Kernel</button>
-          </div>
-        </div>
       {/if}
     </div>
   </div>
@@ -483,63 +412,4 @@
     padding: 0 2px;
   }
 
-  /* ── Kernel tab ── */
-  .sp__kernel {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-    padding: 0 2px;
-  }
-
-  .sp__kernel-status {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: rgba(255, 255, 255, 0.035);
-    border-radius: 11px;
-    padding: 13px;
-  }
-
-  .sp__kernel-status-text {
-    font-family: var(--font-mono);
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--text-primary, #C0CAF5);
-  }
-
-  .sp__kernel-uptime {
-    margin-left: auto;
-    font-family: var(--font-mono);
-    font-size: 11px;
-    color: var(--text-muted, #6B7394);
-  }
-
-  .sp__kernel-actions {
-    display: flex;
-    gap: 8px;
-  }
-
-  .sp__kernel-btn {
-    flex: 1;
-    padding: 8px 0;
-    border: none;
-    border-radius: 8px;
-    background: rgba(255, 255, 255, 0.06);
-    color: var(--text-secondary, #A9B1D6);
-    font-family: var(--font-mono);
-    font-size: 11.5px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background 150ms ease-out, color 150ms ease-out;
-  }
-
-  .sp__kernel-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: var(--text-primary, #C0CAF5);
-  }
-
-  .sp__kernel-btn--stop:hover {
-    background: rgba(247, 118, 142, 0.15);
-    color: var(--accent-red, #f7768e);
-  }
 </style>

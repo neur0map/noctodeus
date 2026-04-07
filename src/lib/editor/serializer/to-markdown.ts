@@ -143,22 +143,6 @@ function serializeNode(node: JSONContent): string {
       return `[embed](${url})\n\n`;
     }
 
-    case 'executableBlock': {
-      const tabsJson = node.attrs?.tabs ?? '[]';
-      let tabs: { name: string; language: string; content: string }[];
-      try {
-        tabs = JSON.parse(tabsJson as string);
-      } catch {
-        tabs = [];
-      }
-      const parts: string[] = [];
-      for (const tab of tabs) {
-        parts.push(`--- ${tab.name} [${tab.language}] ---`);
-        parts.push(tab.content);
-      }
-      return '```exec\n' + parts.join('\n') + '\n```\n\n';
-    }
-
     case 'table': {
       const rows = node.content ?? [];
       const lines: string[] = [];
