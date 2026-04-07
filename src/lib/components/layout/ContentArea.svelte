@@ -29,6 +29,7 @@
     height: 100%;
     background: var(--color-background);
     overflow: hidden;
+    border-radius: 0 16px 16px 0;
   }
 
   .content-area__header {
