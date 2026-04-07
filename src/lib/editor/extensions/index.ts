@@ -25,6 +25,7 @@ import { AudioBlock } from './audio-block.js';
 import { EmbedBlock } from './embed-block.js';
 import { createMediaDrop, type MediaUploader } from './media-drop.js';
 import { SearchReplace } from './search-replace.js';
+import { ExecutableBlockNode } from './executable-block.js';
 
 import type { Extensions } from '@tiptap/core';
 
@@ -99,6 +100,7 @@ export function createEditorExtensions(
     AudioBlock,
     EmbedBlock,
     SearchReplace,
+    ExecutableBlockNode,
   ];
 
   if (slashPopup) {

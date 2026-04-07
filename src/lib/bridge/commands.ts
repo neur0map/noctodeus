@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import type { CoreInfo, FileContent, FileNode, SearchHit } from "../types/core";
+import type { ExecutionResult, KernelStatus } from "../types/kernel";
 
 // Re-export for convenience
 export type { FileContent };
@@ -155,4 +156,32 @@ export async function logExport(): Promise<string> {
 
 export async function logClear(): Promise<void> {
   return invoke("log_clear");
+}
+
+// ---------------------------------------------------------------------------
+// Kernel commands
+// ---------------------------------------------------------------------------
+
+export async function kernelStart(notePath: string): Promise<void> {
+  return invoke("kernel_start", { notePath });
+}
+
+export async function kernelExecute(
+  notePath: string,
+  blockId: string,
+  code: string,
+): Promise<ExecutionResult> {
+  return invoke("kernel_execute", { notePath, blockId, code });
+}
+
+export async function kernelStop(notePath: string): Promise<void> {
+  return invoke("kernel_stop", { notePath });
+}
+
+export async function kernelStatus(notePath: string): Promise<KernelStatus> {
+  return invoke("kernel_status", { notePath });
+}
+
+export async function kernelRestart(notePath: string): Promise<void> {
+  return invoke("kernel_restart", { notePath });
 }
