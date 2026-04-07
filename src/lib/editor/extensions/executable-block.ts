@@ -60,16 +60,21 @@ export const ExecutableBlockNode = Node.create({
       dom.contentEditable = 'false';
       dom.style.userSelect = 'none';
 
-      // Block ALL mouse/pointer events from reaching ProseMirror
-      // This prevents text selection and bubble toolbar on clicks inside the block
-      const stopPropagation = (e: Event) => {
-        e.stopPropagation();
+      // Block mouse events from reaching ProseMirror (prevents text selection
+      // and bubble toolbar) — but allow textarea clicks through so users can type
+      const stopIfNotTextarea = (e: Event) => {
+        const target = e.target as HTMLElement;
+        if (target.tagName !== 'TEXTAREA') {
+          e.stopPropagation();
+          e.preventDefault();
+        }
       };
-      dom.addEventListener('mousedown', stopPropagation);
-      dom.addEventListener('mouseup', stopPropagation);
-      dom.addEventListener('click', stopPropagation);
-      dom.addEventListener('pointerdown', stopPropagation);
-      dom.addEventListener('pointerup', stopPropagation);
+      dom.addEventListener('mousedown', stopIfNotTextarea);
+      dom.addEventListener('pointerdown', stopIfNotTextarea);
+      // Always stop click/mouseup propagation (doesn't affect focus)
+      dom.addEventListener('mouseup', (e) => e.stopPropagation());
+      dom.addEventListener('click', (e) => e.stopPropagation());
+      dom.addEventListener('pointerup', (e) => e.stopPropagation());
 
       let initialTabs: CodeTab[];
       try {
