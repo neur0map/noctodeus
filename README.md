@@ -105,7 +105,7 @@ npm run tauri dev
 
 ## Status
 
-Early release. Used daily by its author. Rough edges exist. [Open an issue](https://github.com/neur0map/noctodeus/issues) if you find bugs or want something added.
+Early release. I use it daily. Rough edges exist. [Open an issue](https://github.com/neur0map/noctodeus/issues) if you find bugs or want something added.
 
 ---
 
