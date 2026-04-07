@@ -2,7 +2,8 @@
   import { onMount, onDestroy } from 'svelte';
   import type { FileNode } from '$lib/types/core';
   import type { GraphStats, GraphNode, GraphEdge } from '$lib/stores/graph.svelte';
-  import { presets, stagger, animate } from '$lib/utils/motion';
+  import { stagger, animate } from '$lib/utils/motion';
+  import type { AnimationParams } from 'animejs';
   import GraphView from '$lib/components/graph/GraphView.svelte';
 
   let {
@@ -102,79 +103,50 @@
 
   // --- Animations ---
   let dashboardEl: HTMLDivElement | undefined = $state();
+  let animatedEls = new WeakSet<Element>();
 
-  onMount(() => {
+  function animateOnce(selector: string, opts: AnimationParams) {
     if (!dashboardEl) return;
-
-    // Greeting
-    const greeting = dashboardEl.querySelector('.ds__greeting');
-    if (greeting) {
-      animate(greeting, {
-        opacity: [0, 1],
-        duration: 400,
-        ease: 'outQuint',
-      });
-    }
-
-    // Hero card
-    const hero = dashboardEl.querySelector('.ds__hero');
-    if (hero) {
-      animate(hero, {
-        opacity: [0, 1],
-        translateY: [20, 0],
-        scale: [0.98, 1],
-        duration: 500,
-        delay: 100,
-        ease: 'outQuint',
-      });
-    }
-
-    // Mini graph
-    const graph = dashboardEl.querySelector('.ds__graph-wrap');
-    if (graph) {
-      animate(graph, {
-        opacity: [0, 1],
-        duration: 500,
-        delay: 200,
-        ease: 'outQuint',
-      });
-    }
-
-    // Stats count-up
     requestAnimationFrame(() => {
-      if (!dashboardEl) return;
-      const statEls = dashboardEl.querySelectorAll('.ds__stat-value');
-      if (statEls.length) {
-        animate(statEls, {
-          opacity: [0, 1],
-          delay: stagger(60, { start: 350 }),
-          duration: 400,
-          ease: 'outQuint',
-        });
-      }
+      const els = dashboardEl!.querySelectorAll(selector);
+      const newEls = Array.from(els).filter(el => !animatedEls.has(el));
+      if (newEls.length === 0) return;
+      newEls.forEach(el => animatedEls.add(el));
+      animate(newEls, opts);
     });
+  }
 
-    // Two columns stagger
-    const cols = dashboardEl.querySelectorAll('.ds__col');
-    if (cols.length) {
-      animate(cols, {
-        opacity: [0, 1],
-        translateY: [16, 0],
-        delay: stagger(80, { start: 350 }),
-        duration: 500,
-        ease: 'outQuint',
-      });
+  // Animate greeting (always present on mount)
+  onMount(() => {
+    animateOnce('.ds__greeting', { opacity: [0, 1], duration: 400, ease: 'outQuint' });
+  });
+
+  // Animate hero when recent files arrive
+  $effect(() => {
+    if (recentFiles.length > 0) {
+      animateOnce('.ds__hero', { opacity: [0, 1], translateY: [20, 0], scale: [0.98, 1], duration: 500, delay: 100, ease: 'outQuint' });
     }
+  });
 
-    // Orphan nudge
-    const nudge = dashboardEl.querySelector('.ds__orphan');
-    if (nudge) {
-      animate(nudge, {
-        opacity: [0, 1],
-        duration: 400,
-        delay: 500,
-        ease: 'outQuint',
-      });
+  // Animate graph when nodes arrive
+  $effect(() => {
+    if (graphNodes.length > 0) {
+      animateOnce('.ds__graph-wrap', { opacity: [0, 1], duration: 500, delay: 200, ease: 'outQuint' });
+      animateOnce('.ds__stat-value', { opacity: [0, 1], delay: stagger(60, { start: 350 }), duration: 400, ease: 'outQuint' });
+    }
+  });
+
+  // Animate columns when data arrives
+  $effect(() => {
+    if (recentFiles.length > 0 || pinnedFiles.length > 0) {
+      animateOnce('.ds__col', { opacity: [0, 1], translateY: [16, 0], delay: stagger(80, { start: 350 }), duration: 500, ease: 'outQuint' });
+    }
+  });
+
+  // Animate orphan nudge
+  $effect(() => {
+    if (graphStats.orphanCount > 0) {
+      animateOnce('.ds__orphan', { opacity: [0, 1], duration: 400, delay: 500, ease: 'outQuint' });
     }
   });
 </script>
