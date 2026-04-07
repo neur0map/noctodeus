@@ -1,14 +1,16 @@
 # Noctodeus
 
-A creative IDE for thought. Local-first, privacy-focused note-taking and knowledge management built as a native desktop application.
+A nocturnal note-taking app for technical minds. Local-first, privacy-focused knowledge management built as a native desktop application with executable code blocks, persistent Python kernel, and a premium Midnight Tokyo aesthetic.
 
 ![Editor](static/noctodeus-1.png)
 
 ## Features
 
 - **Rich markdown editor** — TipTap 3 with tables, math (KaTeX), code blocks with syntax highlighting, task lists, images, video, audio, embeds
-- **Wiki links & graph view** — `[[link]]` syntax with backlinks, interactive knowledge graph, alias resolution
-- **Full-text search** — FTS5-powered search across file names, titles, and content with highlighted snippets
+- **Executable code blocks** — Multi-tab code regions in notes with persistent Python kernel (variables carry across blocks) and live HTML/CSS/JS preview with iframe rendering
+- **Wiki links & graph view** — `[[link]]` syntax with backlinks, interactive knowledge graph with constellation-style visualization, alias resolution
+- **Global search** — FTS5-powered search across file names, titles, and content with highlighted snippets (Cmd+K)
+- **8 visual themes** — Midnight Tokyo, Obsidian, Nord Frost, Dawn, Paper, Solarized Light, Khaki, Rose Pine — with Bear-style preview cards
 - **Daily notes & calendar** — Month calendar widget in sidebar, click any date to create/open a journal entry
 - **Properties panel** — Collapsible YAML frontmatter editor with typed fields (text, tags, dates, checkboxes)
 - **Task extraction** — Consolidated view of all tasks across your vault, filterable by status
@@ -17,13 +19,16 @@ A creative IDE for thought. Local-first, privacy-focused note-taking and knowled
 - **Find & replace** — In-editor search with match highlighting, case toggle, replace all
 - **Edit/view toggle** — Switch between WYSIWYG editing and rendered preview
 - **Export** — Markdown, HTML, CSV with optional media inclusion
-- **Customizable** — Accent colors, font families, editor width, custom CSS injection, dark/light/system themes
+- **Editable keyboard shortcuts** — Customize all keybindings from settings with live recording
+- **Customizable** — Font families, editor width, custom CSS injection with documented selectors
 
 ![Graph & Editing](static/noctodeus-2.png)
 
 ![Task Extraction](static/noctodeus-3.png)
 
 ![Appearance Settings](static/noctodeus-4.png)
+
+![Executable Code Blocks](static/noctodeus-5.png)
 
 ## Stack
 
@@ -43,11 +48,11 @@ A creative IDE for thought. Local-first, privacy-focused note-taking and knowled
 |---------|---------|
 | [TipTap 3](https://tiptap.dev) | Headless rich text editor framework |
 | [ProseMirror](https://prosemirror.net) | Document model and editing primitives |
-| [lowlight](https://github.com/wooorm/lowlight) | Syntax highlighting (atom-one-dark theme) |
+| [lowlight](https://github.com/wooorm/lowlight) | Syntax highlighting (Tokyo Night theme) |
 | [markdown-it](https://github.com/markdown-it/markdown-it) | Markdown parsing with plugins (mark, sub, sup, KaTeX) |
 | [KaTeX](https://katex.org) | LaTeX math rendering via @vscode/markdown-it-katex |
 
-TipTap Extensions: Starter Kit, Table, Highlight, Subscript, Superscript, Underline, TextAlign, Typography, TextStyle, Color, CharacterCount, Focus, Code Block Lowlight, Image, Link, Placeholder, Task List, Task Item, Suggestion
+TipTap Extensions: Starter Kit, Table, Highlight, Subscript, Superscript, Underline, TextAlign, Typography, TextStyle, Color, CharacterCount, Focus, Code Block Lowlight, Image, Link, Placeholder, Task List, Task Item, Suggestion, Executable Block
 
 ### UI
 
@@ -56,6 +61,7 @@ TipTap Extensions: Starter Kit, Table, Highlight, Subscript, Superscript, Underl
 | [Tailwind CSS v4](https://tailwindcss.com) | Utility-first styling with CSS-native @theme tokens |
 | [shadcn-svelte](https://shadcn-svelte.com) | Accessible component primitives (Button, Dialog, Command, etc.) |
 | [Lucide](https://lucide.dev) | Icon library |
+| [JetBrainsMono Nerd Font](https://www.nerdfonts.com) | Monospace UI font with file-type glyphs |
 | [anime.js v4](https://animejs.com) | Staggered entry animations, transitions, micro-interactions |
 | SCSS | Custom layout partials for shell, sidebar, panels |
 
@@ -73,7 +79,7 @@ TipTap Extensions: Starter Kit, Table, Highlight, Subscript, Superscript, Underl
 |-------|---------|
 | `tauri` | App framework, IPC, window management |
 | `rusqlite` | SQLite with bundled engine, FTS5 virtual tables |
-| `tokio` | Async runtime |
+| `tokio` | Async runtime, persistent Python kernel management |
 | `notify` | File system watcher for live indexing |
 | `walkdir` | Recursive directory scanning |
 | `tracing` + `tracing-subscriber` + `tracing-appender` | Structured logging with file rotation |
@@ -113,20 +119,23 @@ noctodeus/
 │   ├── lib/
 │   │   ├── bridge/               # Tauri command wrappers
 │   │   ├── components/           # UI components
+│   │   │   ├── codeblock/        # Executable code block (tabs, editor, output drawer)
 │   │   │   ├── common/           # Modals, dialogs, menus, focus manager
 │   │   │   ├── editor/           # Properties panel
 │   │   │   ├── filetree/         # File tree with keyboard nav
 │   │   │   ├── graph/            # Knowledge graph visualization
-│   │   │   ├── layout/           # AppShell, Sidebar, ContentArea, Worksurface
+│   │   │   ├── layout/           # AppShell, Sidebar, ContentArea, TabBar, Dialogs
 │   │   │   ├── panels/           # Note details, outline, backlinks
+│   │   │   ├── quickopen/        # Global search (Cmd+K)
 │   │   │   ├── sidebar/          # Calendar widget
 │   │   │   ├── tabs/             # Tab bar with drag reorder
 │   │   │   └── ui/               # shadcn-svelte generated components
 │   │   ├── editor/               # TipTap editor, extensions, serializer
 │   │   ├── stores/               # Svelte 5 rune-based state
 │   │   ├── styles/               # Tailwind theme, SCSS layout partials
+│   │   ├── themes/               # 8 visual themes with runtime application
 │   │   ├── types/                # TypeScript interfaces
-│   │   └── utils/                # Shortcuts, theme, motion
+│   │   └── utils/                # Shortcuts, motion, nerd-icons
 │   └── routes/                   # SvelteKit pages
 ├── src-tauri/                    # Backend (Rust)
 │   └── src/
@@ -134,8 +143,9 @@ noctodeus/
 │       ├── core/                 # Core (vault) state management
 │       ├── db/                   # SQLite schema, queries, migrations
 │       ├── indexer/              # FTS indexing, file scanning, alias extraction
+│       ├── kernel/               # Persistent Python kernel management
 │       └── watcher/              # File system change detection
-└── static/                       # Static assets (logo, favicon, screenshots)
+└── static/                       # Static assets (logo, favicon, fonts, screenshots)
 ```
 
 ## Development
@@ -163,7 +173,7 @@ Runs on macOS, Windows, and Linux. Keyboard shortcuts adapt automatically (Cmd o
 
 ## Status
 
-Early development. Not ready for use.
+Early development. Not ready for production use.
 
 ## License
 
