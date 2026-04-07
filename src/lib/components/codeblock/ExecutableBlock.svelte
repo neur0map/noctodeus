@@ -9,6 +9,7 @@
   import OutputDrawer from './OutputDrawer.svelte';
   import StatusDot from './StatusDot.svelte';
   import ErrorCard from './ErrorCard.svelte';
+  import LanguagePicker from './LanguagePicker.svelte';
 
   let {
     initialTabs = [],
@@ -22,12 +23,10 @@
 
   /** Client-side execution timeout (ms). */
   const EXEC_TIMEOUT_MS = 30_000;
+  const EXEC_WARNING_KEY = 'noctodeus-exec-warning-accepted';
 
-  let tabs = $state<CodeTab[]>(
-    initialTabs.length > 0
-      ? initialTabs
-      : [{ id: generateId(), name: 'main.py', language: 'python', content: '' }],
-  );
+  let tabs = $state<CodeTab[]>(initialTabs.length > 0 ? initialTabs : []);
+  let showInitialPicker = $state(initialTabs.length === 0);
   let activeTabId = $state(tabs[0]?.id ?? '');
   let output = $state('');
   let stderr = $state('');
@@ -75,6 +74,18 @@
 
   async function run() {
     if (status === 'running') return;
+
+    // First-run security warning
+    if (!localStorage.getItem(EXEC_WARNING_KEY)) {
+      const accepted = confirm(
+        'Code blocks execute with full system access \u2014 file system, network, everything.\n\n' +
+        'Only run code you trust.\n\n' +
+        'Continue?'
+      );
+      if (!accepted) return;
+      localStorage.setItem(EXEC_WARNING_KEY, 'true');
+    }
+
     status = 'running';
     kernelError = null;
     executionCount++;
@@ -199,27 +210,26 @@
 </script>
 
 <div class="exec-block" bind:this={blockEl}>
-  <div class="exec-block__header">
-    <CodeTabBar
-      {tabs}
-      {activeTabId}
-      onactivate={(id) => (activeTabId = id)}
-      onadd={addTab}
-      onremove={removeTab}
-      onrename={renameTab}
-      onchangelang={changeLanguage}
-    />
-    <div class="exec-block__actions">
-      {#if status === 'running'}
-        <button
-          class="exec-block__kill"
-          onclick={(e) => { e.preventDefault(); e.stopPropagation(); kill(); }}
-          onmousedown={(e) => { e.preventDefault(); e.stopPropagation(); }}
-          title="Kill (force stop)"
-        >
-          &#x25A0;
-        </button>
-      {:else}
+  {#if showInitialPicker}
+    <div class="exec-block__init">
+      <span class="exec-block__init-label">Choose a language to start</span>
+      <LanguagePicker
+        onselect={(lang) => { addTab(lang); showInitialPicker = false; }}
+        onclose={() => {}}
+      />
+    </div>
+  {:else}
+    <div class="exec-block__header">
+      <CodeTabBar
+        {tabs}
+        {activeTabId}
+        onactivate={(id) => (activeTabId = id)}
+        onadd={addTab}
+        onremove={removeTab}
+        onrename={renameTab}
+        onchangelang={changeLanguage}
+      />
+      <div class="exec-block__actions">
         <button
           class="exec-block__run"
           onclick={(e) => { e.preventDefault(); e.stopPropagation(); run(); }}
@@ -228,46 +238,61 @@
         >
           &#x25B6;
         </button>
-      {/if}
-      <StatusDot {status} />
-      {#if executionCount > 0}
-        <span class="exec-block__counter">[{executionCount}]</span>
-      {/if}
+        {#if tabs.some((t) => t.language === 'python')}
+          <button
+            class="exec-block__kill"
+            class:exec-block__kill--running={status === 'running'}
+            onclick={(e) => { e.preventDefault(); e.stopPropagation(); kill(); }}
+            onmousedown={(e) => { e.preventDefault(); e.stopPropagation(); }}
+            title={status === 'running' ? 'Kill (force stop)' : 'Restart kernel'}
+          >
+            {#if status === 'running'}
+              &#x25A0;
+            {:else}
+              &#x21BA;
+            {/if}
+          </button>
+        {/if}
+        <StatusDot {status} />
+        {#if executionCount > 0}
+          <span class="exec-block__counter">[{executionCount}]</span>
+        {/if}
+      </div>
     </div>
-  </div>
 
-  {#if activeTab}
-    <CodeEditor
-      code={activeTab.content}
-      language={activeTab.language}
-      onchange={(code) => updateContent(activeTab.id, code)}
-      onrun={run}
-    />
-  {/if}
+    {#if activeTab}
+      <CodeEditor
+        code={activeTab.content}
+        language={activeTab.language}
+        onchange={(code) => updateContent(activeTab.id, code)}
+        onrun={run}
+      />
+    {/if}
 
-  {#if kernelError}
-    <ErrorCard
-      error={kernelError}
-      onrestart={async () => {
-        kernelError = null;
-        const notePath = files.activeFilePath ?? 'scratch';
-        try {
-          await kernelStart(notePath);
-        } catch {
-          /* ignore */
-        }
-      }}
-    />
-  {:else}
-    <OutputDrawer
-      {output}
-      {stderr}
-      {status}
-      bind:open={drawerOpen}
-      isWeb={tabs.some((t) => ['html', 'css', 'js'].includes(t.language)) &&
-        !tabs.some((t) => t.language === 'python')}
-      onclear={clearOutput}
-    />
+    {#if kernelError}
+      <ErrorCard
+        error={kernelError}
+        onrestart={async () => {
+          kernelError = null;
+          const notePath = files.activeFilePath ?? 'scratch';
+          try {
+            await kernelStart(notePath);
+          } catch {
+            /* ignore */
+          }
+        }}
+      />
+    {:else}
+      <OutputDrawer
+        {output}
+        {stderr}
+        {status}
+        bind:open={drawerOpen}
+        isWeb={tabs.some((t) => ['html', 'css', 'js'].includes(t.language)) &&
+          !tabs.some((t) => t.language === 'python')}
+        onclear={clearOutput}
+      />
+    {/if}
   {/if}
 </div>
 
@@ -336,20 +361,55 @@
     height: 28px;
     border: none;
     border-radius: 6px;
-    background: rgba(247, 118, 142, 0.12);
-    color: var(--accent-red, #F7768E);
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text-muted, #6b7394);
     font-size: 10px;
     cursor: pointer;
-    transition: background 150ms ease-out;
+    transition: background 150ms ease-out, color 150ms ease-out;
   }
 
   .exec-block__kill:hover {
+    color: var(--text-primary, #C0CAF5);
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .exec-block__kill--running {
+    background: rgba(247, 118, 142, 0.12);
+    color: var(--accent-red, #F7768E);
+  }
+
+  .exec-block__kill--running:hover {
     background: rgba(247, 118, 142, 0.2);
+    color: var(--accent-red, #F7768E);
   }
 
   .exec-block__counter {
     font-family: var(--font-mono);
     font-size: 10px;
     color: var(--text-faint, #3b4261);
+  }
+
+  .exec-block__init {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 24px 16px;
+  }
+
+  .exec-block__init-label {
+    font-size: 12px;
+    color: var(--text-muted, #6b7394);
+  }
+
+  .exec-block__init :global(.lang-picker) {
+    position: static;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    box-shadow: none;
+    border: none;
+    background: none;
+    gap: 4px;
   }
 </style>

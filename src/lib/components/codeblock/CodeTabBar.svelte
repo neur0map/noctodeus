@@ -48,22 +48,13 @@
     }
   }
 
-  function handleDropdownClickOutside(e: MouseEvent) {
-    const target = e.target as HTMLElement;
-    if (!target.closest('.tab-dropdown')) {
-      dropdownTabId = null;
-    }
-  }
-
   $effect(() => {
     if (dropdownTabId) {
-      const raf = requestAnimationFrame(() => {
-        document.addEventListener('mousedown', handleDropdownClickOutside);
-      });
-      return () => {
-        cancelAnimationFrame(raf);
-        document.removeEventListener('mousedown', handleDropdownClickOutside);
-      };
+      function handleKey(e: KeyboardEvent) {
+        if (e.key === 'Escape') dropdownTabId = null;
+      }
+      document.addEventListener('keydown', handleKey);
+      return () => document.removeEventListener('keydown', handleKey);
     }
   });
 </script>
@@ -84,6 +75,13 @@
           <button class="tab-bar__name" onclick={() => onactivate(tab.id)}>
             {tab.name}
           </button>
+          {#if tabs.length > 1}
+            <button
+              class="tab-bar__close"
+              onclick={(e) => { e.stopPropagation(); onremove(tab.id); }}
+              title="Close tab"
+            >&times;</button>
+          {/if}
         {/if}
 
         <div class="tab-dropdown" style="position: relative;">
@@ -194,6 +192,25 @@
     padding: 3px 6px;
     width: 90px;
     outline: none;
+  }
+
+  .tab-bar__close {
+    border: none;
+    background: none;
+    color: var(--text-faint, #3B4261);
+    font-size: 12px;
+    cursor: pointer;
+    padding: 0 2px;
+    opacity: 0;
+    transition: opacity 120ms, color 120ms;
+  }
+
+  .tab-bar__tab:hover .tab-bar__close {
+    opacity: 1;
+  }
+
+  .tab-bar__close:hover {
+    color: var(--accent-red, #F7768E);
   }
 
   .tab-bar__menu-btn {

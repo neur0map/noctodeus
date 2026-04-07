@@ -9,36 +9,16 @@
     onclose: () => void;
   } = $props();
 
-  let pickerEl: HTMLDivElement | undefined = $state();
-
-  function handleClickOutside(e: MouseEvent) {
-    if (pickerEl && !pickerEl.contains(e.target as Node)) {
-      onclose();
-    }
-  }
-
-  function handleKeydown(e: KeyboardEvent) {
-    if (e.key === 'Escape') {
-      onclose();
-    }
-  }
-
   $effect(() => {
-    // Delay listener by one frame so the originating click doesn't
-    // immediately trigger click-outside and close the picker
-    const raf = requestAnimationFrame(() => {
-      document.addEventListener('mousedown', handleClickOutside);
-    });
+    function handleKeydown(e: KeyboardEvent) {
+      if (e.key === 'Escape') onclose();
+    }
     document.addEventListener('keydown', handleKeydown);
-    return () => {
-      cancelAnimationFrame(raf);
-      document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('keydown', handleKeydown);
-    };
+    return () => document.removeEventListener('keydown', handleKeydown);
   });
 </script>
 
-<div class="lang-picker" bind:this={pickerEl}>
+<div class="lang-picker">
   {#each SUPPORTED_LANGUAGES as lang}
     <button
       class="lang-picker__item"

@@ -27,9 +27,7 @@ export const ExecutableBlockNode = Node.create({
   addAttributes() {
     return {
       tabs: {
-        default: JSON.stringify([
-          { id: 'init', name: 'main.py', language: 'python', content: '' },
-        ]),
+        default: JSON.stringify([]),
         parseHTML: (element: HTMLElement) => element.getAttribute('data-tabs'),
         renderHTML: (attributes: Record<string, unknown>) => ({
           'data-tabs': attributes.tabs,
@@ -62,7 +60,7 @@ export const ExecutableBlockNode = Node.create({
       try {
         initialTabs = JSON.parse(node.attrs.tabs as string) as CodeTab[];
       } catch {
-        initialTabs = [{ id: 'init', name: 'main.py', language: 'python', content: '' }];
+        initialTabs = [];
       }
 
       // Debounce syncing tabs back to ProseMirror — prevents the auto-save
@@ -127,9 +125,7 @@ export const ExecutableBlockNode = Node.create({
       insertExecutableBlock:
         (attrs?: { tabs?: CodeTab[] }) =>
         ({ commands }: { commands: any }) => {
-          const tabs = attrs?.tabs ?? [
-            { id: 'init', name: 'main.py', language: 'python', content: '' },
-          ];
+          const tabs = attrs?.tabs ?? [];
           return commands.insertContent({
             type: 'executableBlock',
             attrs: { tabs: JSON.stringify(tabs) },
