@@ -5,7 +5,7 @@
 
   import type { Snippet } from "svelte";
   import { onMount, onDestroy } from "svelte";
-  import { applyTheme, watchSystemTheme } from "../lib/utils/theme";
+  import { applyTheme } from "$lib/themes/apply";
   import type { UnlistenFn } from "@tauri-apps/api/event";
 
   import AppShell from "../lib/components/layout/AppShell.svelte";
@@ -51,31 +51,13 @@
   const pinned = getPinnedState();
 
   // Apply theme reactively
-  let unwatchTheme: (() => void) | undefined;
   $effect(() => {
-    const mode = appSettings.theme;
-    applyTheme(mode);
-    unwatchTheme?.();
-    unwatchTheme = watchSystemTheme(mode, () => applyTheme(mode));
+    applyTheme(appSettings.theme);
   });
 
-  // Apply custom appearance settings reactively
+  // Apply custom font overrides reactively
   $effect(() => {
     const root = document.documentElement;
-    const accent = appSettings.accentColor;
-    if (accent && accent !== '#7AA2F7') {
-      root.style.setProperty('--accent', accent);
-      root.style.setProperty('--primary', accent);
-      root.style.setProperty('--ring', accent);
-      root.style.setProperty('--sidebar-primary', accent);
-      root.style.setProperty('--sidebar-ring', accent);
-    } else {
-      root.style.removeProperty('--accent');
-      root.style.removeProperty('--primary');
-      root.style.removeProperty('--ring');
-      root.style.removeProperty('--sidebar-primary');
-      root.style.removeProperty('--sidebar-ring');
-    }
 
     if (appSettings.fontMono) root.style.setProperty('--font-mono', `"${appSettings.fontMono}", ui-monospace, monospace`);
     else root.style.removeProperty('--font-mono');

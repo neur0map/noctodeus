@@ -1,4 +1,7 @@
-import type { ThemeMode } from '../stores/settings.svelte';
+// Legacy theme utilities — superseded by $lib/themes/apply.ts
+// Kept temporarily for reference; nothing imports this file.
+
+type ThemeMode = 'dark' | 'light' | 'system';
 
 function getSystemTheme(): 'dark' | 'light' {
   if (typeof window === 'undefined') return 'dark';

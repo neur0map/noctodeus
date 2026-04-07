@@ -1,5 +1,6 @@
 <script lang="ts">
   import { getSettings } from '../../stores/settings.svelte';
+  import { THEMES } from '../../themes/themes';
   import { APP_SHORTCUTS, formatShortcutLabel } from '../../utils/shortcuts';
   import SettingsIcon from "@lucide/svelte/icons/settings";
   import PencilLine from "@lucide/svelte/icons/pencil-line";
@@ -125,11 +126,11 @@
                 <select
                   class="settings__select"
                   value={settings.theme}
-                  onchange={(e) => settings.update('theme', e.currentTarget.value as any)}
+                  onchange={(e) => settings.update('theme', e.currentTarget.value)}
                 >
-                  <option value="dark">Dark</option>
-                  <option value="light">Light</option>
-                  <option value="system">System</option>
+                  {#each THEMES as theme}
+                    <option value={theme.id}>{theme.name}</option>
+                  {/each}
                 </select>
               </div>
               <div class="settings__row">
@@ -148,30 +149,6 @@
                   <option value="18">18px</option>
                   <option value="20">20px</option>
                 </select>
-              </div>
-              <div class="settings__row">
-                <div class="settings__row-info">
-                  <span class="settings__row-label">Accent color</span>
-                  <span class="settings__row-desc">Brand color for highlights, links, and active states.</span>
-                </div>
-                <div class="settings__color-row">
-                  {#each [
-                    { color: '#7AA2F7', label: 'Blue' },
-                    { color: '#BB9AF7', label: 'Purple' },
-                    { color: '#7DCFFF', label: 'Cyan' },
-                    { color: '#9ECE6A', label: 'Green' },
-                    { color: '#F7768E', label: 'Red' },
-                    { color: '#FF9E64', label: 'Orange' },
-                  ] as swatch}
-                    <button
-                      class="settings__color-swatch"
-                      class:settings__color-swatch--active={settings.accentColor === swatch.color}
-                      style="background: {swatch.color}"
-                      onclick={() => settings.update('accentColor', swatch.color)}
-                      title={swatch.label}
-                    ></button>
-                  {/each}
-                </div>
               </div>
               <div class="settings__row">
                 <div class="settings__row-info">
@@ -651,31 +628,6 @@
     padding: 3px 8px;
     white-space: nowrap;
     flex-shrink: 0;
-  }
-
-  /* ── Color swatches ── */
-  .settings__color-row {
-    display: flex;
-    gap: 6px;
-    flex-wrap: wrap;
-  }
-
-  .settings__color-swatch {
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    border: 2px solid transparent;
-    cursor: pointer;
-    transition: border-color 150ms var(--ease-expo-out), transform 150ms var(--ease-expo-out);
-  }
-
-  .settings__color-swatch:hover {
-    transform: scale(1.15);
-  }
-
-  .settings__color-swatch--active {
-    border-color: var(--color-foreground);
-    box-shadow: 0 0 0 2px var(--color-background), 0 0 0 4px currentColor;
   }
 
   /* ── Font fields ── */
