@@ -101,12 +101,14 @@ export const ExecutableBlockNode = Node.create({
 
       return {
         dom,
-        // Tell ProseMirror to completely ignore all events inside this node view.
-        // This lets the textarea, buttons, and other interactive elements work
-        // without ProseMirror intercepting clicks, keypresses, or selections.
+        // When ProseMirror sees the node changed (e.g., our debounced sync updated
+        // the tabs attribute), it calls update() instead of destroy+recreate.
+        // Returning true tells ProseMirror to KEEP the existing DOM and Svelte
+        // component alive — no remount, no cursor loss.
+        update: (updatedNode) => {
+          return updatedNode.type.name === 'executableBlock';
+        },
         stopEvent: () => true,
-        // Tell ProseMirror to ignore DOM mutations inside this node view.
-        // The Svelte component manages its own DOM — ProseMirror shouldn't react to it.
         ignoreMutation: () => true,
         destroy() {
           // Flush any pending sync before destroying
