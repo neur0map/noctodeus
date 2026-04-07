@@ -276,7 +276,7 @@
     margin: 16px 0;
     border-radius: 12px;
     border: 1px solid var(--border-subtle, #1e2336);
-    overflow: hidden;
+    overflow: visible;
     background: var(--surface-1, #13161f);
     opacity: 0; /* anime.js animates in */
     position: relative;
@@ -293,6 +293,10 @@
     padding: 6px 10px;
     background: rgba(0, 0, 0, 0.15);
     border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    border-radius: 12px 12px 0 0;
+    overflow: visible;
+    position: relative;
+    z-index: 10;
   }
 
   .exec-block__actions {
