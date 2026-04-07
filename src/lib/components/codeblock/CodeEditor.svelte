@@ -162,6 +162,8 @@
     overflow: hidden;
     white-space: pre;
     min-height: 60px;
+    user-select: text;
+    -webkit-user-select: text;
   }
 
   .code-editor__textarea::placeholder {

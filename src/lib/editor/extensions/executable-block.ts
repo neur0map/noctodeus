@@ -58,6 +58,18 @@ export const ExecutableBlockNode = Node.create({
       const dom = document.createElement('div');
       dom.className = 'exec-block-wrapper';
       dom.contentEditable = 'false';
+      dom.style.userSelect = 'none';
+
+      // Block ALL mouse/pointer events from reaching ProseMirror
+      // This prevents text selection and bubble toolbar on clicks inside the block
+      const stopPropagation = (e: Event) => {
+        e.stopPropagation();
+      };
+      dom.addEventListener('mousedown', stopPropagation);
+      dom.addEventListener('mouseup', stopPropagation);
+      dom.addEventListener('click', stopPropagation);
+      dom.addEventListener('pointerdown', stopPropagation);
+      dom.addEventListener('pointerup', stopPropagation);
 
       let initialTabs: CodeTab[];
       try {
