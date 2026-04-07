@@ -144,7 +144,7 @@
       if (active || hover) {
         ctx.beginPath();
         ctx.arc(n.x, n.y, r + 8, 0, Math.PI * 2);
-        ctx.fillStyle = active ? 'rgba(122, 162, 247, 0.12)' : 'rgba(187, 154, 247, 0.08)';
+        ctx.fillStyle = active ? 'rgba(255, 255, 255, 0.06)' : 'rgba(255, 255, 255, 0.04)';
         ctx.fill();
       }
 

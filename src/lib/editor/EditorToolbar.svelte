@@ -248,7 +248,7 @@
 
   .toolbar-btn.active {
     color: var(--color-accent);
-    background: rgba(122, 162, 247, 0.12);
+    background: rgba(255, 255, 255, 0.05);
   }
 
   .toolbar-btn--italic {

@@ -120,7 +120,7 @@
   }
 
   .rl__item--sel {
-    background: rgba(122, 162, 247, 0.08);
+    background: rgba(255, 255, 255, 0.03);
   }
 
   .rl__item--sel::before {

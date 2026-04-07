@@ -224,7 +224,7 @@
   }
 
   .bt__btn--active {
-    background: rgba(122, 162, 247, 0.15);
+    background: rgba(255, 255, 255, 0.05);
     color: var(--color-accent);
   }
 
@@ -234,7 +234,7 @@
   }
 
   .bt__btn--highlight.bt__btn--active {
-    background: rgba(122, 162, 247, 0.15);
+    background: rgba(255, 255, 255, 0.05);
     color: var(--color-accent);
   }
 

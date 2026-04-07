@@ -170,7 +170,7 @@
   }
 
   .search-bar__result-snippet :global(mark) {
-    background: rgba(122, 162, 247, 0.2);
+    background: rgba(255, 255, 255, 0.08);
     color: var(--color-foreground);
     border-radius: 2px;
     padding: 0 1px;

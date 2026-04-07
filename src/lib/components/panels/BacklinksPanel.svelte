@@ -263,6 +263,6 @@
   }
 
   .backlinks__link-btn:hover {
-    background: rgba(122, 162, 247, 0.1);
+    background: rgba(255, 255, 255, 0.04);
   }
 </style>
