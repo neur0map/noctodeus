@@ -1,7 +1,8 @@
 <script lang="ts">
   import type { CodeTab, SupportedLanguage } from './types';
   import { SUPPORTED_LANGUAGES } from './types';
-  import LanguagePicker from './LanguagePicker.svelte';
+  import ContextMenu from '$lib/components/common/ContextMenu.svelte';
+  import type { MenuItem } from '$lib/components/common/ContextMenu.svelte';
 
   let {
     tabs,
@@ -21,44 +22,98 @@
     onchangelang: (id: string, lang: SupportedLanguage) => void;
   } = $props();
 
-  let showAddPicker = $state(false);
-  let dropdownTabId = $state<string | null>(null);
-  let dropdownPos = $state<{ top: number; left: number }>({ top: 0, left: 0 });
-  let addPickerPos = $state<{ top: number; left: number }>({ top: 0, left: 0 });
+  // Tab context menu state
+  let menuVisible = $state(false);
+  let menuPos = $state({ top: 0, left: 0 });
+  let menuTabId = $state<string | null>(null);
+
+  // Add tab menu state
+  let addMenuVisible = $state(false);
+  let addMenuPos = $state({ top: 0, left: 0 });
+
+  // Rename state
   let renamingTabId = $state<string | null>(null);
   let renameValue = $state('');
 
-  function startRename(id: string, currentName: string) {
-    renamingTabId = id;
-    renameValue = currentName;
-    dropdownTabId = null;
+  // Build menu items for a tab
+  function tabMenuItems(tab: CodeTab): MenuItem[] {
+    const items: MenuItem[] = [
+      { id: 'rename', label: 'Rename' },
+      { id: 'sep1', label: '', separator: true },
+    ];
+    for (const lang of SUPPORTED_LANGUAGES) {
+      items.push({
+        id: `lang:${lang.id}`,
+        label: lang.label,
+        icon: tab.language === lang.id ? '●' : '',
+      });
+    }
+    if (tabs.length > 1) {
+      items.push({ id: 'sep2', label: '', separator: true });
+      items.push({ id: 'delete', label: 'Delete tab', danger: true });
+    }
+    return items;
+  }
+
+  // Language picker items for + button
+  const addMenuItems: MenuItem[] = SUPPORTED_LANGUAGES.map(lang => ({
+    id: lang.id,
+    label: `${lang.label}  ${lang.ext}`,
+  }));
+
+  function openTabMenu(e: MouseEvent, tabId: string) {
+    e.preventDefault();
+    e.stopPropagation();
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    menuPos = { top: rect.bottom + 4, left: rect.left };
+    menuTabId = tabId;
+    menuVisible = true;
+  }
+
+  function handleTabMenuSelect(id: string) {
+    menuVisible = false;
+    if (!menuTabId) return;
+
+    if (id === 'rename') {
+      const tab = tabs.find(t => t.id === menuTabId);
+      if (tab) {
+        renamingTabId = menuTabId;
+        renameValue = tab.name;
+      }
+    } else if (id === 'delete') {
+      onremove(menuTabId);
+    } else if (id.startsWith('lang:')) {
+      const lang = id.replace('lang:', '') as SupportedLanguage;
+      onchangelang(menuTabId, lang);
+    }
+    menuTabId = null;
+  }
+
+  function openAddMenu(e: MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    addMenuPos = { top: rect.bottom + 4, left: rect.left };
+    addMenuVisible = true;
+  }
+
+  function handleAddSelect(id: string) {
+    addMenuVisible = false;
+    onadd(id as SupportedLanguage);
   }
 
   function commitRename(id: string) {
     const trimmed = renameValue.trim();
-    if (trimmed && trimmed !== tabs.find((t) => t.id === id)?.name) {
+    if (trimmed && trimmed !== tabs.find(t => t.id === id)?.name) {
       onrename(id, trimmed);
     }
     renamingTabId = null;
   }
 
   function handleRenameKeydown(e: KeyboardEvent, id: string) {
-    if (e.key === 'Enter') {
-      commitRename(id);
-    } else if (e.key === 'Escape') {
-      renamingTabId = null;
-    }
+    if (e.key === 'Enter') commitRename(id);
+    else if (e.key === 'Escape') renamingTabId = null;
   }
-
-  $effect(() => {
-    if (dropdownTabId) {
-      function handleKey(e: KeyboardEvent) {
-        if (e.key === 'Escape') dropdownTabId = null;
-      }
-      document.addEventListener('keydown', handleKey);
-      return () => document.removeEventListener('keydown', handleKey);
-    }
-  });
 </script>
 
 <div class="tab-bar">
@@ -87,80 +142,46 @@
           {/if}
         {/if}
 
-        <div class="tab-dropdown" style="position: relative;">
-          <button
-            class="tab-bar__menu-btn"
-            onclick={(e) => {
-              e.preventDefault(); e.stopPropagation();
-              if (dropdownTabId === tab.id) { dropdownTabId = null; return; }
-              const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-              dropdownPos = { top: rect.bottom + 4, left: Math.min(rect.left, window.innerWidth - 160) };
-              dropdownTabId = tab.id;
-            }}
-            onmousedown={(e) => { e.preventDefault(); e.stopPropagation(); }}
-            title="Tab options"
-          >
-            ▾
-          </button>
-
-          {#if dropdownTabId === tab.id}
-            <div class="tab-dropdown__menu" style="top: {dropdownPos.top}px; left: {dropdownPos.left}px;">
-              <button class="tab-dropdown__item" onclick={(e) => { e.preventDefault(); e.stopPropagation(); startRename(tab.id, tab.name); }} onmousedown={(e) => { e.preventDefault(); e.stopPropagation(); }}>
-                Rename
-              </button>
-              <div class="tab-dropdown__sub">
-                <span class="tab-dropdown__sublabel">Language</span>
-                {#each SUPPORTED_LANGUAGES as lang}
-                  <button
-                    class="tab-dropdown__item"
-                    class:tab-dropdown__item--active={tab.language === lang.id}
-                    onclick={(e) => { e.preventDefault(); e.stopPropagation(); onchangelang(tab.id, lang.id); dropdownTabId = null; }}
-                    onmousedown={(e) => { e.preventDefault(); e.stopPropagation(); }}
-                  >
-                    {lang.label}
-                  </button>
-                {/each}
-              </div>
-              {#if tabs.length > 1}
-                <button class="tab-dropdown__item tab-dropdown__item--danger" onclick={(e) => { e.preventDefault(); e.stopPropagation(); onremove(tab.id); dropdownTabId = null; }} onmousedown={(e) => { e.preventDefault(); e.stopPropagation(); }}>
-                  Delete
-                </button>
-              {/if}
-            </div>
-          {/if}
-        </div>
+        <button
+          class="tab-bar__menu-btn"
+          onclick={(e) => openTabMenu(e, tab.id)}
+          onmousedown={(e) => { e.preventDefault(); e.stopPropagation(); }}
+          title="Tab options"
+        >▾</button>
       </div>
     {/each}
   </div>
 
-  <div class="tab-bar__add" style="position: relative;">
-    <button class="tab-bar__add-btn" onclick={(e) => {
-      e.preventDefault(); e.stopPropagation();
-      if (showAddPicker) { showAddPicker = false; return; }
-      const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-      addPickerPos = { top: rect.bottom + 4, left: Math.min(rect.left, window.innerWidth - 170) };
-      showAddPicker = true;
-    }} onmousedown={(e) => { e.preventDefault(); e.stopPropagation(); }} title="Add tab">
-      +
-    </button>
-    {#if showAddPicker}
-      <LanguagePicker
-        fixed={true}
-        top={addPickerPos.top}
-        left={addPickerPos.left}
-        onselect={(lang) => { onadd(lang); showAddPicker = false; }}
-        onclose={() => showAddPicker = false}
-      />
-    {/if}
-  </div>
+  <button
+    class="tab-bar__add-btn"
+    onclick={openAddMenu}
+    onmousedown={(e) => { e.preventDefault(); e.stopPropagation(); }}
+    title="Add tab"
+  >+</button>
 </div>
+
+<!-- Reuse the app's existing ContextMenu component for both menus -->
+<ContextMenu
+  visible={menuVisible}
+  position={menuPos}
+  items={menuTabId ? tabMenuItems(tabs.find(t => t.id === menuTabId)!) : []}
+  onselect={handleTabMenuSelect}
+  onclose={() => { menuVisible = false; menuTabId = null; }}
+/>
+
+<ContextMenu
+  visible={addMenuVisible}
+  position={addMenuPos}
+  items={addMenuItems}
+  onselect={handleAddSelect}
+  onclose={() => addMenuVisible = false}
+/>
 
 <style>
   .tab-bar {
     display: flex;
     align-items: center;
-    gap: 2px;
-    overflow: visible;
+    gap: 4px;
     min-width: 0;
   }
 
@@ -169,7 +190,7 @@
     align-items: center;
     gap: 1px;
     min-width: 0;
-    overflow: visible;
+    overflow-x: auto;
   }
 
   .tab-bar__tab {
@@ -249,69 +270,6 @@
     color: var(--text-muted, #6B7394);
   }
 
-  .tab-dropdown__menu {
-    position: fixed;
-    z-index: 9999;
-    display: flex;
-    flex-direction: column;
-    min-width: 130px;
-    padding: 4px;
-    border-radius: 8px;
-    border: 1px solid var(--border-subtle, #1E2336);
-    background: var(--surface-2, #1A1E2E);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-  }
-
-  .tab-dropdown__item {
-    display: block;
-    width: 100%;
-    padding: 5px 10px;
-    border: none;
-    border-radius: 4px;
-    background: none;
-    color: var(--text-primary, #C0CAF5);
-    font-size: 12px;
-    cursor: pointer;
-    text-align: left;
-  }
-
-  .tab-dropdown__item:hover {
-    background: rgba(255, 255, 255, 0.06);
-  }
-
-  .tab-dropdown__item--active {
-    color: var(--accent-blue, #7AA2F7);
-  }
-
-  .tab-dropdown__item--danger {
-    color: var(--accent-red, #F7768E);
-  }
-
-  .tab-dropdown__item--danger:hover {
-    background: rgba(247, 118, 142, 0.08);
-  }
-
-  .tab-dropdown__sub {
-    display: flex;
-    flex-direction: column;
-    padding: 2px 0;
-    border-top: 1px solid rgba(255, 255, 255, 0.04);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-    margin: 2px 0;
-  }
-
-  .tab-dropdown__sublabel {
-    font-size: 10px;
-    color: var(--text-faint, #3B4261);
-    padding: 4px 10px 2px;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-
-  .tab-bar__add {
-    flex-shrink: 0;
-  }
-
   .tab-bar__add-btn {
     display: flex;
     align-items: center;
@@ -325,6 +283,7 @@
     font-size: 14px;
     cursor: pointer;
     transition: color 120ms;
+    flex-shrink: 0;
   }
 
   .tab-bar__add-btn:hover {
