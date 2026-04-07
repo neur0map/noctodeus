@@ -20,37 +20,53 @@ Share notes or selected text from Noctodeus as self-destructing encrypted links.
 
 Must produce output compatible with cryptgeon's `occulto` library so the web UI can decrypt it.
 
+### Payload format (must match occulto exactly)
+
+The encrypted output is three base64 segments separated by `--` (double dash):
+
+```
+{base64("AES-GCM")}--{base64(iv)}--{base64(ciphertext+tag)}
+```
+
+Concretely: `QUVTLUNDTQ==--{base64-iv}--{base64-ciphertext-with-appended-tag}`
+
+- The first segment is always `QUVTLUNDTQ==` (base64 of the UTF-8 string "AES-GCM")
+- Use standard base64 with padding (not URL-safe)
+- The auth tag is appended to the ciphertext by AES-GCM (Rust `aes-gcm` crate does this by default), then the whole buffer is base64-encoded as one segment
+- Hex encoding for the key must be lowercase
+
 ### Without password
-- Generate random 256-bit AES key via `crypto.getRandomValues` equivalent (`rand` crate)
+- Generate random 256-bit AES key (`rand` crate)
 - Generate random 12-byte IV
-- Encrypt with AES-256-GCM (128-bit auth tag)
-- Serialize as: `aes-256-gcm:{base64-iv}:{base64-ciphertext+tag}`
-- Hex-encode the raw key bytes
+- Encrypt plaintext bytes (UTF-8 encoded via `.as_bytes()`) with AES-256-GCM
+- Serialize in the format above
+- Lowercase hex-encode the raw key bytes
 - Key goes in URL fragment (`#`), never sent to server
+- `meta` field: `{"type":"text"}` (no derivation field)
 
 ### With password
 - Generate random 16-byte salt
 - Derive 256-bit key via PBKDF2 (SHA-512, 100,000 iterations, salt)
 - Encrypt same as above
-- Store derivation params in the `meta` field:
+- `meta` field stores derivation params. The salt is serialized as a JSON indexed object (how `JSON.stringify(Uint8Array)` works in JS), NOT as base64:
   ```json
-  {"type": "text", "derivation": {"algorithm": "pbkdf2", "hash": "SHA-512", "iterations": 100000, "salt": "<base64-salt>"}}
+  {"type":"text","derivation":{"name":"PBKDF2","hash":"SHA-512","iterations":100000,"salt":{"0":171,"1":205,"2":34,...},"length":256}}
   ```
-- URL has no key fragment — recipient enters password in browser
+- URL has no key fragment, recipient enters password in browser
 
 ### Content encoding
-- Text content: UTF-8 string, encrypted directly
+- Text content: UTF-8 string converted to bytes via `.as_bytes()`, then encrypted
 - The `meta.type` field is `"text"` for text notes
 
 ## Cryptgeon API
 
 Two endpoints used:
 
-**POST `/api/notes/`**
+**POST `/api/notes/`** (Content-Type: application/json)
 ```json
 {
-  "contents": "aes-256-gcm:{base64-iv}:{base64-ciphertext}",
-  "meta": "{\"type\":\"text\",\"derivation\":null}",
+  "contents": "QUVTLUNDTQ==--{base64-iv}--{base64-ciphertext+tag}",
+  "meta": "{\"type\":\"text\"}",
   "views": 1,
   "expiration": 0
 }
@@ -127,9 +143,10 @@ src-tauri/src/share/
 ### crypto.rs
 
 ```rust
-pub fn encrypt(plaintext: &[u8], key: &[u8; 32]) -> Result<(String, [u8; 12]), ShareError>
-// Returns (formatted ciphertext string, iv)
-// Format: "aes-256-gcm:{base64-iv}:{base64-ciphertext+tag}"
+pub fn encrypt(plaintext: &[u8], key: &[u8; 32]) -> Result<String, ShareError>
+// Returns the formatted ciphertext string
+// Format: "QUVTLUNDTQ==--{base64-iv}--{base64-ciphertext+tag}"
+// Uses standard base64 with padding, lowercase hex for keys
 
 pub fn generate_key() -> [u8; 32]
 // Random 256-bit key
@@ -201,6 +218,24 @@ src/lib/bridge/share.ts                      — typed invoke wrappers
 | `hmac` | Required by pbkdf2 |
 
 `sha2` and `hex` are already in Cargo.toml.
+
+## HTTP Client
+
+`reqwest` with `rustls-tls` feature. Configuration:
+- Timeout: 15 seconds
+- No redirect following
+- User-Agent: `noctodeus/{version}`
+
+## Tauri Permissions
+
+The `src-tauri/capabilities/default.json` needs HTTP permission for the cryptgeon server. Since the server URL is configurable, allow outbound HTTPS:
+
+```json
+{
+  "identifier": "http:default",
+  "allow": [{ "url": "https://*" }]
+}
+```
 
 ## Error Handling
 
