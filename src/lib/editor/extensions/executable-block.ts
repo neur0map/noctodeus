@@ -57,24 +57,6 @@ export const ExecutableBlockNode = Node.create({
 
       const dom = document.createElement('div');
       dom.className = 'exec-block-wrapper';
-      dom.contentEditable = 'false';
-      dom.style.userSelect = 'none';
-
-      // Block mouse events from reaching ProseMirror (prevents text selection
-      // and bubble toolbar) — but allow textarea clicks through so users can type
-      const stopIfNotTextarea = (e: Event) => {
-        const target = e.target as HTMLElement;
-        if (target.tagName !== 'TEXTAREA') {
-          e.stopPropagation();
-          e.preventDefault();
-        }
-      };
-      dom.addEventListener('mousedown', stopIfNotTextarea);
-      dom.addEventListener('pointerdown', stopIfNotTextarea);
-      // Always stop click/mouseup propagation (doesn't affect focus)
-      dom.addEventListener('mouseup', (e) => e.stopPropagation());
-      dom.addEventListener('click', (e) => e.stopPropagation());
-      dom.addEventListener('pointerup', (e) => e.stopPropagation());
 
       let initialTabs: CodeTab[];
       try {
@@ -107,6 +89,13 @@ export const ExecutableBlockNode = Node.create({
 
       return {
         dom,
+        // Tell ProseMirror to completely ignore all events inside this node view.
+        // This lets the textarea, buttons, and other interactive elements work
+        // without ProseMirror intercepting clicks, keypresses, or selections.
+        stopEvent: () => true,
+        // Tell ProseMirror to ignore DOM mutations inside this node view.
+        // The Svelte component manages its own DOM — ProseMirror shouldn't react to it.
+        ignoreMutation: () => true,
         destroy() {
           unmount(instance);
         },
