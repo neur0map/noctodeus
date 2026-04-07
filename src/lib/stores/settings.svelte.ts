@@ -18,6 +18,8 @@ export interface AppSettings {
   defaultExtension: string;
   confirmBeforeDelete: boolean;
   wikiStyleLinks: boolean;
+  // Hotkeys
+  keybinds: Record<string, string>;
 }
 
 const DEFAULTS: AppSettings = {
@@ -34,6 +36,7 @@ const DEFAULTS: AppSettings = {
   defaultExtension: '.md',
   confirmBeforeDelete: true,
   wikiStyleLinks: true,
+  keybinds: {},
 };
 
 function loadFromStorage(): AppSettings {
@@ -86,6 +89,7 @@ export function getSettings() {
     get defaultExtension() { return settings.defaultExtension; },
     get confirmBeforeDelete() { return settings.confirmBeforeDelete; },
     get wikiStyleLinks() { return settings.wikiStyleLinks; },
+    get keybinds() { return settings.keybinds; },
 
     update<K extends keyof AppSettings>(key: K, value: AppSettings[K]) {
       // Mutate the property directly on the $state proxy for granular reactivity

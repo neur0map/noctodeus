@@ -36,7 +36,7 @@
   import { ask as tauriAsk } from "@tauri-apps/plugin-dialog";
   import type { SearchHit } from "../lib/types/core";
   import { logger } from "../lib/logger";
-  import { APP_SHORTCUTS } from "../lib/utils/shortcuts";
+  import { getResolvedShortcuts } from "../lib/utils/shortcuts";
   import { sanitizeFileName } from "../lib/utils/files";
 
   import FocusManager from "../lib/components/common/FocusManager.svelte";
@@ -49,6 +49,8 @@
   const tabsState = getTabsState();
   const appSettings = getSettings();
   const pinned = getPinnedState();
+
+  let keymap = $derived(getResolvedShortcuts(appSettings.keybinds));
 
   // Apply theme reactively
   $effect(() => {
@@ -681,7 +683,7 @@
 
 <KeyboardManager
   {overlayOpen}
-  keymap={APP_SHORTCUTS}
+  {keymap}
   onsearch={() => ui.showQuickOpen()}
   onquickopen={() => ui.showCommandPalette()}
   oncommandpalette={() => ui.showCommandPalette()}
