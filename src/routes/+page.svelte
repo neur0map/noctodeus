@@ -24,6 +24,7 @@
     createCore,
     scanCore,
     listCores,
+    kernelStop,
   } from "../lib/bridge/commands";
   import { open as openDialog } from "@tauri-apps/plugin-dialog";
   import { toast } from "../lib/stores/toast.svelte";
@@ -209,6 +210,11 @@
       } catch {}
     }
 
+    // Stop kernel for previous note (fire-and-forget)
+    if (currentFilePath && currentFilePath !== path) {
+      kernelStop(currentFilePath).catch(() => {});
+    }
+
     try {
       // Load content FIRST, then swap all state at once — no null flash
       const result = await readFile(path);
@@ -233,6 +239,10 @@
   }
 
   function closeFile() {
+    // Stop kernel for the note being closed (fire-and-forget)
+    if (currentFilePath) {
+      kernelStop(currentFilePath).catch(() => {});
+    }
     currentFilePath = null;
     currentContent = null;
     currentMetadata = null;
