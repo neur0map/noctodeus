@@ -6,8 +6,9 @@ use tracing::{debug, error};
 
 use crate::normalize_path;
 
+use crate::db::links;
 use crate::db::mutations;
-use crate::db::queries::FileInfo;
+use crate::db::queries::{self, FileInfo};
 use crate::errors::NoctoError;
 use crate::indexer::fts;
 use crate::indexer::scanner::scan_single_file;
@@ -100,10 +101,11 @@ fn handle_created(
     let file_info = scan_single_file(core_path, abs_path)?;
     mutations::upsert_file(conn, &file_info)?;
 
-    // Add to FTS if it's a markdown file.
+    // Add to FTS and links if it's a markdown file.
     if !file_info.is_directory && is_markdown(&file_info.name) {
         if let Ok(content) = fs::read_to_string(abs_path) {
             fts::update_fts_entry(conn, &file_info.path, file_info.title.as_deref(), &content)?;
+            update_links_for_file(conn, &file_info.path, &content);
         }
     }
 
@@ -125,10 +127,11 @@ fn handle_modified(
     let file_info = scan_single_file(core_path, abs_path)?;
     mutations::upsert_file(conn, &file_info)?;
 
-    // Update FTS for markdown files.
+    // Update FTS and links for markdown files.
     if !file_info.is_directory && is_markdown(&file_info.name) {
         if let Ok(content) = fs::read_to_string(abs_path) {
             fts::update_fts_entry(conn, &file_info.path, file_info.title.as_deref(), &content)?;
+            update_links_for_file(conn, &file_info.path, &content);
         }
     }
 
@@ -155,6 +158,7 @@ fn handle_deleted(
     // Remove from all tables.
     mutations::delete_file(conn, &rel_path)?;
     fts::remove_fts_entry(conn, &rel_path)?;
+    links::delete_links_for_path(conn, &rel_path)?;
 
     debug!(path = %rel_path, "removed deleted file from index");
 
@@ -185,9 +189,12 @@ fn handle_renamed(
 
     // Update FTS: remove old entry, add new one.
     fts::remove_fts_entry(conn, &old_rel)?;
+    // Update links: remove old, re-index new.
+    links::delete_links_for_path(conn, &old_rel)?;
     if !file_info.is_directory && is_markdown(&file_info.name) {
         if let Ok(content) = fs::read_to_string(to_abs) {
             fts::update_fts_entry(conn, &new_rel, file_info.title.as_deref(), &content)?;
+            update_links_for_file(conn, &new_rel, &content);
         }
     }
 
@@ -200,8 +207,35 @@ fn handle_renamed(
     })
 }
 
-/// Check if a file name indicates a markdown file.
-fn is_markdown(name: &str) -> bool {
-    let lower = name.to_lowercase();
-    lower.ends_with(".md") || lower.ends_with(".markdown") || lower.ends_with(".mdx")
+/// Re-index outgoing wiki-links for a single file.
+/// Queries all files to build the name lookup. Acceptable for vaults <5k files;
+/// a future optimization could cache this lookup.
+fn update_links_for_file(conn: &Connection, path: &str, content: &str) {
+    if let Ok(all_files) = queries::get_all_files(conn) {
+        let file_names: Vec<(String, String)> = all_files
+            .iter()
+            .filter(|f| !f.is_directory)
+            .filter(|f| {
+                matches!(
+                    f.extension.as_deref(),
+                    Some("md") | Some("markdown") | Some("mdx")
+                )
+            })
+            .map(|f| {
+                let name_no_ext = f
+                    .name
+                    .rsplit_once('.')
+                    .map(|(stem, _)| stem.to_string())
+                    .unwrap_or_else(|| f.name.clone());
+                (f.path.clone(), name_no_ext)
+            })
+            .collect();
+        let lookup: Vec<(&str, &str)> = file_names
+            .iter()
+            .map(|(p, n)| (p.as_str(), n.as_str()))
+            .collect();
+        let _ = links::replace_links_for_source(conn, path, content, &lookup);
+    }
 }
+
+use crate::indexer::util::is_markdown;

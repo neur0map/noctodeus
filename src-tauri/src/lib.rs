@@ -14,6 +14,8 @@ pub fn normalize_path(p: &str) -> String {
     p.replace('\\', "/")
 }
 
+use tauri::Manager;
+
 use crate::core::state::AppState;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -32,6 +34,29 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .manage(AppState::new())
+        .setup(|app| {
+            let handle = app.handle().clone();
+            let window = app.get_webview_window("main")
+                .expect("main window not found");
+
+            window.on_window_event(move |event| {
+                if let tauri::WindowEvent::CloseRequested { .. } = event {
+                    let Some(state) = handle.try_state::<AppState>() else { return };
+                    let state: tauri::State<'_, AppState> = state;
+                    let rt = tokio::runtime::Handle::current();
+                    rt.block_on(async {
+                        let mut lock = state.active_core.write().await;
+                        if let Some(mut active) = lock.take() {
+                            if let Some(tx) = active.watcher_shutdown.take() {
+                                let _ = tx.send(());
+                            }
+                            tracing::info!("graceful shutdown: watcher stopped, core released");
+                        }
+                    });
+                }
+            });
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             // Core commands
             commands::core_create,
@@ -66,6 +91,10 @@ pub fn run() {
             commands::log_clear,
             // Media commands
             commands::media_copy,
+            // Graph commands
+            commands::graph_links,
+            commands::graph_stats,
+            commands::graph_backlinks,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

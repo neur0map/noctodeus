@@ -1,13 +1,12 @@
 use std::path::Path;
-use std::sync::{Arc, Mutex};
 
-use rusqlite::Connection;
 use serde::{Deserialize, Serialize};
 
 use crate::normalize_path;
 
 use crate::core::state::AppState;
 use crate::db::mutations;
+use crate::db::pool::DbPool;
 use crate::db::queries::FileInfo;
 use crate::errors::NoctoError;
 
@@ -23,8 +22,8 @@ pub struct FileContent {
 // Helpers
 // ---------------------------------------------------------------------------
 
-/// Get the DB connection from the active core, or error if no core is open.
-async fn get_db(state: &tauri::State<'_, AppState>) -> Result<Arc<Mutex<Connection>>, NoctoError> {
+/// Get the DB pool from the active core, or error if no core is open.
+async fn get_db(state: &tauri::State<'_, AppState>) -> Result<DbPool, NoctoError> {
     let core = state.active_core.read().await;
     match core.as_ref() {
         Some(active) => Ok(active.db.clone()),
@@ -138,8 +137,8 @@ pub async fn file_create(
     let ext = abs_path.extension().and_then(|e| e.to_str()).unwrap_or("");
     if ext == "md" || ext == "markdown" || ext == "mdx" {
         let db = active.db.clone();
-        let conn = db.lock().map_err(|e| NoctoError::Unexpected {
-            detail: format!("DB lock poisoned: {e}"),
+        let conn = db.get().map_err(|e| NoctoError::Unexpected {
+            detail: format!("Failed to get DB connection: {e}"),
         })?;
         let _ = crate::indexer::fts::update_fts_entry(
             &conn,
@@ -168,8 +167,8 @@ pub async fn file_read(
     // Update recents in DB.
     let db = get_db(&state).await?;
     {
-        let conn = db.lock().map_err(|e| NoctoError::Unexpected {
-            detail: format!("DB lock poisoned: {e}"),
+        let conn = db.get().map_err(|e| NoctoError::Unexpected {
+            detail: format!("Failed to get DB connection: {e}"),
         })?;
         mutations::add_recent(&conn, &path)?;
     }
@@ -209,8 +208,8 @@ pub async fn file_write(
     let ext = abs_path.extension().and_then(|e| e.to_str()).unwrap_or("");
     if ext == "md" || ext == "markdown" || ext == "mdx" {
         let db = active.db.clone();
-        let conn = db.lock().map_err(|e| NoctoError::Unexpected {
-            detail: format!("DB lock poisoned: {e}"),
+        let conn = db.get().map_err(|e| NoctoError::Unexpected {
+            detail: format!("Failed to get DB connection: {e}"),
         })?;
         let _ = crate::indexer::fts::update_fts_entry(
             &conn,
@@ -236,7 +235,7 @@ pub async fn file_delete(
 
     // Remove from FTS before deleting
     if let Ok(db) = get_db(&state).await {
-        if let Ok(conn) = db.lock() {
+        if let Ok(conn) = db.get() {
             let _ = crate::indexer::fts::remove_fts_entry(&conn, &path);
         }
     }

@@ -1,8 +1,5 @@
-use std::sync::{Arc, Mutex};
-
-use rusqlite::Connection;
-
 use crate::core::state::AppState;
+use crate::db::pool::DbPool;
 use crate::db::queries::{self, FileInfo, SearchHit};
 use crate::db::mutations;
 use crate::errors::NoctoError;
@@ -11,8 +8,8 @@ use crate::errors::NoctoError;
 // Helpers
 // ---------------------------------------------------------------------------
 
-/// Get the DB connection from the active core, or error if no core is open.
-async fn get_db(state: &tauri::State<'_, AppState>) -> Result<Arc<Mutex<Connection>>, NoctoError> {
+/// Get the DB pool from the active core, or error if no core is open.
+async fn get_db(state: &tauri::State<'_, AppState>) -> Result<DbPool, NoctoError> {
     let core = state.active_core.read().await;
     match core.as_ref() {
         Some(active) => Ok(active.db.clone()),
@@ -33,8 +30,8 @@ pub async fn search_query(
     state: tauri::State<'_, AppState>,
 ) -> Result<Vec<SearchHit>, NoctoError> {
     let db = get_db(&state).await?;
-    let conn = db.lock().map_err(|e| NoctoError::Unexpected {
-        detail: format!("DB lock poisoned: {e}"),
+    let conn = db.get().map_err(|e| NoctoError::Unexpected {
+        detail: format!("Failed to get DB connection: {e}"),
     })?;
 
     // The current search_fts doesn't support scope filtering, so when a scope
@@ -63,8 +60,8 @@ pub async fn search_recent(
     state: tauri::State<'_, AppState>,
 ) -> Result<Vec<FileInfo>, NoctoError> {
     let db = get_db(&state).await?;
-    let conn = db.lock().map_err(|e| NoctoError::Unexpected {
-        detail: format!("DB lock poisoned: {e}"),
+    let conn = db.get().map_err(|e| NoctoError::Unexpected {
+        detail: format!("Failed to get DB connection: {e}"),
     })?;
     queries::get_recent(&conn, limit)
 }
@@ -74,8 +71,8 @@ pub async fn search_pinned(
     state: tauri::State<'_, AppState>,
 ) -> Result<Vec<FileInfo>, NoctoError> {
     let db = get_db(&state).await?;
-    let conn = db.lock().map_err(|e| NoctoError::Unexpected {
-        detail: format!("DB lock poisoned: {e}"),
+    let conn = db.get().map_err(|e| NoctoError::Unexpected {
+        detail: format!("Failed to get DB connection: {e}"),
     })?;
     queries::get_pinned(&conn)
 }
@@ -90,8 +87,8 @@ pub async fn pin_add(
     state: tauri::State<'_, AppState>,
 ) -> Result<(), NoctoError> {
     let db = get_db(&state).await?;
-    let conn = db.lock().map_err(|e| NoctoError::Unexpected {
-        detail: format!("DB lock poisoned: {e}"),
+    let conn = db.get().map_err(|e| NoctoError::Unexpected {
+        detail: format!("Failed to get DB connection: {e}"),
     })?;
     mutations::add_pinned(&conn, &path)
 }
@@ -102,8 +99,8 @@ pub async fn pin_remove(
     state: tauri::State<'_, AppState>,
 ) -> Result<(), NoctoError> {
     let db = get_db(&state).await?;
-    let conn = db.lock().map_err(|e| NoctoError::Unexpected {
-        detail: format!("DB lock poisoned: {e}"),
+    let conn = db.get().map_err(|e| NoctoError::Unexpected {
+        detail: format!("Failed to get DB connection: {e}"),
     })?;
     mutations::remove_pinned(&conn, &path)
 }
@@ -119,8 +116,8 @@ pub async fn state_save(
     state: tauri::State<'_, AppState>,
 ) -> Result<(), NoctoError> {
     let db = get_db(&state).await?;
-    let conn = db.lock().map_err(|e| NoctoError::Unexpected {
-        detail: format!("DB lock poisoned: {e}"),
+    let conn = db.get().map_err(|e| NoctoError::Unexpected {
+        detail: format!("Failed to get DB connection: {e}"),
     })?;
     mutations::save_state(&conn, &key, &value)
 }
@@ -131,8 +128,8 @@ pub async fn state_load(
     state: tauri::State<'_, AppState>,
 ) -> Result<Option<String>, NoctoError> {
     let db = get_db(&state).await?;
-    let conn = db.lock().map_err(|e| NoctoError::Unexpected {
-        detail: format!("DB lock poisoned: {e}"),
+    let conn = db.get().map_err(|e| NoctoError::Unexpected {
+        detail: format!("Failed to get DB connection: {e}"),
     })?;
     queries::load_state(&conn, &key)
 }

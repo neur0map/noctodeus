@@ -1,19 +1,19 @@
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, Mutex};
 
 use chrono::Utc;
-use rusqlite::Connection;
 use serde::{Deserialize, Serialize};
-use tauri::State;
+use tauri::{Emitter, State};
 
 use crate::core::manifest::{create_manifest, ensure_noctodeus_dir, load_manifest};
 use crate::core::state::{ActiveCore, AppState, CoreInfo};
+use crate::db::{create_pool, run_all_migrations, DbPool};
+use crate::db::links;
 use crate::db::mutations;
 use crate::db::queries::FileInfo;
-use crate::db::schema::run_migrations;
 use crate::errors::{CmdResult, NoctoError};
-use crate::indexer::{fts, scanner};
+use crate::indexer::{fts, incremental, scanner};
+use crate::watcher::DebouncedWatcher;
 
 /// Persisted registry entry stored in `cores.json` inside the app data dir.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -60,14 +60,18 @@ fn write_cores_registry(entries: &[CoreEntry]) -> Result<(), NoctoError> {
     Ok(())
 }
 
-/// Opens (or creates) the SQLite database at `.noctodeus/meta.db` with WAL
-/// mode enabled, then runs migrations.
-fn open_db(core_path: &Path) -> Result<Connection, NoctoError> {
-    let db_path = core_path.join(".noctodeus").join("meta.db");
-    let conn = Connection::open(&db_path)?;
-    conn.execute_batch("PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON;")?;
-    run_migrations(&conn)?;
-    Ok(conn)
+/// Opens (or creates) the SQLite database at `.noctodeus/meta.db`,
+/// creates a connection pool, and runs migrations on one connection.
+fn open_db(core_path: &Path) -> Result<crate::db::DbPool, NoctoError> {
+    let pool = create_pool(core_path)?;
+
+    // Run migrations on a connection from the pool.
+    let conn = pool.get().map_err(|e| NoctoError::Unexpected {
+        detail: format!("Failed to get connection from pool: {e}"),
+    })?;
+    run_all_migrations(&conn)?;
+
+    Ok(pool)
 }
 
 /// Upserts a core entry in the registry (updates name/last_opened if the id
@@ -85,6 +89,52 @@ fn upsert_registry_entry(entry: CoreEntry) -> Result<(), NoctoError> {
     Ok(())
 }
 
+/// Start the file watcher and spawn a background task that processes
+/// debounced file changes through the incremental indexer, emitting
+/// Tauri events to the frontend for each change.
+///
+/// Returns a `oneshot::Sender` that can be used to shut down the watcher.
+fn start_watcher(
+    core_path: &Path,
+    pool: DbPool,
+    app_handle: tauri::AppHandle,
+) -> Result<tokio::sync::oneshot::Sender<()>, NoctoError> {
+    let watcher = DebouncedWatcher::start(core_path)?;
+    let (shutdown_tx, mut shutdown_rx) = tokio::sync::oneshot::channel::<()>();
+
+    let watch_path = core_path.to_path_buf();
+
+    tokio::spawn(async move {
+        loop {
+            tokio::select! {
+                _ = &mut shutdown_rx => {
+                    watcher.stop();
+                    tracing::debug!("watcher task shutting down");
+                    break;
+                }
+                _ = tokio::time::sleep(std::time::Duration::from_millis(50)) => {
+                    if let Ok(batch) = watcher.receiver().try_recv() {
+                        if let Ok(conn) = pool.get() {
+                            match incremental::process_changes(&conn, &watch_path, &batch) {
+                                Ok(events) => {
+                                    for event in events {
+                                        let _ = app_handle.emit("file-event", &event);
+                                    }
+                                }
+                                Err(e) => {
+                                    tracing::error!("incremental indexer error: {e}");
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    Ok(shutdown_tx)
+}
+
 // ---------------------------------------------------------------------------
 // Tauri commands
 // ---------------------------------------------------------------------------
@@ -97,7 +147,7 @@ fn upsert_registry_entry(entry: CoreEntry) -> Result<(), NoctoError> {
 /// 4. Opens SQLite DB with migrations
 /// 5. Registers in `cores.json`
 #[tauri::command]
-pub async fn core_create(path: String, name: String, state: State<'_, AppState>) -> CmdResult<CoreInfo> {
+pub async fn core_create(path: String, name: String, app: tauri::AppHandle, state: State<'_, AppState>) -> CmdResult<CoreInfo> {
     let core_path = PathBuf::from(&path);
 
     if !core_path.is_dir() {
@@ -114,7 +164,7 @@ pub async fn core_create(path: String, name: String, state: State<'_, AppState>)
 
     ensure_noctodeus_dir(&core_path)?;
     let manifest = create_manifest(&core_path, &name)?;
-    let conn = open_db(&core_path)?;
+    let pool = open_db(&core_path)?;
 
     let now = Utc::now().to_rfc3339();
 
@@ -126,10 +176,19 @@ pub async fn core_create(path: String, name: String, state: State<'_, AppState>)
         last_opened: Some(now.clone()),
     };
 
+    // Start file watcher for incremental indexing
+    let watcher_shutdown = start_watcher(&core_path, pool.clone(), app)
+        .map(Some)
+        .unwrap_or_else(|e| {
+            tracing::warn!("failed to start file watcher: {e}");
+            None
+        });
+
     let active = ActiveCore {
         info: info.clone(),
-        db: Arc::new(Mutex::new(conn)),
+        db: pool,
         core_path: core_path.clone(),
+        watcher_shutdown,
     };
 
     {
@@ -155,7 +214,7 @@ pub async fn core_create(path: String, name: String, state: State<'_, AppState>)
 /// 4. Stores as active core in AppState
 /// 5. Updates registry last_opened
 #[tauri::command]
-pub async fn core_open(path: String, state: State<'_, AppState>) -> CmdResult<CoreInfo> {
+pub async fn core_open(path: String, app: tauri::AppHandle, state: State<'_, AppState>) -> CmdResult<CoreInfo> {
     let core_path = PathBuf::from(&path);
 
     if !core_path.is_dir() {
@@ -168,7 +227,7 @@ pub async fn core_open(path: String, state: State<'_, AppState>) -> CmdResult<Co
     }
 
     let manifest = load_manifest(&core_path)?;
-    let conn = open_db(&core_path)?;
+    let pool = open_db(&core_path)?;
     let now = Utc::now().to_rfc3339();
 
     let info = CoreInfo {
@@ -179,10 +238,19 @@ pub async fn core_open(path: String, state: State<'_, AppState>) -> CmdResult<Co
         last_opened: Some(now.clone()),
     };
 
+    // Start file watcher for incremental indexing
+    let watcher_shutdown = start_watcher(&core_path, pool.clone(), app)
+        .map(Some)
+        .unwrap_or_else(|e| {
+            tracing::warn!("failed to start file watcher: {e}");
+            None
+        });
+
     let active = ActiveCore {
         info: info.clone(),
-        db: Arc::new(Mutex::new(conn)),
+        db: pool,
         core_path: core_path.clone(),
+        watcher_shutdown,
     };
 
     {
@@ -200,12 +268,17 @@ pub async fn core_open(path: String, state: State<'_, AppState>) -> CmdResult<Co
     Ok(info)
 }
 
-/// Close the currently-active Core, releasing its DB connection and resources.
+/// Close the currently-active Core, stopping the watcher and releasing resources.
 #[tauri::command]
 pub async fn core_close(state: State<'_, AppState>) -> CmdResult<()> {
     let mut lock = state.active_core.write().await;
-    // Dropping the ActiveCore closes the rusqlite Connection.
-    *lock = None;
+    if let Some(mut active) = lock.take() {
+        // Stop the file watcher before dropping.
+        if let Some(tx) = active.watcher_shutdown.take() {
+            let _ = tx.send(());
+        }
+        tracing::info!("core closed, watcher stopped");
+    }
     Ok(())
 }
 
@@ -220,8 +293,8 @@ pub async fn core_scan(state: State<'_, AppState>) -> CmdResult<Vec<FileInfo>> {
 
     let files = scanner::scan_directory(&active.core_path)?;
 
-    let conn = active.db.lock().map_err(|e| NoctoError::Unexpected {
-        detail: format!("DB lock poisoned: {e}"),
+    let conn = active.db.get().map_err(|e| NoctoError::Unexpected {
+        detail: format!("Failed to get DB connection: {e}"),
     })?;
 
     // Clear and rebuild the file index
@@ -232,6 +305,39 @@ pub async fn core_scan(state: State<'_, AppState>) -> CmdResult<Vec<FileInfo>> {
 
     // Rebuild FTS from markdown files
     fts::rebuild_fts(&conn, &active.core_path)?;
+
+    // Rebuild links table from markdown files
+    links::clear_links(&conn)?;
+    let file_names: Vec<(&str, String)> = files
+        .iter()
+        .filter(|f| !f.is_directory)
+        .filter(|f| {
+            matches!(
+                f.extension.as_deref(),
+                Some("md") | Some("markdown") | Some("mdx")
+            )
+        })
+        .map(|f| {
+            let name_no_ext = f
+                .name
+                .rsplit_once('.')
+                .map(|(stem, _)| stem.to_string())
+                .unwrap_or_else(|| f.name.clone());
+            (f.path.as_str(), name_no_ext)
+        })
+        .collect();
+
+    let lookup: Vec<(&str, &str)> = file_names
+        .iter()
+        .map(|(path, name)| (*path, name.as_str()))
+        .collect();
+
+    for (path, _) in &file_names {
+        let abs_path = active.core_path.join(path);
+        if let Ok(content) = std::fs::read_to_string(&abs_path) {
+            links::replace_links_for_source(&conn, path, &content, &lookup)?;
+        }
+    }
 
     Ok(files)
 }

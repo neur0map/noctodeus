@@ -276,7 +276,7 @@
     const fileTree = await scanCore();
     files.setFiles(fileTree);
     await refreshHomeLists();
-    graphState.scan(files.fileMap, readFile);
+    graphState.scan(files.fileMap);
   }
 
   // --- Note creation ---

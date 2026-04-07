@@ -1,4 +1,5 @@
 import type { FileNode } from '../types/core';
+import { graphLinks, graphStats as fetchGraphStats } from '../bridge/commands';
 
 export interface GraphStats {
   totalLinks: number;
@@ -24,9 +25,7 @@ export interface GraphEdge {
   target: string;
 }
 
-const WIKI_LINK_RE = /\[\[([^\]]+)\]\]/g;
-
-let graphStats = $state<GraphStats>({
+let graphStatsState = $state<GraphStats>({
   totalLinks: 0,
   avgLinksPerNote: 0,
   mostConnected: [],
@@ -40,83 +39,69 @@ let scanning = $state(false);
 
 export function getGraphState() {
   return {
-    get stats() { return graphStats; },
+    get stats() { return graphStatsState; },
     get nodes() { return graphNodes; },
     get edges() { return graphEdges; },
     get scanning() { return scanning; },
 
-    async scan(files: Map<string, FileNode>, readFile: (path: string) => Promise<{ content: string }>) {
+    async scan(files: Map<string, FileNode>) {
       scanning = true;
 
-      const linkCounts = new Map<string, number>();
-      const edges: GraphEdge[] = [];
       const noteFiles = Array.from(files.values()).filter(f => !f.is_directory && (f.extension === 'md' || f.extension === 'markdown'));
+      const pathSet = new Set(noteFiles.map(f => f.path));
 
-      for (const f of noteFiles) {
-        linkCounts.set(f.path, 0);
-      }
+      try {
+        const [backendLinks, backendStats] = await Promise.all([
+          graphLinks(),
+          fetchGraphStats(),
+        ]);
 
-      let totalLinks = 0;
+        // Build edges from backend data, filtering to files that exist in the current tree.
+        const edges: GraphEdge[] = backendLinks
+          .filter(link => pathSet.has(link.sourcePath) && pathSet.has(link.targetPath))
+          .map(link => ({ source: link.sourcePath, target: link.targetPath }));
 
-      for (const f of noteFiles) {
-        try {
-          const { content } = await readFile(f.path);
-          const matches = content.matchAll(WIKI_LINK_RE);
-          let outbound = 0;
-          for (const match of matches) {
-            outbound++;
-            const target = match[1].split('|')[0].trim();
-            const targetFile = noteFiles.find(n => {
-              const nameNoExt = n.name.replace(/\.(md|markdown)$/i, '');
-              return nameNoExt === target;
-            });
-            if (targetFile) {
-              linkCounts.set(targetFile.path, (linkCounts.get(targetFile.path) ?? 0) + 1);
-              edges.push({ source: f.path, target: targetFile.path });
-            }
-          }
-          linkCounts.set(f.path, (linkCounts.get(f.path) ?? 0) + outbound);
-          totalLinks += outbound;
-        } catch {
-          // Skip unreadable files
+        // Compute per-node link counts from edges (needed for node sizing in graph view).
+        const linkCounts = new Map<string, number>();
+        for (const edge of edges) {
+          linkCounts.set(edge.source, (linkCounts.get(edge.source) ?? 0) + 1);
+          linkCounts.set(edge.target, (linkCounts.get(edge.target) ?? 0) + 1);
         }
+
+        graphStatsState = {
+          totalLinks: backendStats.totalLinks,
+          avgLinksPerNote: Math.round(backendStats.avgLinksPerNote * 10) / 10,
+          mostConnected: backendStats.mostConnected.map(n => ({
+            path: n.path,
+            title: n.title ?? '',
+            count: n.count,
+          })),
+          orphanCount: backendStats.orphanCount,
+          orphanPaths: backendStats.orphanPaths,
+        };
+
+        // Build graph nodes with random initial positions
+        graphNodes = noteFiles.map((f) => ({
+          id: f.path,
+          path: f.path,
+          title: f.title || f.name.replace(/\.(md|markdown)$/i, ''),
+          x: Math.random() * 600 - 300,
+          y: Math.random() * 400 - 200,
+          vx: 0,
+          vy: 0,
+          linkCount: linkCounts.get(f.path) ?? 0,
+        }));
+
+        graphEdges = edges;
+      } catch {
+        // If backend queries fail, reset to empty state
       }
 
-      const sorted = Array.from(linkCounts.entries())
-        .map(([path, count]) => {
-          const file = files.get(path);
-          return { path, title: file?.title || file?.name || path, count };
-        })
-        .sort((a, b) => b.count - a.count);
-
-      const orphans = sorted.filter(n => n.count === 0);
-
-      graphStats = {
-        totalLinks,
-        avgLinksPerNote: noteFiles.length > 0 ? Math.round((totalLinks / noteFiles.length) * 10) / 10 : 0,
-        mostConnected: sorted.slice(0, 5),
-        orphanCount: orphans.length,
-        orphanPaths: orphans.map(o => o.path),
-      };
-
-      // Build graph nodes with random initial positions
-      graphNodes = noteFiles.map((f) => ({
-        id: f.path,
-        path: f.path,
-        title: f.title || f.name.replace(/\.(md|markdown)$/i, ''),
-        x: Math.random() * 600 - 300,
-        y: Math.random() * 400 - 200,
-        vx: 0,
-        vy: 0,
-        linkCount: linkCounts.get(f.path) ?? 0,
-      }));
-
-      graphEdges = edges;
       scanning = false;
     },
 
     reset() {
-      graphStats = {
+      graphStatsState = {
         totalLinks: 0,
         avgLinksPerNote: 0,
         mostConnected: [],

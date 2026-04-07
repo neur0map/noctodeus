@@ -157,3 +157,38 @@ export async function logClear(): Promise<void> {
   return invoke("log_clear");
 }
 
+// ---------------------------------------------------------------------------
+// Graph commands
+// ---------------------------------------------------------------------------
+
+export interface Link {
+  sourcePath: string;
+  targetPath: string;
+}
+
+export interface ConnectedNote {
+  path: string;
+  title: string | null;
+  count: number;
+}
+
+export interface LinkStats {
+  totalLinks: number;
+  avgLinksPerNote: number;
+  mostConnected: ConnectedNote[];
+  orphanCount: number;
+  orphanPaths: string[];
+}
+
+export async function graphLinks(): Promise<Link[]> {
+  return invoke<Link[]>("graph_links");
+}
+
+export async function graphStats(): Promise<LinkStats> {
+  return invoke<LinkStats>("graph_stats");
+}
+
+export async function graphBacklinks(path: string): Promise<Link[]> {
+  return invoke<Link[]>("graph_backlinks", { path });
+}
+

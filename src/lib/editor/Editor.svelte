@@ -267,7 +267,7 @@
       editorState.markSaved(hash);
       // Re-scan graph if content has wiki-links
       if (markdown.includes('[[')) {
-        graphState.scan(filesState.fileMap, readFile);
+        graphState.scan(filesState.fileMap);
       }
     } catch (err) {
       logger.error(`Failed to save ${path}: ${err}`);

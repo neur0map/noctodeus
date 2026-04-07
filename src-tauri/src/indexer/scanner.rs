@@ -326,11 +326,7 @@ fn compute_hash(path: &Path) -> Option<String> {
     Some(hex::encode(hash))
 }
 
-/// Check if a file name indicates a markdown file.
-fn is_markdown(name: &str) -> bool {
-    let lower = name.to_lowercase();
-    lower.ends_with(".md") || lower.ends_with(".markdown") || lower.ends_with(".mdx")
-}
+use crate::indexer::util::is_markdown;
 
 /// Filter predicate for `WalkDir`: skip `.noctodeus/` directories.
 fn is_noctodeus_dir(entry: &walkdir::DirEntry) -> bool {

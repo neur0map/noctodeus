@@ -1,9 +1,10 @@
 use std::path::PathBuf;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
-use rusqlite::Connection;
 use serde::Serialize;
-use tokio::sync::RwLock;
+use tokio::sync::{oneshot, RwLock};
+
+use crate::db::DbPool;
 
 /// Serializable snapshot of a Core's identity, sent to the frontend.
 #[derive(Debug, Clone, Serialize)]
@@ -15,14 +16,16 @@ pub struct CoreInfo {
     pub last_opened: Option<String>,
 }
 
-/// The currently-open Core with its SQLite connection and filesystem root.
+/// The currently-open Core with its SQLite connection pool and filesystem root.
 pub struct ActiveCore {
     pub info: CoreInfo,
-    pub db: Arc<Mutex<Connection>>,
+    pub db: DbPool,
     pub core_path: PathBuf,
+    /// Sends a shutdown signal to the watcher task.
+    pub watcher_shutdown: Option<oneshot::Sender<()>>,
 }
 
-// ActiveCore is not Clone (contains a Connection), but Debug is handy for logs.
+// ActiveCore is not Clone (contains a pool), but Debug is handy for logs.
 impl std::fmt::Debug for ActiveCore {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("ActiveCore")

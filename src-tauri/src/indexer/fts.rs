@@ -83,13 +83,13 @@ pub fn remove_fts_entry(conn: &Connection, path: &str) -> Result<(), NoctoError>
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::db::schema::run_migrations;
+    use crate::db::migrations::run_all_migrations;
     use rusqlite::Connection;
     use std::fs;
 
     fn setup_db() -> Connection {
         let conn = Connection::open_in_memory().unwrap();
-        run_migrations(&conn).unwrap();
+        run_all_migrations(&conn).unwrap();
         conn
     }
 
