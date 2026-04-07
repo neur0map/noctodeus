@@ -24,9 +24,14 @@
   }
 
   $effect(() => {
-    document.addEventListener('mousedown', handleClickOutside);
+    // Delay listener by one frame so the originating click doesn't
+    // immediately trigger click-outside and close the picker
+    const raf = requestAnimationFrame(() => {
+      document.addEventListener('mousedown', handleClickOutside);
+    });
     document.addEventListener('keydown', handleKeydown);
     return () => {
+      cancelAnimationFrame(raf);
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('keydown', handleKeydown);
     };

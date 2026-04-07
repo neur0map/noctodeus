@@ -57,8 +57,13 @@
 
   $effect(() => {
     if (dropdownTabId) {
-      document.addEventListener('mousedown', handleDropdownClickOutside);
-      return () => document.removeEventListener('mousedown', handleDropdownClickOutside);
+      const raf = requestAnimationFrame(() => {
+        document.addEventListener('mousedown', handleDropdownClickOutside);
+      });
+      return () => {
+        cancelAnimationFrame(raf);
+        document.removeEventListener('mousedown', handleDropdownClickOutside);
+      };
     }
   });
 </script>
