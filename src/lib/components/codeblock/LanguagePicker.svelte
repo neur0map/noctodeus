@@ -22,7 +22,8 @@
   {#each SUPPORTED_LANGUAGES as lang}
     <button
       class="lang-picker__item"
-      onclick={() => { onselect(lang.id); onclose(); }}
+      onclick={(e) => { e.preventDefault(); e.stopPropagation(); onselect(lang.id); onclose(); }}
+      onmousedown={(e) => { e.preventDefault(); e.stopPropagation(); }}
     >
       <span class="lang-picker__label">{lang.label}</span>
       <span class="lang-picker__ext">{lang.ext}</span>
@@ -34,8 +35,9 @@
   .lang-picker {
     position: absolute;
     top: 100%;
-    left: 0;
-    z-index: 20;
+    left: auto;
+    right: 0;
+    z-index: 100;
     display: flex;
     flex-direction: column;
     min-width: 140px;

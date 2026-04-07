@@ -15,8 +15,13 @@ export const SUPPORTED_LANGUAGES: { id: SupportedLanguage; label: string; ext: s
 ];
 
 export function defaultTabName(lang: SupportedLanguage): string {
-  const l = SUPPORTED_LANGUAGES.find((x) => x.id === lang);
-  return `untitled${l?.ext ?? '.txt'}`;
+  switch (lang) {
+    case 'python': return 'main.py';
+    case 'html': return 'index.html';
+    case 'css': return 'style.css';
+    case 'js': return 'app.js';
+    default: return `untitled.${lang}`;
+  }
 }
 
 export function generateId(): string {

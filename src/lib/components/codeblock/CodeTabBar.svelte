@@ -78,7 +78,8 @@
           {#if tabs.length > 1}
             <button
               class="tab-bar__close"
-              onclick={(e) => { e.stopPropagation(); onremove(tab.id); }}
+              onclick={(e) => { e.preventDefault(); e.stopPropagation(); onremove(tab.id); }}
+              onmousedown={(e) => { e.preventDefault(); e.stopPropagation(); }}
               title="Close tab"
             >&times;</button>
           {/if}
@@ -87,7 +88,8 @@
         <div class="tab-dropdown" style="position: relative;">
           <button
             class="tab-bar__menu-btn"
-            onclick={(e) => { e.stopPropagation(); dropdownTabId = dropdownTabId === tab.id ? null : tab.id; }}
+            onclick={(e) => { e.preventDefault(); e.stopPropagation(); dropdownTabId = dropdownTabId === tab.id ? null : tab.id; }}
+            onmousedown={(e) => { e.preventDefault(); e.stopPropagation(); }}
             title="Tab options"
           >
             ▾
@@ -95,7 +97,7 @@
 
           {#if dropdownTabId === tab.id}
             <div class="tab-dropdown__menu">
-              <button class="tab-dropdown__item" onclick={() => startRename(tab.id, tab.name)}>
+              <button class="tab-dropdown__item" onclick={(e) => { e.preventDefault(); e.stopPropagation(); startRename(tab.id, tab.name); }} onmousedown={(e) => { e.preventDefault(); e.stopPropagation(); }}>
                 Rename
               </button>
               <div class="tab-dropdown__sub">
@@ -104,14 +106,15 @@
                   <button
                     class="tab-dropdown__item"
                     class:tab-dropdown__item--active={tab.language === lang.id}
-                    onclick={() => { onchangelang(tab.id, lang.id); dropdownTabId = null; }}
+                    onclick={(e) => { e.preventDefault(); e.stopPropagation(); onchangelang(tab.id, lang.id); dropdownTabId = null; }}
+                    onmousedown={(e) => { e.preventDefault(); e.stopPropagation(); }}
                   >
                     {lang.label}
                   </button>
                 {/each}
               </div>
               {#if tabs.length > 1}
-                <button class="tab-dropdown__item tab-dropdown__item--danger" onclick={() => { onremove(tab.id); dropdownTabId = null; }}>
+                <button class="tab-dropdown__item tab-dropdown__item--danger" onclick={(e) => { e.preventDefault(); e.stopPropagation(); onremove(tab.id); dropdownTabId = null; }} onmousedown={(e) => { e.preventDefault(); e.stopPropagation(); }}>
                   Delete
                 </button>
               {/if}
@@ -123,7 +126,7 @@
   </div>
 
   <div class="tab-bar__add" style="position: relative;">
-    <button class="tab-bar__add-btn" onclick={() => showAddPicker = !showAddPicker} title="Add tab">
+    <button class="tab-bar__add-btn" onclick={(e) => { e.preventDefault(); e.stopPropagation(); showAddPicker = !showAddPicker; }} onmousedown={(e) => { e.preventDefault(); e.stopPropagation(); }} title="Add tab">
       +
     </button>
     {#if showAddPicker}
@@ -140,7 +143,7 @@
     display: flex;
     align-items: center;
     gap: 2px;
-    overflow-x: auto;
+    overflow: visible;
     min-width: 0;
   }
 
@@ -149,7 +152,7 @@
     align-items: center;
     gap: 1px;
     min-width: 0;
-    overflow-x: auto;
+    overflow: visible;
   }
 
   .tab-bar__tab {
@@ -233,7 +236,7 @@
     position: absolute;
     top: 100%;
     right: 0;
-    z-index: 20;
+    z-index: 100;
     display: flex;
     flex-direction: column;
     min-width: 130px;

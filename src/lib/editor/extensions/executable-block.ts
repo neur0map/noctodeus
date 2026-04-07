@@ -69,18 +69,25 @@ export const ExecutableBlockNode = Node.create({
       let latestTabs: CodeTab[] = initialTabs;
 
       function syncToProseMirror() {
-        const pos = typeof getPos === 'function' ? getPos() : null;
-        if (pos !== null && pos !== undefined) {
+        try {
+          const pos = typeof getPos === 'function' ? getPos() : null;
+          if (pos === null || pos === undefined) return;
+          // Validate the node at this position is still our node
+          const nodeAtPos = editor.state.doc.nodeAt(pos);
+          if (!nodeAtPos || nodeAtPos.type.name !== 'executableBlock') return;
+
           editor
             .chain()
             .command(({ tr }) => {
               tr.setNodeMarkup(pos, undefined, {
-                ...node.attrs,
+                ...nodeAtPos.attrs,
                 tabs: JSON.stringify(latestTabs),
               });
               return true;
             })
             .run();
+        } catch {
+          // Position is stale — skip this sync, next one will retry
         }
       }
 
@@ -93,6 +100,17 @@ export const ExecutableBlockNode = Node.create({
             // Debounce: only sync to ProseMirror after 1.5s of inactivity
             if (syncTimer) clearTimeout(syncTimer);
             syncTimer = setTimeout(syncToProseMirror, 1500);
+          },
+          ondelete: () => {
+            try {
+              const pos = typeof getPos === 'function' ? getPos() : null;
+              if (pos === null || pos === undefined) return;
+              const nodeAtPos = editor.state.doc.nodeAt(pos);
+              if (!nodeAtPos || nodeAtPos.type.name !== 'executableBlock') return;
+              editor.chain().deleteRange({ from: pos, to: pos + nodeAtPos.nodeSize }).run();
+            } catch {
+              // Position stale — ignore
+            }
           },
         },
       });
@@ -124,12 +142,17 @@ export const ExecutableBlockNode = Node.create({
     return {
       insertExecutableBlock:
         (attrs?: { tabs?: CodeTab[] }) =>
-        ({ commands }: { commands: any }) => {
+        ({ commands, editor: cmdEditor }: { commands: any; editor: any }) => {
           const tabs = attrs?.tabs ?? [];
-          return commands.insertContent({
+          const result = commands.insertContent({
             type: 'executableBlock',
             attrs: { tabs: JSON.stringify(tabs) },
           });
+          // Deselect after insert to prevent bubble toolbar from appearing
+          requestAnimationFrame(() => {
+            cmdEditor.commands.blur();
+          });
+          return result;
         },
     } as any;
   },

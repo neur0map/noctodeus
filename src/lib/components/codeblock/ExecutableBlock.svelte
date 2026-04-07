@@ -4,6 +4,7 @@
   import { generateId, defaultTabName } from './types';
   import { kernelStart, kernelExecute, kernelRestart } from '$lib/bridge/commands';
   import { getFilesState } from '$lib/stores/files.svelte';
+  import { ask } from '@tauri-apps/plugin-dialog';
   import CodeTabBar from './CodeTabBar.svelte';
   import CodeEditor from './CodeEditor.svelte';
   import OutputDrawer from './OutputDrawer.svelte';
@@ -14,9 +15,11 @@
   let {
     initialTabs = [],
     onupdate,
+    ondelete,
   }: {
     initialTabs?: CodeTab[];
     onupdate?: (tabs: CodeTab[]) => void;
+    ondelete?: () => void;
   } = $props();
 
   const files = getFilesState();
@@ -72,32 +75,39 @@
     onupdate?.(tabs);
   }
 
+  /** Guard against double-invocation (click + Cmd+Enter firing simultaneously). */
+  let runLock = false;
+
   async function run() {
-    if (status === 'running') return;
+    if (status === 'running' || runLock) return;
+    runLock = true;
 
-    // First-run security warning
-    if (!localStorage.getItem(EXEC_WARNING_KEY)) {
-      const accepted = confirm(
-        'Code blocks execute with full system access \u2014 file system, network, everything.\n\n' +
-        'Only run code you trust.\n\n' +
-        'Continue?'
-      );
-      if (!accepted) return;
-      localStorage.setItem(EXEC_WARNING_KEY, 'true');
-    }
+    try {
+      // First-run security warning (async Tauri native dialog)
+      if (!localStorage.getItem(EXEC_WARNING_KEY)) {
+        const accepted = await ask(
+          'Code blocks execute with full system access — file system, network, everything.\n\nOnly run code you trust.',
+          { title: 'Noctodeus', kind: 'warning', okLabel: 'I understand', cancelLabel: 'Cancel' },
+        );
+        if (!accepted) return;
+        localStorage.setItem(EXEC_WARNING_KEY, 'true');
+      }
 
-    status = 'running';
-    kernelError = null;
-    executionCount++;
-    drawerOpen = true;
+      status = 'running';
+      kernelError = null;
+      executionCount++;
+      drawerOpen = true;
 
-    const hasPython = tabs.some((t) => t.language === 'python');
-    const hasWeb = tabs.some((t) => ['html', 'css', 'js'].includes(t.language));
+      const hasPython = tabs.some((t) => t.language === 'python');
+      const hasWeb = tabs.some((t) => ['html', 'css', 'js'].includes(t.language));
 
-    if (hasPython) {
-      await runPython();
-    } else if (hasWeb) {
-      runWeb();
+      if (hasPython) {
+        await runPython();
+      } else if (hasWeb) {
+        runWeb();
+      }
+    } finally {
+      runLock = false;
     }
   }
 
@@ -257,6 +267,14 @@
         {#if executionCount > 0}
           <span class="exec-block__counter">[{executionCount}]</span>
         {/if}
+        {#if ondelete}
+          <button
+            class="exec-block__delete"
+            onclick={(e) => { e.preventDefault(); e.stopPropagation(); ondelete(); }}
+            onmousedown={(e) => { e.preventDefault(); e.stopPropagation(); }}
+            title="Delete block"
+          >&times;</button>
+        {/if}
       </div>
     </div>
 
@@ -321,7 +339,7 @@
     border-radius: 12px 12px 0 0;
     overflow: visible;
     position: relative;
-    z-index: 10;
+    z-index: 50;
   }
 
   .exec-block__actions {
@@ -387,6 +405,31 @@
     font-family: var(--font-mono);
     font-size: 10px;
     color: var(--text-faint, #3b4261);
+  }
+
+  .exec-block__delete {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border: none;
+    border-radius: 4px;
+    background: none;
+    color: var(--text-faint, #3b4261);
+    font-size: 14px;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 150ms, color 150ms, background 150ms;
+  }
+
+  .exec-block:hover .exec-block__delete {
+    opacity: 1;
+  }
+
+  .exec-block__delete:hover {
+    color: var(--accent-red, #F7768E);
+    background: rgba(247, 118, 142, 0.08);
   }
 
   .exec-block__init {
