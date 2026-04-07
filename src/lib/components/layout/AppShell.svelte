@@ -55,6 +55,7 @@
     overflow: hidden;
     border-right: 1px solid var(--border-subtle, var(--color-border));
     background: var(--surface-1, var(--color-card));
+    border-radius: 12px 0 0 12px;
     transition: width 150ms var(--ease-expo-out);
   }
 
