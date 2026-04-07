@@ -5,14 +5,9 @@
 <h1 align="center">Noctodeus</h1>
 
 <p align="center">
-  A local-first note-taking app for people who think in connections.
-</p>
-
-<p align="center">
   <a href="https://github.com/neur0map/noctodeus/releases/latest">Download</a> &middot;
-  <a href="#features">Features</a> &middot;
-  <a href="#getting-started">Getting Started</a> &middot;
-  <a href="#keyboard-shortcuts">Shortcuts</a> &middot;
+  <a href="#what-it-does">What It Does</a> &middot;
+  <a href="#shortcuts">Shortcuts</a> &middot;
   <a href="https://github.com/neur0map/noctodeus/issues">Feedback</a>
 </p>
 
@@ -20,44 +15,43 @@
   <img src="https://img.shields.io/github/license/neur0map/noctodeus?color=%23c0a0f0&style=for-the-badge" alt="License" />
   <img src="https://img.shields.io/github/v/release/neur0map/noctodeus?color=%23c0a0f0&style=for-the-badge" alt="Release" />
   <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-blue?style=for-the-badge" alt="Platform" />
-  <img src="https://img.shields.io/github/stars/neur0map/noctodeus?style=for-the-badge" alt="Stars" />
 </p>
 
 <br />
 
 <p align="center">
-  <img src="static/noctodeus-1.png" alt="Noctodeus Editor" width="800" />
+  <img src="static/noctodeus-1.png" alt="Noctodeus" width="800" />
 </p>
 
 ---
 
-## Why Noctodeus
+## The Honest Pitch
 
-Your notes live on your machine as plain markdown files. No cloud accounts. No subscriptions. No vendor lock-in. You own everything you write.
+You probably already use Obsidian, Logseq, or Notion. They work. They have teams, funding, and years of polish behind them.
 
-Noctodeus treats your notes as a connected network, not a folder hierarchy. Link ideas together with wiki-links, watch patterns emerge in the graph view, and find anything instantly with full-text search. When you're ready, sync to a private GitHub repo — your data never touches a server you don't control.
+Noctodeus doesn't have any of that. It's one person building the note app they actually want to use.
 
-Built with Rust, Svelte 5, and Tauri 2 for a native desktop experience that feels fast and stays fast.
+Here's what's different: **the entire thing is one binary.** No Electron. No hidden browser eating 400MB of RAM. Tauri 2 + Rust backend, Svelte 5 frontend. It starts in under a second, uses ~80MB of memory, and your notes never leave your machine unless you explicitly sync them to your own GitHub repo.
+
+If you care about owning your tools — not just your data, but the actual software — this might be worth 5 minutes of your time.
 
 ---
 
-## Features
+## What It Does
 
-**Editor** — Rich markdown editing with slash commands, tables, task lists, code blocks with syntax highlighting for 30+ languages, images, video, audio, and embeds. Everything saves as clean `.md` files.
+**Write in markdown** with a proper editor. Slash commands, tables, task lists, code blocks with syntax highlighting, drag-and-drop images. No mode switching — it's WYSIWYG that saves as clean `.md` files.
 
-**Wiki-links & Graph** — Type `[[` to link notes. See backlinks in the side panel. Open the graph view to visualize your entire knowledge network — larger nodes have more connections.
+**Link notes with `[[wiki-links]]`.** Backlinks show up in the side panel. The graph view renders your connections — it's not something you build, it just emerges as you write.
 
-**Full-text Search** — SQLite FTS5 with Porter stemming. Search across titles and content. Results show highlighted snippets. Press one shortcut and start typing.
+**Search everything.** Full-text search powered by SQLite FTS5 with stemming. "Writing" finds "write" and "written." Results show highlighted snippets.
 
-**Daily Notes** — Click any date in the sidebar calendar to create or open a journal entry. Templated with frontmatter, tasks section, and notes section.
+**Journal with daily notes.** Click a date in the sidebar calendar. A templated note appears. That's it — no setup, no plugins.
 
-**GitHub Sync** — Push and pull your notes to a private GitHub repo. One button. Automatic three-way merge. Conflicts fork into separate files — nothing is ever lost.
+**Sync to GitHub.** One button. Pull, merge, push. If two devices edit the same file, both versions are kept. No merge conflicts in your notes, ever.
 
-**15+ Themes** — Dark, light, and warm palettes. Each theme is crafted with consistent color tokens across every UI element. Switch instantly from settings.
+**15+ themes.** Dark, light, warm. Every theme is hand-tuned across the entire UI — not just syntax colors on top of a white background.
 
-**Customizable** — Rebind any keyboard shortcut. Override fonts. Inject custom CSS. Adjust editor width, font size, and more.
-
-**Multiple Cores** — Keep personal notes, work projects, and research in separate vaults. Switch between them from the sidebar.
+**Runs on macOS, Windows, and Linux.** Same app, native on each platform. Shortcuts adapt automatically (Cmd on Mac, Ctrl elsewhere).
 
 <p align="center">
   <img src="static/noctodeus-2.png" alt="Graph View" width="800" />
@@ -67,86 +61,54 @@ Built with Rust, Svelte 5, and Tauri 2 for a native desktop experience that feel
 
 ## Download
 
-Get the latest release for your platform:
-
-| Platform | Architecture | Download |
-|----------|-------------|----------|
-| macOS | Apple Silicon (M1+) | [`.dmg`](https://github.com/neur0map/noctodeus/releases/latest) |
+| Platform | Arch | |
+|----------|------|-|
+| macOS | Apple Silicon | [`.dmg`](https://github.com/neur0map/noctodeus/releases/latest) |
 | macOS | Intel | [`.dmg`](https://github.com/neur0map/noctodeus/releases/latest) |
 | Windows | x64 | [`.exe`](https://github.com/neur0map/noctodeus/releases/latest) |
 | Linux | x64 | [`.AppImage`](https://github.com/neur0map/noctodeus/releases/latest) / [`.deb`](https://github.com/neur0map/noctodeus/releases/latest) |
 
-Or build from source — see [Development](#development) below.
-
 ---
 
-## Getting Started
+## Shortcuts
 
-1. **Create a core** — Pick an empty folder (or an existing folder with markdown files). This becomes your vault.
-2. **Start writing** — New cores include a welcome guide that walks through every feature.
-3. **Link ideas** — Type `[[` to create wiki-links between notes. The graph grows as you write.
-4. **Set up sync** — Go to Settings > Sync, paste a GitHub PAT and repo URL, and click Connect.
+Rebindable in Settings > Hotkeys.
 
----
-
-## Keyboard Shortcuts
-
-All shortcuts are customizable in Settings > Hotkeys.
-
-| Action | macOS | Windows / Linux |
-|--------|-------|-----------------|
+| | macOS | Windows / Linux |
+|-|-------|-----------------|
 | Quick Open | `Cmd+P` | `Ctrl+P` |
 | Search | `Cmd+K` | `Ctrl+K` |
 | Command Palette | `Cmd+Shift+P` | `Ctrl+Shift+P` |
 | New Note | `Cmd+N` | `Ctrl+N` |
 | Toggle Sidebar | `Cmd+B` | `Ctrl+B` |
-| Toggle Panel | `Cmd+\` | `Ctrl+\` |
 | Find in Note | `Cmd+F` | `Ctrl+F` |
-| Delete File | `Cmd+Backspace` | `Ctrl+Backspace` |
 
 ---
 
-## Tech Stack
+## Built With
 
-| Layer | Technology |
-|-------|-----------|
-| Desktop | [Tauri 2](https://tauri.app) + Rust |
-| Frontend | [SvelteKit](https://kit.svelte.dev) + [Svelte 5](https://svelte.dev) + TypeScript |
-| Editor | [TipTap 3](https://tiptap.dev) + ProseMirror |
-| Database | SQLite (rusqlite) with FTS5 full-text search |
-| Styling | Tailwind CSS v4 + shadcn-svelte |
-| Sync | Git CLI (GitHub) |
+Rust, [Tauri 2](https://tauri.app), [Svelte 5](https://svelte.dev), [TipTap 3](https://tiptap.dev), SQLite + FTS5, Tailwind CSS v4.
 
 ---
 
-## Development
+## Build From Source
 
 ```bash
-# Prerequisites: Node.js 18+, Rust toolchain, git
-# On Linux: sudo apt install libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+# needs: node 18+, rust toolchain, git
+# linux: sudo apt install libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
 
 npm install
 npm run tauri dev
-
-# Tests
-cd src-tauri && cargo test
-npm test
-
-# Type check
-npm run check
-
-# Production build
-npm run tauri build
 ```
 
 ---
 
-## Contributing
+## Status
 
-Issues and pull requests are welcome. If you find a bug or have a feature request, [open an issue](https://github.com/neur0map/noctodeus/issues).
+Early release. Used daily by its author. Rough edges exist. If you find bugs or want something added, [open an issue](https://github.com/neur0map/noctodeus/issues).
 
 ---
 
 ## License
 
-[GNU Affero General Public License v3.0](LICENSE)
+[AGPL-3.0](LICENSE)
