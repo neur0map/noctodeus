@@ -23,35 +23,35 @@
   <img src="static/noctodeus-1.png" alt="Noctodeus" width="800" />
 </p>
 
----
+## Why This Exists
 
-## The Honest Pitch
+You already have Obsidian, Logseq, Notion. They work. They have teams, funding, and years of polish.
 
-You probably already use Obsidian, Logseq, or Notion. They work. They have teams, funding, and years of polish behind them.
+Noctodeus is one person building the note app they actually want to use.
 
-Noctodeus doesn't have any of that. It's one person building the note app they actually want to use.
+The whole thing is one binary. No Electron. No hidden browser eating 400MB of RAM. Tauri 2 with a Rust backend, Svelte 5 frontend. Starts in under a second, sits around 80MB of memory, and your notes stay on your machine unless you push them to your own GitHub repo.
 
-Here's what's different: **the entire thing is one binary.** No Electron. No hidden browser eating 400MB of RAM. Tauri 2 + Rust backend, Svelte 5 frontend. It starts in under a second, uses ~80MB of memory, and your notes never leave your machine unless you explicitly sync them to your own GitHub repo.
-
-If you care about owning your tools — not just your data, but the actual software — this might be worth 5 minutes of your time.
+If you care about owning your tools and not just your data, give it 5 minutes.
 
 ---
 
 ## What It Does
 
-**Write in markdown** with a proper editor. Slash commands, tables, task lists, code blocks with syntax highlighting, drag-and-drop images. No mode switching — it's WYSIWYG that saves as clean `.md` files.
+**Markdown editor** with slash commands, tables, task lists, code blocks with syntax highlighting, drag-and-drop images. WYSIWYG that saves as plain `.md` files. No proprietary format.
 
-**Link notes with `[[wiki-links]]`.** Backlinks show up in the side panel. The graph view renders your connections — it's not something you build, it just emerges as you write.
+**`[[Wiki-links]]`** between notes. Backlinks in the side panel. Graph view that grows as you write.
 
-**Search everything.** Full-text search powered by SQLite FTS5 with stemming. "Writing" finds "write" and "written." Results show highlighted snippets.
+**Full-text search** across every note. SQLite FTS5 with stemming, so "writing" matches "write" and "written." Highlighted snippets in results.
 
-**Journal with daily notes.** Click a date in the sidebar calendar. A templated note appears. That's it — no setup, no plugins.
+**Daily notes.** Click a date in the sidebar calendar. A templated journal entry appears. No plugins, no setup.
 
-**Sync to GitHub.** One button. Pull, merge, push. If two devices edit the same file, both versions are kept. No merge conflicts in your notes, ever.
+**GitHub sync.** One button. Pulls remote changes, merges, pushes. Two devices edit the same file? Both versions kept. No merge conflicts in your notes.
 
-**15+ themes.** Dark, light, warm. Every theme is hand-tuned across the entire UI — not just syntax colors on top of a white background.
+**8 themes** across dark, light, and warm palettes. Each one tuned across the entire UI, not just syntax colors.
 
-**Runs on macOS, Windows, and Linux.** Same app, native on each platform. Shortcuts adapt automatically (Cmd on Mac, Ctrl elsewhere).
+**Customizable shortcuts, fonts, editor width, and custom CSS injection.**
+
+**macOS, Windows, Linux.** Same app. Shortcuts adapt automatically (Cmd on Mac, Ctrl elsewhere).
 
 <p align="center">
   <img src="static/noctodeus-2.png" alt="Graph View" width="800" />
@@ -72,7 +72,7 @@ If you care about owning your tools — not just your data, but the actual softw
 
 ## Shortcuts
 
-Rebindable in Settings > Hotkeys.
+All rebindable in Settings > Hotkeys.
 
 | | macOS | Windows / Linux |
 |-|-------|-----------------|
@@ -105,7 +105,7 @@ npm run tauri dev
 
 ## Status
 
-Early release. Used daily by its author. Rough edges exist. If you find bugs or want something added, [open an issue](https://github.com/neur0map/noctodeus/issues).
+Early release. Used daily by its author. Rough edges exist. [Open an issue](https://github.com/neur0map/noctodeus/issues) if you find bugs or want something added.
 
 ---
 
