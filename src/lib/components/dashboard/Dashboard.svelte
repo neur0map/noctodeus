@@ -1,8 +1,9 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
-  import type { FileNode } from '../../types/core';
-  import type { GraphStats } from '../../stores/graph.svelte';
-  import { presets, stagger, animate } from '../../utils/motion';
+  import type { FileNode } from '$lib/types/core';
+  import type { GraphStats, GraphNode, GraphEdge } from '$lib/stores/graph.svelte';
+  import { presets, stagger, animate } from '$lib/utils/motion';
+  import GraphView from '$lib/components/graph/GraphView.svelte';
 
   let {
     coreName = 'Noctodeus',
@@ -11,6 +12,8 @@
     totalNotes = 0,
     graphStats,
     graphScanning = false,
+    graphNodes = [],
+    graphEdges = [],
     onfileopen,
   }: {
     coreName?: string;
@@ -19,6 +22,8 @@
     totalNotes?: number;
     graphStats: GraphStats;
     graphScanning?: boolean;
+    graphNodes?: GraphNode[];
+    graphEdges?: GraphEdge[];
     onfileopen: (path: string) => void;
   } = $props();
 
@@ -27,174 +32,332 @@
   const timer = setInterval(() => { tick++; }, 15_000);
   onDestroy(() => clearInterval(timer));
 
-  // _tick param forces Svelte to re-evaluate when the clock ticks
+  // Time-of-day greeting
+  function getGreeting(): string {
+    const h = new Date().getHours();
+    if (h >= 5 && h < 12) return 'Good morning';
+    if (h >= 12 && h < 18) return 'Good afternoon';
+    return 'Good evening';
+  }
+
+  // Context-aware subtitle
+  let greetingLine = $derived.by(() => {
+    void tick; // refresh on tick
+    const greeting = getGreeting();
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const todayUnix = todayStart.getTime() / 1000;
+    const changedToday = recentFiles.filter(f => f.modified_at >= todayUnix).length;
+
+    if (changedToday > 0) {
+      return `${greeting} — ${changedToday} note${changedToday === 1 ? '' : 's'} changed today`;
+    }
+    return `${greeting} — ${totalNotes} notes`;
+  });
+
+  // _tick param forces re-evaluation
   function formatRelativeTime(unixSeconds: number, _tick: number): string {
     const now = Date.now() / 1000;
     const diff = now - unixSeconds;
     if (diff < 10) return 'now';
-    if (diff < 60) return `${Math.floor(diff)}s`;
-    if (diff < 3600) return `${Math.floor(diff / 60)}m`;
-    if (diff < 86400) return `${Math.floor(diff / 3600)}h`;
-    if (diff < 604800) return `${Math.floor(diff / 86400)}d`;
-    return `${Math.floor(diff / 604800)}w`;
+    if (diff < 60) return `${Math.floor(diff)}s ago`;
+    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+    if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;
+    return `${Math.floor(diff / 604800)}w ago`;
   }
 
   function displayName(file: FileNode): string {
     return file.title || file.name;
   }
 
-  let dashboardEl: HTMLDivElement | undefined = $state();
-  let animatedEls = new WeakSet<Element>();
+  // Hero card — most recently edited file
+  let heroFile = $derived(recentFiles.length > 0 ? recentFiles[0] : null);
 
-  function animateNewElements(selector: string, delay: number) {
-    if (!dashboardEl) return;
-    requestAnimationFrame(() => {
-      const els = dashboardEl!.querySelectorAll(selector);
-      const newEls = Array.from(els).filter(el => !animatedEls.has(el));
-      if (newEls.length === 0) return;
-      newEls.forEach(el => animatedEls.add(el));
-      presets.staggerIn(newEls, { delay, staggerDelay: 30 });
-    });
-  }
+  // Mini graph — top 10 most connected nodes + their edges
+  let miniNodes = $derived.by(() => {
+    if (graphNodes.length === 0) return [];
+    const sorted = [...graphNodes].sort((a, b) => b.linkCount - a.linkCount);
+    return sorted.slice(0, 10);
+  });
+
+  let miniNodeIds = $derived(new Set(miniNodes.map(n => n.id)));
+
+  let miniEdges = $derived.by(() => {
+    if (miniNodes.length === 0) return [];
+    return graphEdges.filter(e => miniNodeIds.has(e.source) && miniNodeIds.has(e.target));
+  });
+
+  // Two-column data
+  let recentList = $derived(recentFiles.slice(heroFile ? 1 : 0, 6));
+
+  let rightColumnFiles = $derived.by(() => {
+    if (pinnedFiles.length > 0) return { title: 'Pinned', files: pinnedFiles.slice(0, 5) };
+    const connected = graphStats.mostConnected.filter(n => n.count > 0).slice(0, 5);
+    return { title: 'Most Linked', files: connected };
+  });
+
+  // Orphan nudge
+  let orphanCount = $derived(graphStats.orphanCount);
+
+  // --- Animations ---
+  let dashboardEl: HTMLDivElement | undefined = $state();
 
   onMount(() => {
     if (!dashboardEl) return;
-    const title = dashboardEl.querySelector('.dashboard__name');
-    if (title) { animatedEls.add(title); presets.fadeInUp(title, { duration: 400 }); }
 
-    const stats = dashboardEl.querySelectorAll('.stat');
-    if (stats.length) {
-      Array.from(stats).forEach(el => animatedEls.add(el));
-      presets.staggerIn(Array.from(stats), { delay: 100, staggerDelay: 60 });
+    // Greeting
+    const greeting = dashboardEl.querySelector('.ds__greeting');
+    if (greeting) {
+      animate(greeting, {
+        opacity: [0, 1],
+        duration: 400,
+        ease: 'outQuint',
+      });
+    }
+
+    // Hero card
+    const hero = dashboardEl.querySelector('.ds__hero');
+    if (hero) {
+      animate(hero, {
+        opacity: [0, 1],
+        translateY: [20, 0],
+        scale: [0.98, 1],
+        duration: 500,
+        delay: 100,
+        ease: 'outQuint',
+      });
+    }
+
+    // Mini graph
+    const graph = dashboardEl.querySelector('.ds__graph-wrap');
+    if (graph) {
+      animate(graph, {
+        opacity: [0, 1],
+        duration: 500,
+        delay: 200,
+        ease: 'outQuint',
+      });
+    }
+
+    // Stats count-up
+    requestAnimationFrame(() => {
+      if (!dashboardEl) return;
+      const statEls = dashboardEl.querySelectorAll('.ds__stat-value');
+      if (statEls.length) {
+        animate(statEls, {
+          opacity: [0, 1],
+          delay: stagger(60, { start: 350 }),
+          duration: 400,
+          ease: 'outQuint',
+        });
+      }
+    });
+
+    // Two columns stagger
+    const cols = dashboardEl.querySelectorAll('.ds__col');
+    if (cols.length) {
+      animate(cols, {
+        opacity: [0, 1],
+        translateY: [16, 0],
+        delay: stagger(80, { start: 350 }),
+        duration: 500,
+        ease: 'outQuint',
+      });
+    }
+
+    // Orphan nudge
+    const nudge = dashboardEl.querySelector('.ds__orphan');
+    if (nudge) {
+      animate(nudge, {
+        opacity: [0, 1],
+        duration: 400,
+        delay: 500,
+        ease: 'outQuint',
+      });
     }
   });
-
-  // Animate rows as each data source arrives
-  $effect(() => { void graphStats.mostConnected; animateNewElements('.dashboard__row', 50); });
-  $effect(() => { void recentFiles; animateNewElements('.dashboard__row', 50); });
-  $effect(() => { void pinnedFiles; animateNewElements('.dashboard__row', 50); });
 </script>
 
-<div class="dashboard" bind:this={dashboardEl}>
-  <h1 class="dashboard__name">{coreName}</h1>
+<div class="ds" bind:this={dashboardEl}>
+  <!-- 1. Greeting Strip -->
+  <p class="ds__greeting">{greetingLine}</p>
 
-  <div class="dashboard__stats">
-    <div class="stat">
-      <span class="stat__value" class:stat__value--scanning={graphScanning}>
-        {graphScanning ? '--' : graphStats.totalLinks}
-      </span>
-      <span class="stat__label">links</span>
-    </div>
-    <div class="stat">
-      <span class="stat__value" class:stat__value--scanning={graphScanning}>
-        {graphScanning ? '--' : graphStats.avgLinksPerNote}
-      </span>
-      <span class="stat__label">avg / note</span>
-    </div>
-    <div class="stat">
-      <span class="stat__value" class:stat__value--scanning={graphScanning}>
-        {graphScanning ? '--' : graphStats.orphanCount}
-      </span>
-      <span class="stat__label">orphans</span>
-    </div>
-    <div class="stat">
-      <span class="stat__value">{totalNotes}</span>
-      <span class="stat__label">notes</span>
-    </div>
-  </div>
+  <!-- 2. Continue Where You Left Off -->
+  {#if heroFile}
+    <button class="ds__hero" onclick={() => onfileopen(heroFile!.path)}>
+      <span class="ds__hero-title">{displayName(heroFile)}</span>
+      <span class="ds__hero-time">{formatRelativeTime(heroFile.modified_at, tick)}</span>
+    </button>
+  {/if}
 
-  {#if pinnedFiles.length > 0}
-    <div class="dashboard__section">
-      <h2 class="dashboard__section-title">Pinned</h2>
-      {#each pinnedFiles as file (file.path)}
-        <button class="dashboard__row" onclick={() => onfileopen(file.path)}>
-          <span class="dashboard__row-name">{displayName(file)}</span>
-        </button>
-      {/each}
+  <!-- 3. Mini Graph -->
+  {#if miniNodes.length > 0}
+    <div class="ds__graph-wrap">
+      <div class="ds__graph">
+        <GraphView
+          nodes={miniNodes}
+          edges={miniEdges}
+          onselect={onfileopen}
+        />
+      </div>
+      <div class="ds__stats">
+        <span class="ds__stat">
+          <span class="ds__stat-value">{graphScanning ? '--' : graphStats.totalLinks}</span>
+          <span class="ds__stat-label">links</span>
+        </span>
+        <span class="ds__stat">
+          <span class="ds__stat-value">{graphScanning ? '--' : graphStats.avgLinksPerNote}</span>
+          <span class="ds__stat-label">avg / note</span>
+        </span>
+        <span class="ds__stat">
+          <span class="ds__stat-value">{graphScanning ? '--' : graphStats.orphanCount}</span>
+          <span class="ds__stat-label">orphans</span>
+        </span>
+        <span class="ds__stat">
+          <span class="ds__stat-value">{totalNotes}</span>
+          <span class="ds__stat-label">notes</span>
+        </span>
+      </div>
     </div>
   {/if}
 
-  {#if graphStats.mostConnected.some(n => n.count > 0)}
-    <div class="dashboard__section">
-      <h2 class="dashboard__section-title">Most Linked</h2>
-      {#each graphStats.mostConnected.filter(n => n.count > 0) as node (node.path)}
-        <button class="dashboard__row" onclick={() => onfileopen(node.path)}>
-          <span class="dashboard__row-name">{node.title}</span>
-          <span class="dashboard__row-meta">{node.count}</span>
-        </button>
-      {/each}
+  <!-- 4. Two Columns -->
+  {#if recentList.length > 0 || rightColumnFiles.files.length > 0}
+    <div class="ds__columns">
+      <!-- Left: Recent -->
+      {#if recentList.length > 0}
+        <div class="ds__col">
+          <h2 class="ds__col-title">Recent</h2>
+          {#each recentList as file (file.path)}
+            <button class="ds__row" onclick={() => onfileopen(file.path)}>
+              <span class="ds__row-name">{displayName(file)}</span>
+              <span class="ds__row-meta">{formatRelativeTime(file.modified_at, tick)}</span>
+            </button>
+          {/each}
+        </div>
+      {/if}
+
+      <!-- Right: Pinned or Most Linked -->
+      {#if rightColumnFiles.files.length > 0}
+        <div class="ds__col">
+          <h2 class="ds__col-title">{rightColumnFiles.title}</h2>
+          {#each rightColumnFiles.files as item (item.path)}
+            <button class="ds__row" onclick={() => onfileopen(item.path)}>
+              <span class="ds__row-name">{'title' in item && typeof item.title === 'string' ? item.title : ('name' in item ? (item as FileNode).title || (item as FileNode).name : '')}</span>
+              {#if 'count' in item}
+                <span class="ds__row-meta">{item.count}</span>
+              {/if}
+            </button>
+          {/each}
+        </div>
+      {/if}
     </div>
   {/if}
 
-  {#if recentFiles.length > 0}
-    <div class="dashboard__section">
-      <h2 class="dashboard__section-title">Recent</h2>
-      {#each recentFiles.slice(0, 10) as file (file.path)}
-        <button class="dashboard__row" onclick={() => onfileopen(file.path)}>
-          <span class="dashboard__row-name">{displayName(file)}</span>
-          <span class="dashboard__row-meta">{formatRelativeTime(file.modified_at, tick)}</span>
-        </button>
-      {/each}
-    </div>
+  <!-- 5. Orphan Nudge -->
+  {#if orphanCount > 0 && !graphScanning}
+    <p class="ds__orphan">
+      {orphanCount} note{orphanCount === 1 ? ' has' : 's have'} no links — connect them?
+    </p>
   {/if}
-
 </div>
 
 <style>
-  .dashboard {
+  .ds {
     display: flex;
     flex-direction: column;
     max-width: 720px;
     margin: 0 auto;
     padding: 40px 28px;
     overflow-y: auto;
-    gap: 32px;
+    gap: 28px;
   }
 
-  .dashboard__name {
-    font-family: var(--font-sans);
-    font-size: clamp(1.8rem, 2.5vw, 2.4rem);
-    color: var(--color-foreground);
-    font-weight: 600;
-    letter-spacing: -0.03em;
+  /* 1. Greeting */
+  .ds__greeting {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--color-placeholder);
+    letter-spacing: 0.01em;
     opacity: 0;
   }
 
-  /* Stats */
-  .dashboard__stats {
+  /* 2. Hero Card */
+  .ds__hero {
     display: flex;
-    flex-direction: row;
-    gap: 24px;
-    padding-bottom: 20px;
-    border-bottom: 1px solid var(--color-border);
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    cursor: pointer;
+    text-align: left;
+    opacity: 0;
+    transition: border-color 150ms ease;
   }
 
-  .stat {
+  .ds__hero:hover {
+    border-color: var(--color-accent);
+  }
+
+  .ds__hero-title {
+    font-family: var(--font-sans);
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--color-foreground);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+  }
+
+  .ds__hero-time {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--color-placeholder);
+    flex-shrink: 0;
+    margin-left: 16px;
+  }
+
+  /* 3. Mini Graph */
+  .ds__graph-wrap {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 12px;
     opacity: 0;
   }
 
-  .stat__value {
+  .ds__graph {
+    height: 200px;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid var(--color-border);
+  }
+
+  .ds__stats {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+  }
+
+  .ds__stat {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+  }
+
+  .ds__stat-value {
     font-family: var(--font-mono);
-    font-size: 20px;
+    font-size: 13px;
     font-weight: 600;
     color: var(--color-foreground);
-    line-height: 1;
+    opacity: 0;
   }
 
-  .stat__value--scanning {
-    animation: stat-pulse 1.5s ease-in-out infinite;
-    color: var(--color-placeholder);
-  }
-
-  @keyframes stat-pulse {
-    0%, 100% { opacity: 0.4; }
-    50% { opacity: 0.8; }
-  }
-
-  .stat__label {
+  .ds__stat-label {
     font-family: var(--font-mono);
     font-size: 10px;
     color: var(--color-placeholder);
@@ -202,14 +365,21 @@
     letter-spacing: 0.04em;
   }
 
-  /* Sections */
-  .dashboard__section {
+  /* 4. Two Columns */
+  .ds__columns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+
+  .ds__col {
     display: flex;
     flex-direction: column;
     gap: 0;
+    opacity: 0;
   }
 
-  .dashboard__section-title {
+  .ds__col-title {
     font-family: var(--font-mono);
     font-size: 10px;
     color: var(--color-placeholder);
@@ -218,39 +388,54 @@
     margin-bottom: 8px;
   }
 
-  /* Rows */
-  .dashboard__row {
+  .ds__row {
     display: flex;
     justify-content: space-between;
     align-items: center;
     width: 100%;
-    padding: 8px 8px;
+    padding: 6px 4px;
     border: none;
     background: transparent;
     border-radius: 4px;
     cursor: pointer;
     text-align: left;
-    transition: background 150ms ease;
-    opacity: 0;
   }
 
-  .dashboard__row:hover {
-    background: var(--color-hover);
+  .ds__row:hover .ds__row-name {
+    color: var(--color-accent);
   }
 
-  .dashboard__row-name {
+  .ds__row-name {
     font-family: var(--font-mono);
     font-size: 13px;
     color: var(--color-foreground);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    transition: color 150ms ease;
   }
 
-  .dashboard__row-meta {
+  .ds__row-meta {
     font-family: var(--font-mono);
     font-size: 11px;
     color: var(--color-placeholder);
     flex-shrink: 0;
+    margin-left: 12px;
+  }
+
+  /* 5. Orphan Nudge */
+  .ds__orphan {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--color-placeholder);
+    text-align: center;
+    opacity: 0;
+  }
+
+  /* Responsive stacking */
+  @media (max-width: 560px) {
+    .ds__columns {
+      grid-template-columns: 1fr;
+    }
   }
 </style>

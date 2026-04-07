@@ -504,6 +504,8 @@
       totalNotes={Array.from(files.fileMap.values()).filter(f => !f.is_directory).length}
       graphStats={graphState.stats}
       graphScanning={graphState.scanning}
+      graphNodes={graphState.nodes}
+      graphEdges={graphState.edges}
       onfileopen={openFile}
     />
   </Worksurface>
