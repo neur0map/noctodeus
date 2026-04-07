@@ -427,13 +427,11 @@
 
   .settings__nav-item:hover {
     color: var(--color-foreground);
-    background: var(--color-hover);
   }
 
   .settings__nav-item--active {
     color: var(--color-foreground);
-    background: var(--surface-3, var(--color-hover));
-    border-left: 2px solid var(--accent-blue, var(--color-accent));
+    font-weight: 500;
   }
 
   .settings__nav-icon {

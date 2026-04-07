@@ -95,16 +95,10 @@
 
   .tab-item:hover:not(.tab-item--active) {
     color: var(--text-secondary, var(--color-muted-foreground));
-    background: var(--surface-3, var(--color-hover));
   }
 
   .tab-item--active {
     color: var(--text-primary, var(--color-foreground));
-    background: var(--surface-3, var(--color-card));
-    border-top-color: var(--accent-blue, var(--color-accent));
-    box-shadow:
-      0 1px 2px rgba(0, 0, 0, 0.2),
-      inset 0 1px 0 rgba(255, 255, 255, 0.04);
   }
 
   .tab-item--dragging {

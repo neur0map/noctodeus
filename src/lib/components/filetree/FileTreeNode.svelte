@@ -176,8 +176,7 @@
   }
 
   .tree-node__row:hover {
-    background: var(--surface-3, var(--color-hover));
-    color: var(--color-foreground);
+    color: var(--text-primary, var(--color-foreground));
   }
 
   .tree-node__row:focus-visible {
@@ -186,9 +185,8 @@
   }
 
   .tree-node__row--active {
-    background: var(--surface-3, var(--color-hover));
-    border-left-color: var(--accent-blue, var(--color-accent));
-    color: var(--color-foreground);
+    color: var(--text-primary, var(--color-foreground));
+    font-weight: 500;
   }
 
   .tree-node__row--dragged {
