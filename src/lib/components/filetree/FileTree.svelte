@@ -203,8 +203,8 @@
   }
 
   .file-tree--zone-active :global(.tree-node__row:focus) {
-    outline: 2px solid var(--color-accent);
-    outline-offset: -2px;
+    outline: none;
+    box-shadow: var(--glow-focus, 0 0 0 2px rgba(122, 162, 247, 0.15));
   }
 
   :global(.file-drag-ghost) {
@@ -214,8 +214,8 @@
     font-family: var(--font-mono);
     font-size: 11px;
     color: var(--color-foreground);
-    background: rgba(20, 21, 27, 0.95);
-    border: 1px solid var(--color-border);
+    background: var(--surface-2, rgba(20, 21, 27, 0.95));
+    border: 1px solid var(--border-subtle, var(--color-border));
     border-radius: 6px;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
     pointer-events: none;

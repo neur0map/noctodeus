@@ -1,5 +1,6 @@
 export interface AppShortcuts {
   quick_open: string;
+  search: string;
   command_palette: string;
   new_note: string;
   toggle_sidebar: string;
@@ -15,6 +16,7 @@ const MOD = isMac ? "Meta" : "Ctrl";
 
 export const APP_SHORTCUTS: AppShortcuts = {
   quick_open: `${MOD}+P`,
+  search: `${MOD}+K`,
   command_palette: `${MOD}+Shift+P`,
   new_note: `${MOD}+N`,
   toggle_sidebar: `${MOD}+B`,
@@ -22,6 +24,26 @@ export const APP_SHORTCUTS: AppShortcuts = {
   collapse_sidebar: `${MOD}+Shift+B`,
   delete_file: `${MOD}+Backspace`,
 };
+
+export const DEFAULT_SHORTCUTS: AppShortcuts = { ...APP_SHORTCUTS };
+
+export const SHORTCUT_LABELS: Record<keyof AppShortcuts, { label: string; desc: string }> = {
+  search: { label: 'Search', desc: 'Global file and content search.' },
+  quick_open: { label: 'Quick Open', desc: 'Open the file switcher.' },
+  command_palette: { label: 'Command Palette', desc: 'Open the command palette.' },
+  new_note: { label: 'New Note', desc: 'Create a new note.' },
+  toggle_sidebar: { label: 'Toggle Sidebar', desc: 'Show or hide the sidebar.' },
+  toggle_right_panel: { label: 'Toggle Panel', desc: 'Show or hide the detail panel.' },
+  collapse_sidebar: { label: 'Collapse Sidebar', desc: 'Collapse sidebar to icon-only.' },
+  delete_file: { label: 'Delete File', desc: 'Move the active file to trash.' },
+};
+
+export function getResolvedShortcuts(overrides: Record<string, string>): AppShortcuts {
+  return {
+    ...APP_SHORTCUTS,
+    ...overrides,
+  } as AppShortcuts;
+}
 
 const MAC_DISPLAY: Record<string, string> = {
   meta: "\u2318",

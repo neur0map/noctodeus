@@ -3,6 +3,7 @@
 
   let {
     onquickopen,
+    onsearch,
     oncommandpalette,
     onnewnote,
     ontogglesidebar,
@@ -14,6 +15,7 @@
     overlayOpen = false,
   }: {
     onquickopen: () => void;
+    onsearch: () => void;
     oncommandpalette: () => void;
     onnewnote: () => void;
     ontogglesidebar: () => void;
@@ -48,15 +50,14 @@
     // If overlay is open, only handle overlay-specific keys
     if (overlayOpen) return;
 
-    // Delete file works even when editor is focused (shows confirm dialog)
-    if (matchesShortcut(e, keymap.delete_file)) {
+    // ── Global shortcuts: work even when editor is focused ──
+    // These override editor keybinds (e.g., Cmd+K, Cmd+P, Cmd+N)
+
+    if (matchesShortcut(e, keymap.search)) {
       e.preventDefault();
-      ondeletefile();
+      onsearch();
       return;
     }
-
-    // If input focused, don't capture global shortcuts
-    if (isInputFocused()) return;
 
     if (matchesShortcut(e, keymap.quick_open)) {
       e.preventDefault();
@@ -73,6 +74,12 @@
     if (matchesShortcut(e, keymap.new_note)) {
       e.preventDefault();
       onnewnote();
+      return;
+    }
+
+    if (matchesShortcut(e, keymap.delete_file)) {
+      e.preventDefault();
+      ondeletefile();
       return;
     }
 

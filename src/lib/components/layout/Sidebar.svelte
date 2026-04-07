@@ -55,6 +55,7 @@
   .sidebar {
     display: flex;
     flex-direction: column;
+    gap: var(--space-sm, 8px);
     height: 100%;
     background: var(--color-card);
   }
@@ -86,8 +87,8 @@
   .sidebar__header {
     display: flex;
     align-items: center;
-    gap: 4px;
-    padding: 12px 12px 0;
+    gap: var(--space-xs, 4px);
+    padding: var(--space-md, 12px);
     flex-shrink: 0;
   }
 
@@ -121,14 +122,14 @@
     min-height: 0;
     overflow-y: auto;
     overflow-x: hidden;
-    padding: 4px 0;
+    padding: 0 var(--space-sm, 8px);
     scrollbar-width: none;
   }
   .sidebar__body::-webkit-scrollbar { display: none; }
 
   .sidebar__footer {
     flex-shrink: 0;
-    padding: 8px 12px;
+    padding: var(--space-md, 12px);
     border-top: 1px solid var(--color-border);
   }
 </style>

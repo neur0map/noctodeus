@@ -1,6 +1,7 @@
 <script lang="ts">
   import { getSettings } from '../../stores/settings.svelte';
-  import { APP_SHORTCUTS, formatShortcutLabel } from '../../utils/shortcuts';
+  import { THEMES } from '../../themes/themes';
+  import { SHORTCUT_LABELS, getResolvedShortcuts, formatShortcutLabel } from '../../utils/shortcuts';
   import SettingsIcon from "@lucide/svelte/icons/settings";
   import PencilLine from "@lucide/svelte/icons/pencil-line";
   import Palette from "@lucide/svelte/icons/palette";
@@ -40,6 +41,62 @@
   function handleBackdropClick(e: MouseEvent) {
     if (e.target === e.currentTarget) onclose();
   }
+
+  // ── Keybind recording ──
+  let recordingKey: string | null = $state(null);
+
+  let resolvedShortcuts = $derived(getResolvedShortcuts(settings.keybinds));
+
+  function startRecording(key: string) {
+    recordingKey = key;
+  }
+
+  function handleShortcutCapture(e: KeyboardEvent) {
+    if (!recordingKey) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (e.key === 'Escape') {
+      recordingKey = null;
+      return;
+    }
+
+    // Ignore bare modifier keys
+    if (['Meta', 'Control', 'Shift', 'Alt'].includes(e.key)) return;
+
+    // Build the shortcut string
+    const parts: string[] = [];
+    if (e.metaKey) parts.push('Meta');
+    if (e.ctrlKey) parts.push('Ctrl');
+    if (e.shiftKey) parts.push('Shift');
+    if (e.altKey) parts.push('Alt');
+    parts.push(e.key.length === 1 ? e.key.toUpperCase() : e.key);
+
+    const shortcut = parts.join('+');
+    const newKeybinds = { ...settings.keybinds, [recordingKey]: shortcut };
+    settings.update('keybinds', newKeybinds);
+    recordingKey = null;
+  }
+
+  function resetKeybind(key: string) {
+    const newKeybinds = { ...settings.keybinds };
+    delete newKeybinds[key];
+    settings.update('keybinds', newKeybinds);
+  }
+
+  function resetAllKeybinds() {
+    settings.update('keybinds', {});
+  }
+
+  // Window-level listener in capture phase to intercept shortcuts during recording
+  $effect(() => {
+    if (recordingKey) {
+      const handler = (e: KeyboardEvent) => handleShortcutCapture(e);
+      window.addEventListener('keydown', handler, true);
+      return () => window.removeEventListener('keydown', handler, true);
+    }
+  });
 </script>
 
 {#if visible}
@@ -117,20 +174,36 @@
 
           {:else if activeSection === 'appearance'}
             <div class="settings__section">
-              <div class="settings__row">
+              <div class="settings__row settings__row--theme">
                 <div class="settings__row-info">
                   <span class="settings__row-label">Theme</span>
                   <span class="settings__row-desc">Choose the interface theme.</span>
                 </div>
-                <select
-                  class="settings__select"
-                  value={settings.theme}
-                  onchange={(e) => settings.update('theme', e.currentTarget.value as any)}
-                >
-                  <option value="dark">Dark</option>
-                  <option value="light">Light</option>
-                  <option value="system">System</option>
-                </select>
+              </div>
+              <div class="theme-grid">
+                {#each ['dark', 'light', 'warm'] as group}
+                  <div class="theme-grid__group">
+                    <span class="theme-grid__group-label">{group}</span>
+                    <div class="theme-grid__cards">
+                      {#each THEMES.filter(t => t.group === group) as theme (theme.id)}
+                        <button
+                          class="theme-card"
+                          class:theme-card--active={settings.theme === theme.id}
+                          style="background: {theme.preview.bg};"
+                          onclick={() => settings.update('theme', theme.id)}
+                        >
+                          <span class="theme-card__name" style="color: {theme.preview.text};">{theme.name}</span>
+                          <span class="theme-card__sample" style="color: {theme.preview.textMuted};">
+                            Lorem ipsum <strong style="color: {theme.preview.text};">dolor sit</strong> amet, consectetur.
+                          </span>
+                          <span class="theme-card__sample" style="color: {theme.preview.textMuted};">
+                            Mauris <em style="color: {theme.preview.link};">semper</em> pharetra.
+                          </span>
+                        </button>
+                      {/each}
+                    </div>
+                  </div>
+                {/each}
               </div>
               <div class="settings__row">
                 <div class="settings__row-info">
@@ -148,23 +221,6 @@
                   <option value="18">18px</option>
                   <option value="20">20px</option>
                 </select>
-              </div>
-              <div class="settings__row">
-                <div class="settings__row-info">
-                  <span class="settings__row-label">Accent color</span>
-                  <span class="settings__row-desc">Brand color for highlights, links, and active states.</span>
-                </div>
-                <div class="settings__color-row">
-                  {#each ['#6366f1', '#8b5cf6', '#ec4899', '#f43f5e', '#f97316', '#eab308', '#22c55e', '#06b6d4', '#3b82f6'] as color}
-                    <button
-                      class="settings__color-swatch"
-                      class:settings__color-swatch--active={settings.accentColor === color}
-                      style="background: {color}"
-                      onclick={() => settings.update('accentColor', color)}
-                      title={color}
-                    ></button>
-                  {/each}
-                </div>
               </div>
               <div class="settings__row">
                 <div class="settings__row-info">
@@ -243,6 +299,9 @@
                   onchange={(e) => settings.update('customCSS', e.currentTarget.value)}
                   rows={5}
                 ></textarea>
+                <span class="settings__row-desc" style="margin-top: 4px; font-size: 10px;">
+                  Selectors: .ProseMirror (editor), .app-shell (layout), :root (tokens)
+                </span>
               </div>
             </div>
 
@@ -287,47 +346,36 @@
 
           {:else if activeSection === 'hotkeys'}
             <div class="settings__section">
-              <div class="settings__row">
-                <div class="settings__row-info">
-                  <span class="settings__row-label">Quick Open</span>
-                  <span class="settings__row-desc">Open the file switcher.</span>
+              {#each Object.entries(SHORTCUT_LABELS) as [key, meta] (key)}
+                <div class="settings__row">
+                  <div class="settings__row-info">
+                    <span class="settings__row-label">{meta.label}</span>
+                    <span class="settings__row-desc">{meta.desc}</span>
+                  </div>
+                  <div class="settings__keybind-actions">
+                    <!-- svelte-ignore a11y_no_static_element_interactions -->
+                    <kbd
+                      class="settings__kbd settings__kbd--editable"
+                      class:settings__kbd--recording={recordingKey === key}
+                      onclick={() => startRecording(key)}
+                      tabindex="0"
+                    >
+                      {recordingKey === key ? 'Press shortcut...' : formatShortcutLabel(resolvedShortcuts[key as keyof typeof resolvedShortcuts])}
+                    </kbd>
+                    {#if settings.keybinds[key]}
+                      <button
+                        class="settings__keybind-reset"
+                        onclick={() => resetKeybind(key)}
+                        title="Reset to default"
+                      >&#8634;</button>
+                    {/if}
+                  </div>
                 </div>
-                <kbd class="settings__kbd">{formatShortcutLabel(APP_SHORTCUTS.quick_open)}</kbd>
-              </div>
-              <div class="settings__row">
-                <div class="settings__row-info">
-                  <span class="settings__row-label">Command Palette</span>
-                  <span class="settings__row-desc">Open the command palette.</span>
-                </div>
-                <kbd class="settings__kbd">{formatShortcutLabel(APP_SHORTCUTS.command_palette)}</kbd>
-              </div>
-              <div class="settings__row">
-                <div class="settings__row-info">
-                  <span class="settings__row-label">New Note</span>
-                  <span class="settings__row-desc">Create a new note.</span>
-                </div>
-                <kbd class="settings__kbd">{formatShortcutLabel(APP_SHORTCUTS.new_note)}</kbd>
-              </div>
-              <div class="settings__row">
-                <div class="settings__row-info">
-                  <span class="settings__row-label">Toggle Sidebar</span>
-                  <span class="settings__row-desc">Show or hide the sidebar.</span>
-                </div>
-                <kbd class="settings__kbd">{formatShortcutLabel(APP_SHORTCUTS.toggle_sidebar)}</kbd>
-              </div>
-              <div class="settings__row">
-                <div class="settings__row-info">
-                  <span class="settings__row-label">Toggle Right Panel</span>
-                  <span class="settings__row-desc">Show or hide the detail panel.</span>
-                </div>
-                <kbd class="settings__kbd">{formatShortcutLabel(APP_SHORTCUTS.toggle_right_panel)}</kbd>
-              </div>
-              <div class="settings__row">
-                <div class="settings__row-info">
-                  <span class="settings__row-label">Delete File</span>
-                  <span class="settings__row-desc">Move the active file to trash.</span>
-                </div>
-                <kbd class="settings__kbd">{formatShortcutLabel(APP_SHORTCUTS.delete_file)}</kbd>
+              {/each}
+              <div class="settings__row settings__row--action">
+                <button class="settings__reset-all" onclick={resetAllKeybinds}>
+                  Reset all to defaults
+                </button>
               </div>
             </div>
           {/if}
@@ -341,7 +389,7 @@
   .settings-backdrop {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.55);
+    background: rgba(0, 0, 0, 0.6);
     backdrop-filter: blur(8px);
     z-index: 500;
     display: flex;
@@ -359,10 +407,10 @@
     display: flex;
     width: min(860px, 90vw);
     height: min(580px, 80vh);
-    background: var(--color-popover);
-    border: 1px solid var(--color-border);
+    background: var(--surface-2, var(--color-popover));
+    border: none;
     border-radius: 14px;
-    box-shadow: var(--shadow-float);
+    box-shadow: var(--shadow-modal, 0 8px 32px rgba(0,0,0,0.4));
     overflow: hidden;
     animation: settings-in 450ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
@@ -420,12 +468,36 @@
 
   .settings__nav-item:hover {
     color: var(--color-foreground);
-    background: var(--color-hover);
   }
 
   .settings__nav-item--active {
     color: var(--color-foreground);
-    background: rgba(99, 102, 241, 0.12);
+    font-weight: 500;
+    position: relative;
+  }
+
+  .settings__nav-item--active::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: conic-gradient(
+      from var(--glow-angle, 0deg),
+      transparent 0%,
+      transparent 65%,
+      rgba(122, 162, 247, 0.1) 75%,
+      rgba(122, 162, 247, 0.25) 82%,
+      rgba(122, 162, 247, 0.1) 89%,
+      transparent 100%
+    );
+    -webkit-mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    animation: glow-trace 7s linear infinite, glow-trace-fade-in 0.8s ease both;
+    pointer-events: none;
   }
 
   .settings__nav-icon {
@@ -518,10 +590,10 @@
   }
 
   .settings__row-label {
-    font-family: var(--font-sans);
-    font-size: 13px;
+    font-family: var(--font-mono);
+    font-size: 11px;
     font-weight: 500;
-    color: var(--color-foreground);
+    color: var(--text-muted, var(--color-placeholder));
   }
 
   .settings__row-desc {
@@ -622,29 +694,66 @@
     flex-shrink: 0;
   }
 
-  /* ── Color swatches ── */
-  .settings__color-row {
-    display: flex;
-    gap: 6px;
-    flex-wrap: wrap;
-  }
-
-  .settings__color-swatch {
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    border: 2px solid transparent;
+  .settings__kbd--editable {
     cursor: pointer;
-    transition: border-color 150ms var(--ease-expo-out), transform 150ms var(--ease-expo-out);
+    transition: background 150ms ease-out, color 150ms ease-out;
   }
 
-  .settings__color-swatch:hover {
-    transform: scale(1.15);
+  .settings__kbd--editable:hover {
+    background: rgba(255, 255, 255, 0.08);
   }
 
-  .settings__color-swatch--active {
-    border-color: var(--color-foreground);
-    box-shadow: 0 0 0 2px var(--color-background), 0 0 0 4px currentColor;
+  .settings__kbd--recording {
+    background: rgba(122, 162, 247, 0.12);
+    color: var(--accent-blue, #7AA2F7);
+    animation: pulse-recording 1s ease-in-out infinite alternate;
+  }
+
+  @keyframes pulse-recording {
+    from { opacity: 0.7; }
+    to { opacity: 1; }
+  }
+
+  .settings__keybind-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .settings__keybind-reset {
+    background: none;
+    border: none;
+    color: var(--text-muted, var(--color-placeholder));
+    cursor: pointer;
+    font-size: 14px;
+    padding: 2px;
+    opacity: 0.6;
+    transition: opacity 150ms ease-out;
+  }
+
+  .settings__keybind-reset:hover {
+    opacity: 1;
+  }
+
+  .settings__row--action {
+    justify-content: flex-end;
+  }
+
+  .settings__reset-all {
+    background: none;
+    border: 1px solid var(--border-subtle, var(--color-border));
+    color: var(--text-muted, var(--color-placeholder));
+    font-family: var(--font-mono);
+    font-size: 11px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: color 150ms ease-out, border-color 150ms ease-out;
+  }
+
+  .settings__reset-all:hover {
+    color: var(--text-primary, var(--color-foreground));
+    border-color: var(--text-muted, var(--color-placeholder));
   }
 
   /* ── Font fields ── */
@@ -726,6 +835,96 @@
 
   .settings__css-editor::placeholder {
     color: var(--color-placeholder);
+  }
+
+  /* ── Theme row (no bottom border — grid follows) ── */
+  .settings__row--theme {
+    border-bottom: none;
+    padding-bottom: 8px;
+  }
+
+  /* ── Theme preview grid ── */
+  .theme-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  }
+
+  .theme-grid__group-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-variant: small-caps;
+    color: var(--text-muted, var(--color-placeholder));
+    letter-spacing: 0.04em;
+    padding-left: 2px;
+    margin-bottom: 6px;
+    display: block;
+  }
+
+  .theme-grid__cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .theme-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(128, 128, 128, 0.1);
+    cursor: pointer;
+    text-align: left;
+    transition: border-color 150ms ease-out;
+  }
+
+  .theme-card:hover {
+    border-color: rgba(128, 128, 128, 0.2);
+  }
+
+  /* Active theme gets the glow-trace animation */
+  .theme-card--active {
+    border-color: transparent;
+  }
+
+  .theme-card--active::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: conic-gradient(
+      from var(--glow-angle, 0deg),
+      transparent 0%,
+      transparent 65%,
+      rgba(122, 162, 247, 0.15) 75%,
+      rgba(122, 162, 247, 0.35) 82%,
+      rgba(122, 162, 247, 0.15) 89%,
+      transparent 100%
+    );
+    -webkit-mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    animation: glow-trace 6s linear infinite;
+    pointer-events: none;
+  }
+
+  .theme-card__name {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.3;
+  }
+
+  .theme-card__sample {
+    font-size: 11px;
+    line-height: 1.5;
   }
 
   @media (prefers-reduced-motion: reduce) {

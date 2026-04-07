@@ -1,39 +1,28 @@
 <script lang="ts">
   import "../lib/styles/app.css";
   import "../lib/styles/app.scss";
+  import "../lib/styles/fonts.css";
 
   import type { Snippet } from "svelte";
   import { onMount, onDestroy } from "svelte";
-  import { applyTheme, watchSystemTheme } from "../lib/utils/theme";
+  import { applyTheme } from "$lib/themes/apply";
   import type { UnlistenFn } from "@tauri-apps/api/event";
 
   import AppShell from "../lib/components/layout/AppShell.svelte";
-  import Sidebar from "../lib/components/layout/Sidebar.svelte";
+  import SidebarContent from "../lib/components/layout/SidebarContent.svelte";
   import ContentArea from "../lib/components/layout/ContentArea.svelte";
-  import TabBar from "../lib/components/tabs/TabBar.svelte";
-  import FileTree from "../lib/components/filetree/FileTree.svelte";
-  import SearchBar from "../lib/components/search/SearchBar.svelte";
+  import TabBarContent from "../lib/components/layout/TabBarContent.svelte";
   import ContextMenu from "../lib/components/common/ContextMenu.svelte";
   import type { MenuItem } from "../lib/components/common/ContextMenu.svelte";
   import InputDialog from "../lib/components/common/InputDialog.svelte";
   import KeyboardManager from "../lib/components/common/KeyboardManager.svelte";
-  import ToastContainer from "../lib/components/common/ToastContainer.svelte";
-  import SaveIndicator from "../lib/editor/SaveIndicator.svelte";
-  import SettingsModal from "../lib/components/common/SettingsModal.svelte";
-  import ExportDialog from "../lib/components/common/ExportDialog.svelte";
-  import GraphView from "../lib/components/graph/GraphView.svelte";
-  import BacklinksPanel from "../lib/components/panels/BacklinksPanel.svelte";
-  import OutlinePanel from "../lib/components/panels/OutlinePanel.svelte";
-  import NoteDetailsPanel from "../lib/components/panels/NoteDetailsPanel.svelte";
-  import { getActiveEditorState } from "../lib/stores/active-editor.svelte";
+  import Dialogs from "../lib/components/layout/Dialogs.svelte";
   import { getSettings } from "../lib/stores/settings.svelte";
 
   import { getUiState } from "../lib/stores/ui.svelte";
   import { getCoreState } from "../lib/stores/core.svelte";
   import { getFilesState } from "../lib/stores/files.svelte";
-  import { getEditorState } from "../lib/stores/editor.svelte";
   import { getTabsState } from "../lib/stores/tabs.svelte";
-  import { getGraphState } from "../lib/stores/graph.svelte";
   import {
     onCoreReady,
     onCoreClosed,
@@ -47,59 +36,30 @@
   import { ask as tauriAsk } from "@tauri-apps/plugin-dialog";
   import type { SearchHit } from "../lib/types/core";
   import { logger } from "../lib/logger";
-  import { APP_SHORTCUTS } from "../lib/utils/shortcuts";
+  import { getResolvedShortcuts } from "../lib/utils/shortcuts";
+  import { sanitizeFileName } from "../lib/utils/files";
 
-  import Ellipsis from "@lucide/svelte/icons/ellipsis";
-
-  import Menu from "@lucide/svelte/icons/menu";
-  import PanelRight from "@lucide/svelte/icons/panel-right";
-  import Plus from "@lucide/svelte/icons/plus";
-  import Settings from "@lucide/svelte/icons/settings";
-  import GitFork from "@lucide/svelte/icons/git-fork";
-  import CoreSwitcher from "../lib/components/common/CoreSwitcher.svelte";
-  import TasksModal from "../lib/components/common/TasksModal.svelte";
-  import CalendarWidget from "../lib/components/sidebar/CalendarWidget.svelte";
   import FocusManager from "../lib/components/common/FocusManager.svelte";
-  import ListChecks from "@lucide/svelte/icons/list-checks";
 
   let { children }: { children: Snippet } = $props();
 
   const ui = getUiState();
   const core = getCoreState();
   const files = getFilesState();
-  const editor = getEditorState();
   const tabsState = getTabsState();
-  const graphState = getGraphState();
-  const activeEditorState = getActiveEditorState();
   const appSettings = getSettings();
   const pinned = getPinnedState();
 
+  let keymap = $derived(getResolvedShortcuts(appSettings.keybinds));
+
   // Apply theme reactively
-  let unwatchTheme: (() => void) | undefined;
   $effect(() => {
-    const mode = appSettings.theme;
-    applyTheme(mode);
-    unwatchTheme?.();
-    unwatchTheme = watchSystemTheme(mode, () => applyTheme(mode));
+    applyTheme(appSettings.theme);
   });
 
-  // Apply custom appearance settings reactively
+  // Apply custom font overrides reactively
   $effect(() => {
     const root = document.documentElement;
-    const accent = appSettings.accentColor;
-    if (accent && accent !== '#6366f1') {
-      root.style.setProperty('--accent', accent);
-      root.style.setProperty('--primary', accent);
-      root.style.setProperty('--ring', accent);
-      root.style.setProperty('--sidebar-primary', accent);
-      root.style.setProperty('--sidebar-ring', accent);
-    } else {
-      root.style.removeProperty('--accent');
-      root.style.removeProperty('--primary');
-      root.style.removeProperty('--ring');
-      root.style.removeProperty('--sidebar-primary');
-      root.style.removeProperty('--sidebar-ring');
-    }
 
     if (appSettings.fontMono) root.style.setProperty('--font-mono', `"${appSettings.fontMono}", ui-monospace, monospace`);
     else root.style.removeProperty('--font-mono');
@@ -128,7 +88,7 @@
   });
 
   let unlisteners: UnlistenFn[] = [];
-  let overlayOpen = $derived(ui.quickOpenVisible || ui.commandPaletteVisible);
+  let overlayOpen = $derived(ui.quickOpenVisible || ui.commandPaletteVisible || ui.panelModalVisible || ui.graphPanelVisible);
 
   // Calendar: scan journal/ folder for existing daily notes
   let journalDates = $derived(
@@ -216,7 +176,7 @@
       case 'new-file': {
         const rawName = await showInputDialog('New file name', 'untitled');
         if (!rawName) return;
-        const name = sanitizeFileName(rawName, false);
+        const name = sanitizeFileName(rawName, false, appSettings.defaultExtension);
         try {
           const node = await createFile(name, '');
           files.addFile(node);
@@ -307,18 +267,6 @@
     ctxVisible = true;
   }
 
-  function sanitizeFileName(name: string, isDir: boolean): string {
-    // Replace spaces with dashes
-    let clean = name.trim().replace(/\s+/g, '-');
-    // Remove unsafe characters
-    clean = clean.replace(/[<>:"|?*\\]/g, '');
-    // Ensure default extension for files (not directories)
-    if (!isDir && !clean.includes('.')) {
-      clean += appSettings.defaultExtension;
-    }
-    return clean;
-  }
-
   async function handleCtxSelect(id: string) {
     ctxVisible = false;
     if (!ctxTargetPath) return;
@@ -342,7 +290,7 @@
         const oldName = oldPath.split('/').pop() ?? oldPath;
         const rawName = await showInputDialog('Rename', oldName);
         if (!rawName) return;
-        const newName = sanitizeFileName(rawName, ctxTargetIsDir);
+        const newName = sanitizeFileName(rawName, ctxTargetIsDir, appSettings.defaultExtension);
         if (newName === oldName) return;
         const parentDir = oldPath.includes('/') ? oldPath.slice(0, oldPath.lastIndexOf('/')) : '';
         const newPath = parentDir ? `${parentDir}/${newName}` : newName;
@@ -385,7 +333,7 @@
       case 'new-file': {
         const rawName = await showInputDialog('New file name', 'untitled');
         if (!rawName) return;
-        const name = sanitizeFileName(rawName, false);
+        const name = sanitizeFileName(rawName, false, appSettings.defaultExtension);
         const filePath = ctxTargetPath ? `${ctxTargetPath}/${name}` : name;
         try {
           const node = await createFile(filePath, '');
@@ -399,7 +347,7 @@
       case 'new-folder': {
         const rawName = await showInputDialog('Folder name', '');
         if (!rawName) return;
-        const name = sanitizeFileName(rawName, true);
+        const name = sanitizeFileName(rawName, true, appSettings.defaultExtension);
         const dirPath = ctxTargetPath ? `${ctxTargetPath}/${name}` : name;
         try {
           await createDir(dirPath);
@@ -500,7 +448,7 @@
   async function handleNewFolder() {
     const rawName = await showInputDialog('Folder name', '');
     if (!rawName) return;
-    const name = sanitizeFileName(rawName, true);
+    const name = sanitizeFileName(rawName, true, appSettings.defaultExtension);
     try {
       await createDir(name);
       const { scanCore } = await import('../lib/bridge/commands');
@@ -561,7 +509,7 @@
 
   async function handleInlineRename(oldPath: string, rawNewName: string) {
     const isDir = files.fileMap.get(oldPath)?.is_directory ?? false;
-    const newName = sanitizeFileName(rawNewName, isDir);
+    const newName = sanitizeFileName(rawNewName, isDir, appSettings.defaultExtension);
     if (newName === oldPath.split('/').pop()) return;
     const parentDir = oldPath.includes('/') ? oldPath.slice(0, oldPath.lastIndexOf('/')) : '';
     const newPath = parentDir ? `${parentDir}/${newName}` : newName;
@@ -607,7 +555,7 @@
     }
   }
 
-  const EXPORT_CSS = `body{font-family:system-ui,-apple-system,sans-serif;max-width:720px;margin:2rem auto;padding:0 1rem;color:#e0e0e0;background:#1a1a2e;line-height:1.7;}a{color:#6366f1;}pre{background:#111;padding:1rem;border-radius:8px;overflow-x:auto;}code{font-family:monospace;font-size:0.9em;}img{max-width:100%;border-radius:8px;}blockquote{border-left:3px solid #444;padding-left:1rem;color:#aaa;}h1,h2,h3{font-weight:600;letter-spacing:-0.02em;}`;
+  const EXPORT_CSS = `body{font-family:system-ui,-apple-system,sans-serif;max-width:720px;margin:2rem auto;padding:0 1rem;color:#e0e0e0;background:#0A0E1A;line-height:1.7;}a{color:#7AA2F7;}pre{background:#111;padding:1rem;border-radius:8px;overflow-x:auto;}code{font-family:monospace;font-size:0.9em;}img{max-width:100%;border-radius:8px;}blockquote{border-left:3px solid #444;padding-left:1rem;color:#aaa;}h1,h2,h3{font-weight:600;letter-spacing:-0.02em;}`;
 
   function stripMediaFromMarkdown(md: string): string {
     // Remove image/video/audio lines: ![...](...)
@@ -735,12 +683,13 @@
 
 <KeyboardManager
   {overlayOpen}
-  keymap={APP_SHORTCUTS}
-  onquickopen={() => ui.showQuickOpen()}
+  {keymap}
+  onsearch={() => ui.showQuickOpen()}
+  onquickopen={() => ui.showCommandPalette()}
   oncommandpalette={() => ui.showCommandPalette()}
   onnewnote={handleNewNote}
   ontogglesidebar={() => ui.toggleSidebar()}
-  ontogglerightpanel={() => ui.toggleRightPanel()}
+  ontogglerightpanel={() => ui.panelModalVisible ? ui.hidePanelModal() : ui.showPanelModal()}
   oncollapsesidebar={() => ui.toggleSidebarCollapse()}
   ondeletefile={handleDeleteFile}
   oncloseoverlay={() => ui.closeAllOverlays()}
@@ -749,172 +698,36 @@
 <AppShell
   sidebarVisible={ui.sidebarVisible}
   sidebarCollapsed={ui.sidebarCollapsed}
-  rightPanelVisible={ui.rightPanelVisible || ui.graphPanelVisible}
 >
   {#snippet sidebar()}
-    <Sidebar collapsed={ui.sidebarCollapsed} ontogglecollapse={() => ui.toggleSidebarCollapse()}>
-      {#snippet header()}
-        <div class="sidebar-header">
-          <button class="sidebar-header__btn" onclick={(e) => {
-            const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-            sidebarMenuPosition = { top: rect.bottom + 4, left: rect.left };
-            sidebarMenuVisible = true;
-          }} title="Actions">
-            <Ellipsis size={14} />
-          </button>
-        </div>
-      {/snippet}
-
-      <SearchBar
-        results={searchResults}
-        onselect={handleFileSelect}
-        onsearch={handleSearch}
-      />
-
-      <FileTree
-        tree={files.tree}
-        activeFilePath={files.activeFilePath}
-        onselect={handleFileSelect}
-        ontoggle={handleDirToggle}
-        oncontextmenu={handleTreeContextMenu}
-        ondelete={handleDeleteFile}
-        onmove={handleFileMove}
-        onrename={handleInlineRename}
-      />
-
-      <CalendarWidget
-        existingDates={journalDates}
-        onselect={handleDailyNote}
-      />
-
-      {#snippet footer()}
-        <div class="sidebar-footer">
-          <CoreSwitcher
-            activeCore={core.activeCore}
-            onswitch={(c) => window.dispatchEvent(new CustomEvent('noctodeus-switch-core', { detail: c.path }))}
-            onopen={() => window.dispatchEvent(new CustomEvent('noctodeus-open-core'))}
-          />
-          <button
-            class="sidebar-footer__settings"
-            onclick={() => ui.showSettings()}
-            title="Settings"
-          >
-            <Settings size={15} />
-          </button>
-        </div>
-      {/snippet}
-    </Sidebar>
+    <SidebarContent
+      {journalDates}
+      onFileSelect={handleFileSelect}
+      onDirToggle={handleDirToggle}
+      onContextMenu={handleTreeContextMenu}
+      onDelete={handleDeleteFile}
+      onMove={handleFileMove}
+      onRename={handleInlineRename}
+      onDailyNote={handleDailyNote}
+      onSidebarMenuOpen={(e) => {
+        const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+        sidebarMenuPosition = { top: rect.bottom + 4, left: rect.left };
+        sidebarMenuVisible = true;
+      }}
+    />
   {/snippet}
 
   {#snippet content()}
     <ContentArea>
       {#snippet header()}
-        <TabBar
-          tabs={tabsState.tabs}
-          activeTabId={tabsState.activeTabId}
-          onactivate={(id) => tabsState.activateTab(id)}
-          onclose={(id) => tabsState.closeTab(id)}
-          onreorder={(from, to) => tabsState.reorderTabs(from, to)}
-        >
-          {#snippet trailing()}
-            {#if isMarkdownActive}
-              <SaveIndicator status={editor.saveStatus} />
-            {/if}
-          {/snippet}
-        </TabBar>
+        <TabBarContent {isMarkdownActive} />
       {/snippet}
 
       {@render children()}
     </ContentArea>
   {/snippet}
 
-  {#snippet utilityRail()}
-    <div class="utility-rail">
-      <button
-        class="utility-rail__button"
-        class:utility-rail__button--active={ui.commandPaletteVisible}
-        onclick={() => ui.showCommandPalette()}
-        title="Command palette"
-      >
-        <Menu size={16} />
-      </button>
-      <button
-        class="utility-rail__button"
-        class:utility-rail__button--active={ui.tasksVisible}
-        onclick={() => ui.showTasks()}
-        title="Tasks"
-      >
-        <ListChecks size={16} />
-      </button>
-      <button
-        class="utility-rail__button"
-        class:utility-rail__button--active={ui.graphPanelVisible}
-        onclick={() => ui.toggleGraphPanel()}
-        title="Toggle graph"
-      >
-        <GitFork size={16} />
-      </button>
-      <button
-        class="utility-rail__button"
-        class:utility-rail__button--active={ui.rightPanelVisible}
-        onclick={() => ui.toggleRightPanel()}
-        title="Toggle detail rail"
-      >
-        <PanelRight size={16} />
-      </button>
-      <button
-        class="utility-rail__button"
-        onclick={handleNewNote}
-        title="New note"
-      >
-        <Plus size={16} />
-      </button>
-    </div>
-  {/snippet}
-
-  {#snippet rightPanel()}
-    <div class="right-panel">
-      {#if ui.graphPanelVisible}
-        <div class="right-panel__section right-panel__section--graph">
-          <div class="right-panel__section-header">
-            <span class="right-panel__section-label">Graph</span>
-          </div>
-          <div class="right-panel__graph-body">
-            <GraphView
-              nodes={graphState.nodes}
-              edges={graphState.edges}
-              activeFilePath={files.activeFilePath}
-              onselect={handleFileSelect}
-            />
-          </div>
-        </div>
-      {/if}
-
-      {#if ui.rightPanelVisible}
-        <div class="right-panel__section right-panel__section--scroll">
-          <NoteDetailsPanel
-            editor={activeEditorState.editor}
-            fileNode={files.activeFilePath ? files.fileMap.get(files.activeFilePath) ?? null : null}
-          />
-          <OutlinePanel editor={activeEditorState.editor} />
-        </div>
-
-        <div class="right-panel__section right-panel__section--scroll">
-          <BacklinksPanel
-            currentPath={files.activeFilePath}
-            currentTitle={files.activeFilePath ? (files.fileMap.get(files.activeFilePath)?.title ?? null) : null}
-            currentAliases={files.activeFilePath ? (files.fileMap.get(files.activeFilePath)?.aliases ?? []) : []}
-            nodes={graphState.nodes}
-            edges={graphState.edges}
-            onselect={handleFileSelect}
-          />
-        </div>
-      {/if}
-    </div>
-  {/snippet}
 </AppShell>
-
-<ToastContainer />
 
 <ContextMenu
   visible={ctxVisible}
@@ -940,22 +753,12 @@
   oncancel={cancelInputDialog}
 />
 
-<SettingsModal
-  visible={ui.settingsVisible}
-  onclose={() => ui.hideSettings()}
-/>
-
-<ExportDialog
-  visible={exportDialogVisible}
-  filePath={exportDialogPath}
-  onexport={handleExport}
-  oncancel={() => exportDialogVisible = false}
-/>
-
-<TasksModal
-  visible={ui.tasksVisible}
-  onclose={() => ui.hideTasks()}
-  onfileopen={(path) => { ui.hideTasks(); handleFileSelect(path); }}
+<Dialogs
+  {exportDialogVisible}
+  {exportDialogPath}
+  onExport={handleExport}
+  onExportCancel={() => exportDialogVisible = false}
+  onFileOpen={(path) => { ui.hideTasks(); handleFileSelect(path); }}
 />
 
 </FocusManager>
@@ -972,159 +775,4 @@
     background: var(--color-background);
   }
 
-  /* ── Sidebar header ── */
-  .sidebar-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    height: 28px;
-  }
-
-  .sidebar-header__name {
-    font-family: var(--font-mono);
-    font-size: 12px;
-    color: var(--color-foreground);
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .sidebar-header__btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 22px;
-    height: 22px;
-    border: none;
-    border-radius: 4px;
-    background: transparent;
-    color: var(--color-placeholder);
-    font-size: 12px;
-    cursor: pointer;
-    transition: color 150ms var(--ease-expo-out), background 150ms var(--ease-expo-out);
-  }
-
-  .sidebar-header__btn:hover {
-    color: var(--color-foreground);
-    background: var(--color-hover);
-  }
-
-  /* ── Sidebar footer ── */
-  .sidebar-footer {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    height: 24px;
-  }
-
-  .sidebar-footer__count {
-    font-family: var(--font-mono);
-    font-size: 12px;
-    color: var(--color-placeholder);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .sidebar-footer__chars {
-    opacity: 0.7;
-  }
-
-  .sidebar-footer__settings {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 24px;
-    height: 24px;
-    border: none;
-    border-radius: 5px;
-    background: transparent;
-    color: var(--color-placeholder);
-    cursor: pointer;
-    transition: color 150ms var(--ease-expo-out), background 150ms var(--ease-expo-out);
-  }
-
-  .sidebar-footer__settings:hover {
-    color: var(--color-muted-foreground);
-    background: var(--color-hover);
-  }
-
-  /* ── Utility rail ── */
-  .utility-rail {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-    padding-top: 12px;
-  }
-
-  .utility-rail__button {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 34px;
-    height: 34px;
-    border-radius: 6px;
-    border: none;
-    background: transparent;
-    color: var(--color-placeholder);
-    cursor: pointer;
-    transition: color 150ms var(--ease-expo-out), background 150ms var(--ease-expo-out);
-  }
-
-  .utility-rail__button:hover,
-  .utility-rail__button--active {
-    color: var(--color-foreground);
-    background: var(--color-hover);
-  }
-
-  /* ── Right panel ── */
-  .right-panel {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    background: var(--color-card);
-    overflow: hidden;
-  }
-
-  .right-panel__section {
-    border-bottom: 1px solid var(--color-border);
-  }
-
-  .right-panel__section--graph {
-    flex: 1;
-    min-height: 140px;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .right-panel__section--scroll {
-    flex-shrink: 0;
-    max-height: 35%;
-    overflow-y: auto;
-    scrollbar-width: none;
-  }
-
-  .right-panel__section--scroll::-webkit-scrollbar { display: none; }
-
-  .right-panel__section-header {
-    padding: 8px 12px;
-  }
-
-  .right-panel__section-label {
-    font-family: var(--font-mono);
-    font-size: 10px;
-    color: var(--color-placeholder);
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-  }
-
-  .right-panel__graph-body {
-    flex: 1;
-    min-height: 0;
-    padding: 0 8px 8px;
-  }
 </style>

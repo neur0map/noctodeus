@@ -68,8 +68,8 @@
           font-family: var(--font-mono);
           font-size: 12px;
           color: var(--color-foreground);
-          background: rgba(25, 26, 35, 0.95);
-          border: 1px solid var(--color-border);
+          background: var(--surface-2, rgba(25, 26, 35, 0.95));
+          border: 1px solid var(--border-subtle, var(--color-border));
           border-radius: 8px;
           box-shadow: var(--shadow-float);
           pointer-events: none;
@@ -158,9 +158,9 @@
   .tab-bar {
     display: flex;
     align-items: center;
-    height: 42px;
+    height: 44px;
     padding: 0 8px;
-    gap: 2px;
+    gap: var(--space-xs, 4px);
     border-bottom: 1px solid var(--color-border);
     background: var(--color-background);
     flex-shrink: 0;
@@ -170,7 +170,7 @@
   .tab-bar__tabs {
     display: flex;
     align-items: center;
-    gap: 2px;
+    gap: var(--space-xs, 4px);
     overflow-x: auto;
     overflow-y: hidden;
     flex: 1;

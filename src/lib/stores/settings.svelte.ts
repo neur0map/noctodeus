@@ -1,15 +1,12 @@
 const STORAGE_KEY = 'noctodeus-settings';
 
-export type ThemeMode = 'dark' | 'light' | 'system';
-
 export interface AppSettings {
   // General
   restoreLastSession: boolean;
   // Editor
   autoSave: boolean;
   // Appearance
-  theme: ThemeMode;
-  accentColor: string;
+  theme: string;
   fontSize: number;
   fontMono: string;
   fontSans: string;
@@ -21,23 +18,25 @@ export interface AppSettings {
   defaultExtension: string;
   confirmBeforeDelete: boolean;
   wikiStyleLinks: boolean;
+  // Hotkeys
+  keybinds: Record<string, string>;
 }
 
 const DEFAULTS: AppSettings = {
   restoreLastSession: true,
   autoSave: true,
-  theme: 'dark' as ThemeMode,
-  accentColor: '#6366f1',
+  theme: 'midnight-tokyo',
   fontSize: 16,
-  fontMono: '',
-  fontSans: '',
-  fontContent: '',
+  fontMono: 'JetBrainsMono Nerd Font',
+  fontSans: 'IBM Plex Sans',
+  fontContent: 'IBM Plex Sans',
   editorWidth: 780,
   showCharCount: true,
   customCSS: '',
   defaultExtension: '.md',
   confirmBeforeDelete: true,
   wikiStyleLinks: true,
+  keybinds: {},
 };
 
 function loadFromStorage(): AppSettings {
@@ -45,7 +44,19 @@ function loadFromStorage(): AppSettings {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      return { ...DEFAULTS, ...parsed };
+      const merged = { ...DEFAULTS, ...parsed };
+
+      // Migrate legacy theme values
+      if (merged.theme === 'dark' || merged.theme === 'system') {
+        merged.theme = 'midnight-tokyo';
+      } else if (merged.theme === 'light') {
+        merged.theme = 'dawn';
+      }
+
+      // Drop legacy accentColor if present
+      delete merged.accentColor;
+
+      return merged;
     }
   } catch {
     // ignore
@@ -68,7 +79,6 @@ export function getSettings() {
     get restoreLastSession() { return settings.restoreLastSession; },
     get autoSave() { return settings.autoSave; },
     get theme() { return settings.theme; },
-    get accentColor() { return settings.accentColor; },
     get fontSize() { return settings.fontSize; },
     get fontMono() { return settings.fontMono; },
     get fontSans() { return settings.fontSans; },
@@ -79,6 +89,7 @@ export function getSettings() {
     get defaultExtension() { return settings.defaultExtension; },
     get confirmBeforeDelete() { return settings.confirmBeforeDelete; },
     get wikiStyleLinks() { return settings.wikiStyleLinks; },
+    get keybinds() { return settings.keybinds; },
 
     update<K extends keyof AppSettings>(key: K, value: AppSettings[K]) {
       // Mutate the property directly on the $state proxy for granular reactivity

@@ -11,7 +11,7 @@
   font-size: 14px;
   line-height: 1.8;
   color: var(--color-foreground);
-  max-width: 780px;
+  max-width: 900px;
   margin: 0 auto;
   padding: 36px 28px;
   outline: none;
@@ -30,29 +30,34 @@
 .ProseMirror h1,
 .ProseMirror h2,
 .ProseMirror h3 {
-  font-family: var(--font-sans);
-  font-weight: 600;
   line-height: 1.3;
 }
 
 .ProseMirror h1 {
-  font-size: clamp(2.6rem, 4vw, 3.4rem);
-  margin-top: 24px;
-  margin-bottom: 16px;
-  letter-spacing: -0.05em;
+  font-family: var(--font-mono);
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary, #C0CAF5);
+  margin: 1.5em 0 0.5em;
+  letter-spacing: -0.01em;
 }
 
 .ProseMirror h2 {
+  font-family: var(--font-mono);
   font-size: 20px;
-  margin-top: 24px;
-  margin-bottom: 12px;
-  letter-spacing: -0.03em;
+  font-weight: 600;
+  color: var(--text-primary, #C0CAF5);
+  border-left: 3px solid var(--accent-blue, #7AA2F7);
+  padding-left: 8px;
+  margin: 1.4em 0 0.4em;
 }
 
 .ProseMirror h3 {
-  font-size: 18px;
-  margin-top: 20px;
-  margin-bottom: 8px;
+  font-family: var(--font-mono);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--accent-purple, #BB9AF7);
+  margin: 1.2em 0 0.3em;
 }
 
 /* --------------------------------------------------------------------------
@@ -69,14 +74,14 @@
    Code Blocks
    -------------------------------------------------------------------------- */
 .ProseMirror pre {
-  font-family: var(--font-mono);
-  font-size: 0.9em;
-  background: var(--color-card);
-  border-radius: 10px;
+  background: var(--surface-1, #13161F);
+  border: 1px solid var(--border-subtle, #1E2336);
+  border-radius: 4px;
   padding: 16px;
-  border: 1px solid var(--color-border);
+  font-family: var(--font-mono);
+  font-size: 14px;
   overflow-x: auto;
-  margin: 16px 0;
+  margin: 1em 0;
 }
 
 .ProseMirror pre code {
@@ -90,23 +95,25 @@
 /* --------------------------------------------------------------------------
    Inline Code
    -------------------------------------------------------------------------- */
-.ProseMirror code {
+.ProseMirror :not(pre) > code {
+  color: var(--accent-cyan, #7DCFFF);
+  background: var(--surface-2, #1A1E2E);
+  border-radius: 2px;
+  padding: 1px 4px;
   font-family: var(--font-mono);
   font-size: 0.9em;
-  background: var(--color-hover);
-  border-radius: 4px;
-  padding: 2px 6px;
 }
 
 /* --------------------------------------------------------------------------
    Blockquotes
    -------------------------------------------------------------------------- */
 .ProseMirror blockquote {
-  border-left: 2px solid var(--color-border);
-  padding-left: 16px;
-  color: var(--color-muted-foreground);
-  margin: 16px 0;
+  background: var(--surface-1, #13161F);
+  border-left: 3px solid var(--border-active, #2A2F45);
+  padding: 8px 16px;
+  margin: 1em 0;
   font-style: italic;
+  color: var(--text-secondary, #A9B1D6);
 }
 
 .ProseMirror blockquote > * + * {
@@ -157,7 +164,7 @@
   appearance: none;
   width: 16px;
   height: 16px;
-  border: 2px solid var(--color-border);
+  border: 2px solid var(--border-active, #2A2F45);
   border-radius: 4px;
   cursor: pointer;
   position: relative;
@@ -171,8 +178,8 @@
   li
   > label
   input[type="checkbox"]:checked {
-  background: var(--color-accent);
-  border-color: var(--color-accent);
+  background: var(--accent-green, #9ECE6A);
+  border-color: var(--accent-green, #9ECE6A);
 }
 
 .ProseMirror
@@ -205,9 +212,9 @@
    Links
    -------------------------------------------------------------------------- */
 .ProseMirror a {
-  color: var(--color-accent);
+  color: var(--accent-blue, #7AA2F7);
   text-decoration: none;
-  transition: text-decoration 150ms var(--ease-expo-out);
+  cursor: pointer;
 }
 
 .ProseMirror a:hover {
@@ -218,9 +225,10 @@
    Wiki Links
    -------------------------------------------------------------------------- */
 .wiki-link {
-  color: var(--color-accent);
+  color: var(--accent-blue, #7AA2F7);
   text-decoration: underline;
   text-decoration-style: dotted;
+  text-decoration-color: var(--accent-blue, #7AA2F7);
   cursor: pointer;
   transition: color 150ms var(--ease-expo-out);
 }
@@ -312,8 +320,8 @@
    -------------------------------------------------------------------------- */
 .ProseMirror hr {
   border: none;
-  border-top: 1px solid var(--color-border);
-  margin: 32px 0;
+  border-top: 1px solid var(--border-subtle, #1E2336);
+  margin: 2em 0;
 }
 
 /* --------------------------------------------------------------------------
@@ -321,13 +329,13 @@
    -------------------------------------------------------------------------- */
 .ProseMirror ::selection,
 .ProseMirror *::selection {
-  background: rgba(99, 102, 241, 0.16);
+  background: rgba(122, 162, 247, 0.16);
   -webkit-text-fill-color: currentColor;
 }
 
 .ProseMirror:focus ::selection,
 .ProseMirror:focus *::selection {
-  background: rgba(99, 102, 241, 0.2);
+  background: rgba(122, 162, 247, 0.2);
 }
 
 /* --------------------------------------------------------------------------
@@ -346,13 +354,13 @@
    Search & Replace Highlights
    -------------------------------------------------------------------------- */
 .search-match {
-  background: rgba(250, 204, 21, 0.3);
+  background: rgba(224, 175, 104, 0.25);
   border-radius: 2px;
 }
 
 .search-match--current {
-  background: rgba(250, 150, 20, 0.6);
-  box-shadow: 0 0 0 1px rgba(250, 150, 20, 0.4);
+  background: rgba(224, 175, 104, 0.45);
+  box-shadow: 0 0 4px rgba(224, 175, 104, 0.3);
 }
 
 /* --------------------------------------------------------------------------
@@ -368,7 +376,7 @@
 
 .ProseMirror th,
 .ProseMirror td {
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--border-subtle, #1E2336);
   padding: 8px 12px;
   vertical-align: top;
   position: relative;
@@ -376,7 +384,7 @@
 }
 
 .ProseMirror th {
-  background: var(--color-card);
+  background: var(--surface-1, #13161F);
   font-weight: 600;
   text-align: left;
 }
@@ -386,7 +394,7 @@
 }
 
 .ProseMirror .selectedCell {
-  background: rgba(99, 102, 241, 0.08);
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .ProseMirror .column-resize-handle {

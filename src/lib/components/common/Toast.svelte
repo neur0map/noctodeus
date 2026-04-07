@@ -96,8 +96,8 @@
   }
 
   .toast--info .toast__icon { color: var(--color-accent); }
-  .toast--success .toast__icon { color: #22c55e; }
-  .toast--warning .toast__icon { color: #eab308; }
+  .toast--success .toast__icon { color: var(--accent-green); }
+  .toast--warning .toast__icon { color: var(--accent-yellow); }
   .toast--error .toast__icon { color: var(--color-destructive); }
 
   .toast__message {

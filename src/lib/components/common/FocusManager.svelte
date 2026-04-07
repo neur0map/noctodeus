@@ -10,8 +10,8 @@
     overlayOpen: boolean;
   } = $props();
 
-  type Zone = 'filetree' | 'editor' | 'panel' | 'rail';
-  const ZONES: Zone[] = ['filetree', 'editor', 'panel', 'rail'];
+  type Zone = 'filetree' | 'editor';
+  const ZONES: Zone[] = ['filetree', 'editor'];
 
   let currentZone = $state<Zone>('editor');
 
@@ -71,10 +71,6 @@
         setZone('filetree');
       } else if (target.closest('.ProseMirror, .editor-container, .inline-title')) {
         setZone('editor');
-      } else if (target.closest('.right-panel')) {
-        setZone('panel');
-      } else if (target.closest('.utility-rail')) {
-        setZone('rail');
       }
     }
 

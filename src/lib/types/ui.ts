@@ -12,4 +12,5 @@ export interface QuickOpenItem {
   name: string;
   title?: string | null;
   parentPath?: string;
+  snippet?: string;
 }

@@ -135,8 +135,8 @@
     flex-direction: column;
     gap: 4px;
     padding: 8px 12px;
-    background: var(--color-card);
-    border-bottom: 1px solid var(--color-border);
+    background: var(--surface-2, var(--color-card));
+    border-bottom: 1px solid var(--border-subtle, var(--color-border));
     animation: find-bar-in 250ms var(--ease-expo-out) both;
   }
 

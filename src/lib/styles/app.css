@@ -3,75 +3,14 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* Dark theme (default) */
-:root, .dark {
+/* Non-color tokens — colors are set at runtime by applyTheme() */
+:root {
   --radius: 0.375rem;
-  --background: #09090b;
-  --foreground: #fafafa;
-  --card: #0f0f12;
-  --card-foreground: #fafafa;
-  --popover: #18181b;
-  --popover-foreground: #fafafa;
-  --primary: #6366f1;
-  --primary-foreground: #fafafa;
-  --secondary: #27272a;
-  --secondary-foreground: #fafafa;
-  --muted: #27272a;
-  --muted-foreground: #a1a1aa;
-  --accent: #6366f1;
-  --accent-foreground: #fafafa;
-  --destructive: #ef4444;
-  --border: #27272a;
-  --input: #27272a;
-  --ring: #6366f1;
-  --sidebar: #0f0f12;
-  --sidebar-foreground: #fafafa;
-  --sidebar-primary: #6366f1;
-  --sidebar-primary-foreground: #fafafa;
-  --sidebar-accent: #27272a;
-  --sidebar-accent-foreground: #fafafa;
-  --sidebar-border: #27272a;
-  --sidebar-ring: #6366f1;
-  --hover: #27272a;
-  --placeholder: #52525b;
-  --accent-hover: #818cf8;
-  --float-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
-  color-scheme: dark;
-}
-
-/* Light theme */
-.light {
-  --background: #ffffff;
-  --foreground: #09090b;
-  --card: #f4f4f5;
-  --card-foreground: #09090b;
-  --popover: #ffffff;
-  --popover-foreground: #09090b;
-  --primary: #4f46e5;
-  --primary-foreground: #ffffff;
-  --secondary: #f4f4f5;
-  --secondary-foreground: #18181b;
-  --muted: #f4f4f5;
-  --muted-foreground: #71717a;
-  --accent: #4f46e5;
-  --accent-foreground: #ffffff;
-  --destructive: #dc2626;
-  --border: #e4e4e7;
-  --input: #e4e4e7;
-  --ring: #4f46e5;
-  --sidebar: #f9fafb;
-  --sidebar-foreground: #09090b;
-  --sidebar-primary: #4f46e5;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #f4f4f5;
-  --sidebar-accent-foreground: #18181b;
-  --sidebar-border: #e4e4e7;
-  --sidebar-ring: #4f46e5;
-  --hover: #f4f4f5;
-  --placeholder: #a1a1aa;
-  --accent-hover: #6366f1;
-  --float-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-  color-scheme: light;
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 20px;
+  --space-xl: 32px;
 }
 
 @theme inline {
@@ -93,7 +32,7 @@
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent);
+  --color-accent: var(--accent-blue, #7AA2F7);
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
   --color-border: var(--border);
@@ -108,9 +47,9 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
-  --font-mono: "Berkeley Mono", "JetBrains Mono", "Fira Code", "Cascadia Code", ui-monospace, monospace;
-  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
-  --font-content: "Source Serif 4", "Charter", "Georgia", ui-serif, serif;
+  --font-mono: 'JetBrainsMono Nerd Font', 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
+  --font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-content: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
 
   --color-hover: var(--hover, #27272a);
   --color-placeholder: var(--placeholder, #52525b);
@@ -161,10 +100,69 @@
 
 html, body {
   height: 100%;
-  background: var(--color-background);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.6;
   color: var(--color-foreground);
+  background: #050811;  /* darker than --base, shows behind the app frame */
+}
+
+/* Midnight Tokyo — Scrollbars */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-active, #2A2F45);
+  border-radius: 2px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted, #6B7394);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-subtle, #1E2336) transparent;
+}
+
+*:hover {
+  scrollbar-color: var(--border-active, #2A2F45) transparent;
+}
+
+/* Midnight Tokyo — Focus states (soft glow, no hard rings) */
+*:focus-visible {
+  outline: none;
+  box-shadow: var(--glow-focus, 0 0 0 2px rgba(122, 162, 247, 0.15));
+}
+
+/* Midnight Tokyo — Transitions */
+button, a, input, textarea, select, [role="button"], [role="tab"] {
+  transition: background-color 150ms ease-out, color 150ms ease-out, box-shadow 150ms ease-out, border-color 150ms ease-out, opacity 150ms ease-out;
 }
 
 ::selection {
-  background: rgba(99, 102, 241, 0.2);
+  background: rgba(122, 162, 247, 0.2);
+  color: inherit;
+}
+
+/* ── Glow Trace — traveling light around selected element borders ── */
+@property --glow-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes glow-trace {
+  to { --glow-angle: 360deg; }
+}
+
+@keyframes glow-trace-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }

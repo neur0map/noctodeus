@@ -159,10 +159,10 @@
 
   .cal__month {
     flex: 1;
-    font-family: var(--font-sans);
+    font-family: var(--font-mono);
     font-size: 12px;
     font-weight: 500;
-    color: var(--color-foreground);
+    color: var(--text-primary, var(--color-foreground));
     text-align: center;
   }
 
@@ -170,16 +170,16 @@
     padding: 2px 8px;
     font-family: var(--font-mono);
     font-size: 10px;
-    color: var(--color-accent);
+    color: var(--accent-blue, var(--color-accent));
     background: transparent;
-    border: 1px solid var(--color-accent);
+    border: 1px solid var(--accent-blue, var(--color-accent));
     border-radius: 4px;
     cursor: pointer;
     transition: background 150ms var(--ease-expo-out);
   }
 
   .cal__today:hover {
-    background: rgba(99, 102, 241, 0.1);
+    background: rgba(255, 255, 255, 0.04);
   }
 
   .cal__days {
@@ -192,7 +192,7 @@
   .cal__day-label {
     font-family: var(--font-mono);
     font-size: 9px;
-    color: var(--color-placeholder);
+    color: var(--text-muted, var(--color-placeholder));
     text-align: center;
     padding: 2px 0;
     text-transform: uppercase;
@@ -224,7 +224,7 @@
   }
 
   .cal__cell:hover {
-    background: var(--color-hover);
+    background: var(--surface-3, var(--color-hover));
   }
 
   .cal__cell--other {
@@ -233,7 +233,7 @@
   }
 
   .cal__cell--today {
-    background: var(--color-accent);
+    background: var(--accent-blue, var(--color-accent));
     color: #fff;
     font-weight: 600;
   }
@@ -251,7 +251,7 @@
     width: 4px;
     height: 4px;
     border-radius: 50%;
-    background: var(--color-accent);
+    background: var(--accent-purple, var(--color-accent));
   }
 
   .cal__cell--today.cal__cell--has-note::after {

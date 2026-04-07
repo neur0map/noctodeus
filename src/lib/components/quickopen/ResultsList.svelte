@@ -1,5 +1,7 @@
 <script lang="ts">
   import type { QuickOpenItem } from '../../types/ui';
+  import { fileIcon } from '$lib/utils/nerd-icons';
+  import { animate } from 'animejs';
 
   let {
     items = [],
@@ -13,119 +15,197 @@
 
   let listEl: HTMLElement | undefined = $state();
 
-  // Scroll selected item into view
   $effect(() => {
     if (!listEl) return;
-    const selected = listEl.querySelector('.results-list__item--selected');
+    const selected = listEl.querySelector('.rl__item--sel');
     if (selected) {
       selected.scrollIntoView({ block: 'nearest' });
     }
   });
 
-  function getDisplayName(item: QuickOpenItem): string {
-    return item.title || item.name;
+  function displayName(item: QuickOpenItem): string {
+    return item.title || item.name.replace(/\.\w+$/, '');
   }
 
-  function getDisplayPath(item: QuickOpenItem): string {
-    return item.parentPath || item.path;
+  function shortPath(item: QuickOpenItem): string {
+    const p = item.parentPath || item.path;
+    const parts = p.split('/').filter(Boolean);
+    if (parts.length <= 1) return parts[0] || '';
+    return parts.slice(-2).join('/');
   }
 
-  function getFileIcon(name: string): string {
-    const ext = name.split('.').pop()?.toLowerCase();
-    switch (ext) {
-      case 'md': return '\u25A0';
-      case 'txt': return '\u25A1';
-      case 'json': return '\u25C6';
-      case 'yaml':
-      case 'yml': return '\u25C7';
-      case 'toml': return '\u25C8';
-      default: return '\u25CB';
-    }
+  /** Micro-press on click — gives tactile feedback */
+  function handleItemClick(e: MouseEvent, path: string) {
+    const el = (e.currentTarget as HTMLElement);
+    animate(el, {
+      scale: [1, 0.97, 1],
+      duration: 200,
+      ease: 'outQuint',
+    });
+    setTimeout(() => onselect(path), 100);
   }
 </script>
 
-<div class="results-list" role="listbox" bind:this={listEl}>
+<div class="rl" role="listbox" bind:this={listEl}>
   {#if items.length === 0}
-    <div class="results-list__empty">No results</div>
+    <div class="rl__empty">
+      <span class="rl__empty-icon">⌕</span>
+      <span>No matches found</span>
+    </div>
   {:else}
-    {#each items as item, i (item.path)}
+    {#each items as item, i (item.path + i)}
       <button
-        class="results-list__item"
-        class:results-list__item--selected={i === selectedIndex}
+        class="rl__item"
+        class:rl__item--sel={i === selectedIndex}
         role="option"
         aria-selected={i === selectedIndex}
-        onclick={() => onselect(item.path)}
+        onclick={(e) => handleItemClick(e, item.path)}
       >
-        <span class="results-list__icon">{getFileIcon(item.name)}</span>
-        <span class="results-list__name">{getDisplayName(item)}</span>
-        <span class="results-list__path">{getDisplayPath(item)}</span>
+        <span class="rl__icon">{fileIcon(item.name)}</span>
+        <div class="rl__content">
+          <div class="rl__top">
+            <span class="rl__name">{displayName(item)}</span>
+            <span class="rl__path">{shortPath(item)}</span>
+          </div>
+          {#if item.snippet}
+            <div class="rl__snippet">{@html item.snippet}</div>
+          {/if}
+        </div>
       </button>
     {/each}
   {/if}
 </div>
 
 <style>
-  .results-list {
+  .rl {
     overflow-y: auto;
-    max-height: 340px;
-    padding: 4px 0;
+    max-height: 420px;
+    padding: 8px;
   }
 
-  .results-list__empty {
+  .rl__empty {
     display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 32px 16px;
-    font-family: var(--font-mono);
-    font-size: 13px;
-    color: var(--color-placeholder);
-  }
-
-  .results-list__item {
-    display: flex;
+    flex-direction: column;
     align-items: center;
     gap: 8px;
-    width: 100%;
-    padding: 8px 16px;
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    text-align: left;
-    transition: background 150ms var(--ease-expo-out);
-  }
-
-  .results-list__item:hover,
-  .results-list__item--selected {
-    background: var(--color-hover);
-  }
-
-  .results-list__icon {
-    flex-shrink: 0;
-    width: 16px;
-    font-size: 8px;
-    color: var(--color-placeholder);
-    text-align: center;
-  }
-
-  .results-list__name {
+    padding: 40px 16px;
     font-family: var(--font-mono);
     font-size: 13px;
-    line-height: 1.5;
-    color: var(--color-foreground);
+    color: var(--text-faint, #3B4261);
+  }
+
+  .rl__empty-icon {
+    font-size: 24px;
+    opacity: 0.5;
+  }
+
+  .rl__item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    width: 100%;
+    padding: 10px 12px;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    text-align: left;
+    transition: background 120ms ease-out;
+    position: relative;
+    will-change: transform, opacity;
+  }
+
+  .rl__item:hover {
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  .rl__item--sel {
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  .rl__item--sel::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 6px;
+    bottom: 6px;
+    width: 3px;
+    border-radius: 2px;
+    background: var(--accent-blue, #7AA2F7);
+  }
+
+  .rl__icon {
+    flex-shrink: 0;
+    width: 20px;
+    font-family: var(--font-mono);
+    font-size: 15px;
+    color: var(--text-muted, #6B7394);
+    text-align: center;
+    line-height: 1.4;
+    padding-top: 1px;
+  }
+
+  .rl__content {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .rl__top {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+  }
+
+  .rl__name {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.4;
+    color: var(--text-primary, #C0CAF5);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
-  .results-list__path {
-    flex: 1;
+  .rl__item--sel .rl__name {
+    color: var(--accent-blue, #7AA2F7);
+  }
+
+  .rl__path {
+    flex-shrink: 0;
     font-family: var(--font-mono);
-    font-size: 12px;
+    font-size: 11px;
     line-height: 1.4;
-    color: var(--color-placeholder);
+    color: var(--text-faint, #3B4261);
+    margin-left: auto;
+  }
+
+  .rl__snippet {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    line-height: 1.5;
+    color: var(--text-muted, #6B7394);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    text-align: right;
+    opacity: 0.8;
+  }
+
+  /* Highlight matched terms — uses <span class="hl"> to avoid global <b> style conflicts */
+  .rl__snippet :global(.hl) {
+    color: var(--accent-blue, #7AA2F7);
+    font-weight: 500;
+  }
+
+  /* Fallback: also override <b> in case any slip through */
+  .rl__snippet :global(b),
+  .rl__snippet :global(strong) {
+    color: var(--accent-blue, #7AA2F7);
+    font-weight: 500;
+    background: none !important;
+    background-color: transparent !important;
   }
 </style>
