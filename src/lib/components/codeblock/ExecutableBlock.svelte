@@ -2,7 +2,7 @@
   import { animate } from '$lib/utils/motion';
   import type { CodeTab, SupportedLanguage } from './types';
   import { generateId, defaultTabName } from './types';
-  import { kernelStart, kernelExecute } from '$lib/bridge/commands';
+  import { kernelStart, kernelExecute, kernelRestart } from '$lib/bridge/commands';
   import { getFilesState } from '$lib/stores/files.svelte';
   import CodeTabBar from './CodeTabBar.svelte';
   import CodeEditor from './CodeEditor.svelte';
@@ -19,6 +19,9 @@
   } = $props();
 
   const files = getFilesState();
+
+  /** Client-side execution timeout (ms). */
+  const EXEC_TIMEOUT_MS = 30_000;
 
   let tabs = $state<CodeTab[]>(
     initialTabs.length > 0
@@ -101,11 +104,28 @@
         /* already running */
       }
 
-      const result = await kernelExecute(notePath, `block-${executionCount}`, code);
+      // Race the execution against a client-side timeout
+      const result = await Promise.race([
+        kernelExecute(notePath, `block-${executionCount}`, code),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('__NOCT_CLIENT_TIMEOUT__')), EXEC_TIMEOUT_MS),
+        ),
+      ]);
       output = result.stdout;
       stderr = result.stderr;
       status = result.success ? 'success' : 'error';
     } catch (err: unknown) {
+      // Handle client-side timeout — kill and restart the kernel
+      if (err instanceof Error && err.message === '__NOCT_CLIENT_TIMEOUT__') {
+        try {
+          await kernelRestart(notePath);
+        } catch { /* best effort */ }
+        output = '';
+        stderr = 'Execution timed out (30s). Kernel restarted.';
+        status = 'error';
+        return;
+      }
+
       const parsed =
         typeof err === 'string' ? (JSON.parse(err) as Record<string, unknown>) : (err as Record<string, unknown> | null);
       if (parsed?.kind === 'not_found') {
@@ -148,6 +168,16 @@
     status = 'success';
   }
 
+  async function kill() {
+    const notePath = files.activeFilePath ?? 'scratch';
+    try {
+      await kernelRestart(notePath);
+    } catch { /* best effort */ }
+    output = '';
+    stderr = 'Execution killed by user.';
+    status = 'error';
+  }
+
   function clearOutput() {
     output = '';
     stderr = '';
@@ -180,18 +210,25 @@
       onchangelang={changeLanguage}
     />
     <div class="exec-block__actions">
-      <button
-        class="exec-block__run"
-        onclick={run}
-        disabled={status === 'running'}
-        title="Run (Cmd+Enter)"
-      >
-        {#if status === 'running'}
-          <span class="exec-block__spinner">&#x27F3;</span>
-        {:else}
+      {#if status === 'running'}
+        <button
+          class="exec-block__kill"
+          onclick={(e) => { e.preventDefault(); e.stopPropagation(); kill(); }}
+          onmousedown={(e) => { e.preventDefault(); e.stopPropagation(); }}
+          title="Kill (force stop)"
+        >
+          &#x25A0;
+        </button>
+      {:else}
+        <button
+          class="exec-block__run"
+          onclick={(e) => { e.preventDefault(); e.stopPropagation(); run(); }}
+          onmousedown={(e) => { e.preventDefault(); e.stopPropagation(); }}
+          title="Run (Cmd+Enter)"
+        >
           &#x25B6;
-        {/if}
-      </button>
+        </button>
+      {/if}
       <StatusDot {status} />
       {#if executionCount > 0}
         <span class="exec-block__counter">[{executionCount}]</span>
@@ -287,20 +324,23 @@
     background: rgba(158, 206, 106, 0.08);
   }
 
-  .exec-block__run:disabled {
-    opacity: 0.5;
-    cursor: default;
+  .exec-block__kill {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 6px;
+    background: rgba(247, 118, 142, 0.12);
+    color: var(--accent-red, #F7768E);
+    font-size: 10px;
+    cursor: pointer;
+    transition: background 150ms ease-out;
   }
 
-  .exec-block__spinner {
-    display: inline-block;
-    animation: spin 1s linear infinite;
-  }
-
-  @keyframes spin {
-    to {
-      transform: rotate(360deg);
-    }
+  .exec-block__kill:hover {
+    background: rgba(247, 118, 142, 0.2);
   }
 
   .exec-block__counter {

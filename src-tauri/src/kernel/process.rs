@@ -8,6 +8,46 @@ use tokio::sync::Mutex;
 use super::errors::KernelError;
 use super::protocol;
 
+/// Python bootstrap script that runs a controlled REPL loop.
+///
+/// - Reads code blocks delimited by sentinels from stdin
+/// - Executes them in a persistent namespace (`__ns`)
+/// - Prints output between sentinels to stdout
+/// - No interactive mode, no `>>>` prompts
+const KERNEL_BOOTSTRAP: &str = r#"
+import sys, traceback
+__ns = {}
+while True:
+    try:
+        line = sys.stdin.readline()
+        if not line:
+            break
+        line = line.strip()
+        if line.startswith("__NOCT_EXEC__"):
+            block_id = line[len("__NOCT_EXEC__"):]
+            code_lines = []
+            for l in sys.stdin:
+                l2 = l.rstrip('\n')
+                if l2 == "__NOCT_CODE_END__":
+                    break
+                code_lines.append(l2)
+            code = "\n".join(code_lines)
+            sys.stdout.write("__NOCT_START_" + block_id + "__\n")
+            sys.stdout.flush()
+            try:
+                compiled = compile(code, "<block-" + block_id + ">", "exec")
+                exec(compiled, __ns)
+            except:
+                traceback.print_exc()
+            sys.stdout.write("__NOCT_END_" + block_id + "__\n")
+            sys.stdout.flush()
+    except EOFError:
+        break
+    except Exception as e:
+        sys.stderr.write("Kernel error: " + str(e) + "\n")
+        sys.stderr.flush()
+"#;
+
 #[derive(Debug, Clone, serde::Serialize)]
 pub struct ExecutionResult {
     pub stdout: String,
@@ -31,10 +71,10 @@ pub struct KernelHandle {
 }
 
 impl KernelHandle {
-    /// Spawn a new persistent Python 3 REPL process.
+    /// Spawn a new persistent Python 3 kernel process using the bootstrap script.
     pub async fn spawn() -> Result<Self, KernelError> {
         let mut child = Command::new("python3")
-            .args(["-i", "-u"])
+            .args(["-u", "-c", KERNEL_BOOTSTRAP])
             .stdin(std::process::Stdio::piped())
             .stdout(std::process::Stdio::piped())
             .stderr(std::process::Stdio::piped())
@@ -78,14 +118,14 @@ impl KernelHandle {
     ) -> Result<ExecutionResult, KernelError> {
         let start = Instant::now();
 
-        // 1. Wrap code with sentinel markers
-        let wrapped = protocol::wrap_code(block_id, code);
+        // 1. Build the sentinel-delimited payload
+        let payload = protocol::wrap_code(block_id, code);
 
         // 2. Write to stdin
         {
             let mut stdin = self.stdin.lock().await;
             stdin
-                .write_all(wrapped.as_bytes())
+                .write_all(payload.as_bytes())
                 .await
                 .map_err(|e| KernelError::crashed(format!("stdin write failed: {e}")))?;
             stdin
@@ -128,7 +168,7 @@ impl KernelHandle {
             Ok(Ok(())) => {}
         }
 
-        // 4. Try a non-blocking read of stderr (50ms timeout)
+        // 4. Drain stderr (only real errors/tracebacks now, no >>> prompts)
         let stderr_output = self.drain_stderr().await;
 
         // 5. Parse output

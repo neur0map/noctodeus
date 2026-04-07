@@ -1,12 +1,15 @@
-/// Wrap user code with sentinel markers for output capture.
+/// Build the sentinel-delimited payload for the bootstrap kernel.
+///
+/// Format sent to stdin:
+///   __NOCT_EXEC__{block_id}\n
+///   {code lines}\n
+///   __NOCT_CODE_END__\n
+///
+/// No escaping needed — the bootstrap script reads until the code-end sentinel.
 pub fn wrap_code(block_id: &str, code: &str) -> String {
-    let escaped = code
-        .replace('\\', "\\\\")
-        .replace("\"\"\"", "\\\"\\\"\\\"");
     format!(
-        "print(\"__NOCT_START_{bid}__\")\ntry:\n    exec(\"\"\"{code}\"\"\")\nexcept Exception as __noct_e:\n    import traceback; traceback.print_exc()\nprint(\"__NOCT_END_{bid}__\")\n",
-        bid = block_id,
-        code = escaped,
+        "__NOCT_EXEC__{}\n{}\n__NOCT_CODE_END__\n",
+        block_id, code,
     )
 }
 
