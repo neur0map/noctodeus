@@ -64,6 +64,7 @@
     flex-direction: column;
     min-width: 0;
     overflow: hidden;
+    border-radius: 0 12px 12px 0;
   }
 
   @media (prefers-reduced-motion: reduce) {
