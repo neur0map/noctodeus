@@ -23,6 +23,8 @@
 
   let showAddPicker = $state(false);
   let dropdownTabId = $state<string | null>(null);
+  let dropdownPos = $state<{ top: number; left: number }>({ top: 0, left: 0 });
+  let addPickerPos = $state<{ top: number; left: number }>({ top: 0, left: 0 });
   let renamingTabId = $state<string | null>(null);
   let renameValue = $state('');
 
@@ -88,7 +90,13 @@
         <div class="tab-dropdown" style="position: relative;">
           <button
             class="tab-bar__menu-btn"
-            onclick={(e) => { e.preventDefault(); e.stopPropagation(); dropdownTabId = dropdownTabId === tab.id ? null : tab.id; }}
+            onclick={(e) => {
+              e.preventDefault(); e.stopPropagation();
+              if (dropdownTabId === tab.id) { dropdownTabId = null; return; }
+              const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+              dropdownPos = { top: rect.bottom + 4, left: Math.min(rect.left, window.innerWidth - 160) };
+              dropdownTabId = tab.id;
+            }}
             onmousedown={(e) => { e.preventDefault(); e.stopPropagation(); }}
             title="Tab options"
           >
@@ -96,7 +104,7 @@
           </button>
 
           {#if dropdownTabId === tab.id}
-            <div class="tab-dropdown__menu">
+            <div class="tab-dropdown__menu" style="top: {dropdownPos.top}px; left: {dropdownPos.left}px;">
               <button class="tab-dropdown__item" onclick={(e) => { e.preventDefault(); e.stopPropagation(); startRename(tab.id, tab.name); }} onmousedown={(e) => { e.preventDefault(); e.stopPropagation(); }}>
                 Rename
               </button>
@@ -126,11 +134,20 @@
   </div>
 
   <div class="tab-bar__add" style="position: relative;">
-    <button class="tab-bar__add-btn" onclick={(e) => { e.preventDefault(); e.stopPropagation(); showAddPicker = !showAddPicker; }} onmousedown={(e) => { e.preventDefault(); e.stopPropagation(); }} title="Add tab">
+    <button class="tab-bar__add-btn" onclick={(e) => {
+      e.preventDefault(); e.stopPropagation();
+      if (showAddPicker) { showAddPicker = false; return; }
+      const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+      addPickerPos = { top: rect.bottom + 4, left: Math.min(rect.left, window.innerWidth - 170) };
+      showAddPicker = true;
+    }} onmousedown={(e) => { e.preventDefault(); e.stopPropagation(); }} title="Add tab">
       +
     </button>
     {#if showAddPicker}
       <LanguagePicker
+        fixed={true}
+        top={addPickerPos.top}
+        left={addPickerPos.left}
         onselect={(lang) => { onadd(lang); showAddPicker = false; }}
         onclose={() => showAddPicker = false}
       />
@@ -233,10 +250,8 @@
   }
 
   .tab-dropdown__menu {
-    position: absolute;
-    top: 100%;
-    right: 0;
-    z-index: 100;
+    position: fixed;
+    z-index: 9999;
     display: flex;
     flex-direction: column;
     min-width: 130px;

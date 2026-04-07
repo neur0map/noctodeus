@@ -4,9 +4,15 @@
   let {
     onselect,
     onclose,
+    top = 0,
+    left = 0,
+    fixed = false,
   }: {
     onselect: (lang: SupportedLanguage) => void;
     onclose: () => void;
+    top?: number;
+    left?: number;
+    fixed?: boolean;
   } = $props();
 
   $effect(() => {
@@ -18,7 +24,11 @@
   });
 </script>
 
-<div class="lang-picker">
+<div
+  class="lang-picker"
+  class:lang-picker--fixed={fixed}
+  style={fixed ? `top: ${top}px; left: ${left}px;` : ''}
+>
   {#each SUPPORTED_LANGUAGES as lang}
     <button
       class="lang-picker__item"
@@ -35,7 +45,6 @@
   .lang-picker {
     position: absolute;
     top: 100%;
-    left: auto;
     right: 0;
     z-index: 100;
     display: flex;
@@ -46,6 +55,13 @@
     border: 1px solid var(--border-subtle, #1E2336);
     background: var(--surface-2, #1A1E2E);
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  }
+
+  .lang-picker--fixed {
+    position: fixed;
+    top: auto;
+    right: auto;
+    z-index: 9999;
   }
 
   .lang-picker__item {
