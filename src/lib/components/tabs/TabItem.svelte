@@ -99,6 +99,31 @@
 
   .tab-item--active {
     color: var(--text-primary, var(--color-foreground));
+    position: relative;
+  }
+
+  .tab-item--active::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: conic-gradient(
+      from var(--glow-angle, 0deg),
+      transparent 0%,
+      transparent 65%,
+      rgba(122, 162, 247, 0.12) 75%,
+      rgba(122, 162, 247, 0.3) 82%,
+      rgba(122, 162, 247, 0.12) 89%,
+      transparent 100%
+    );
+    -webkit-mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    animation: glow-trace 6s linear infinite, glow-trace-fade-in 0.8s ease both;
+    pointer-events: none;
   }
 
   .tab-item--dragging {

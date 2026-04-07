@@ -432,6 +432,31 @@
   .settings__nav-item--active {
     color: var(--color-foreground);
     font-weight: 500;
+    position: relative;
+  }
+
+  .settings__nav-item--active::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: conic-gradient(
+      from var(--glow-angle, 0deg),
+      transparent 0%,
+      transparent 65%,
+      rgba(122, 162, 247, 0.1) 75%,
+      rgba(122, 162, 247, 0.25) 82%,
+      rgba(122, 162, 247, 0.1) 89%,
+      transparent 100%
+    );
+    -webkit-mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    animation: glow-trace 7s linear infinite, glow-trace-fade-in 0.8s ease both;
+    pointer-events: none;
   }
 
   .settings__nav-icon {

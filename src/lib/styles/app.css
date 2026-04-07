@@ -250,3 +250,19 @@ button, a, input, textarea, select, [role="button"], [role="tab"] {
   background: rgba(122, 162, 247, 0.2);
   color: inherit;
 }
+
+/* ── Glow Trace — traveling light around selected element borders ── */
+@property --glow-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes glow-trace {
+  to { --glow-angle: 360deg; }
+}
+
+@keyframes glow-trace-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
