@@ -36,7 +36,7 @@
     grid-template-columns: 276px 1fr;
     height: calc(100vh - 8px);
     margin: 0 8px 8px 8px;
-    border-radius: 12px;
+    border-radius: 16px;
     background: var(--color-background);
     overflow: hidden;
     box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
@@ -55,7 +55,7 @@
     overflow: hidden;
     border-right: 1px solid var(--border-subtle, var(--color-border));
     background: var(--surface-1, var(--color-card));
-    border-radius: 12px 0 0 12px;
+    border-radius: 16px 0 0 16px;
     transition: width 150ms var(--ease-expo-out);
   }
 
@@ -64,7 +64,7 @@
     flex-direction: column;
     min-width: 0;
     overflow: hidden;
-    border-radius: 0 12px 12px 0;
+    border-radius: 0 16px 16px 0;
   }
 
   @media (prefers-reduced-motion: reduce) {
