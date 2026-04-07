@@ -5,6 +5,7 @@ pub mod errors;
 pub mod events;
 pub mod indexer;
 pub mod logging;
+pub mod sync;
 pub mod watcher;
 
 /// Normalize a path string to always use forward slashes.
@@ -95,6 +96,16 @@ pub fn run() {
             commands::graph_links,
             commands::graph_stats,
             commands::graph_backlinks,
+            // Sync commands
+            commands::sync_setup,
+            commands::sync_status,
+            commands::sync_smart,
+            commands::sync_push,
+            commands::sync_pull,
+            commands::sync_enable_core,
+            commands::sync_disable_core,
+            commands::sync_resolve,
+            commands::sync_disconnect,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -1,180 +1,152 @@
-# Noctodeus
+<p align="center">
+  <img src="static/noctodeous-logo.png" alt="Noctodeus" width="80" />
+</p>
 
-A nocturnal note-taking app for technical minds. Local-first, privacy-focused knowledge management built as a native desktop application with executable code blocks, persistent Python kernel, and a premium Midnight Tokyo aesthetic.
+<h1 align="center">Noctodeus</h1>
 
-![Editor](static/noctodeus-1.png)
+<p align="center">
+  A local-first note-taking app for people who think in connections.
+</p>
+
+<p align="center">
+  <a href="https://github.com/neur0map/noctodeus/releases/latest">Download</a> &middot;
+  <a href="#features">Features</a> &middot;
+  <a href="#getting-started">Getting Started</a> &middot;
+  <a href="#keyboard-shortcuts">Shortcuts</a> &middot;
+  <a href="https://github.com/neur0map/noctodeus/issues">Feedback</a>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/github/license/neur0map/noctodeus?color=%23c0a0f0&style=for-the-badge" alt="License" />
+  <img src="https://img.shields.io/github/v/release/neur0map/noctodeus?color=%23c0a0f0&style=for-the-badge" alt="Release" />
+  <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-blue?style=for-the-badge" alt="Platform" />
+  <img src="https://img.shields.io/github/stars/neur0map/noctodeus?style=for-the-badge" alt="Stars" />
+</p>
+
+<br />
+
+<p align="center">
+  <img src="static/noctodeus-1.png" alt="Noctodeus Editor" width="800" />
+</p>
+
+---
+
+## Why Noctodeus
+
+Your notes live on your machine as plain markdown files. No cloud accounts. No subscriptions. No vendor lock-in. You own everything you write.
+
+Noctodeus treats your notes as a connected network, not a folder hierarchy. Link ideas together with wiki-links, watch patterns emerge in the graph view, and find anything instantly with full-text search. When you're ready, sync to a private GitHub repo — your data never touches a server you don't control.
+
+Built with Rust, Svelte 5, and Tauri 2 for a native desktop experience that feels fast and stays fast.
+
+---
 
 ## Features
 
-- **Rich markdown editor** — TipTap 3 with tables, math (KaTeX), code blocks with syntax highlighting, task lists, images, video, audio, embeds
-- **Executable code blocks** — Multi-tab code regions in notes with persistent Python kernel (variables carry across blocks) and live HTML/CSS/JS preview with iframe rendering
-- **Wiki links & graph view** — `[[link]]` syntax with backlinks, interactive knowledge graph with constellation-style visualization, alias resolution
-- **Global search** — FTS5-powered search across file names, titles, and content with highlighted snippets (Cmd+K)
-- **8 visual themes** — Midnight Tokyo, Obsidian, Nord Frost, Dawn, Paper, Solarized Light, Khaki, Rose Pine — with Bear-style preview cards
-- **Daily notes & calendar** — Month calendar widget in sidebar, click any date to create/open a journal entry
-- **Properties panel** — Collapsible YAML frontmatter editor with typed fields (text, tags, dates, checkboxes)
-- **Task extraction** — Consolidated view of all tasks across your vault, filterable by status
-- **Unlinked mentions** — Detects references to your notes that aren't linked yet, one-click to convert
-- **Multiple cores** — Switch between vaults instantly from the sidebar dropdown
-- **Find & replace** — In-editor search with match highlighting, case toggle, replace all
-- **Edit/view toggle** — Switch between WYSIWYG editing and rendered preview
-- **Export** — Markdown, HTML, CSV with optional media inclusion
-- **Editable keyboard shortcuts** — Customize all keybindings from settings with live recording
-- **Customizable** — Font families, editor width, custom CSS injection with documented selectors
+**Editor** — Rich markdown editing with slash commands, tables, task lists, code blocks with syntax highlighting for 30+ languages, images, video, audio, and embeds. Everything saves as clean `.md` files.
 
-![Graph & Editing](static/noctodeus-2.png)
+**Wiki-links & Graph** — Type `[[` to link notes. See backlinks in the side panel. Open the graph view to visualize your entire knowledge network — larger nodes have more connections.
 
-![Task Extraction](static/noctodeus-3.png)
+**Full-text Search** — SQLite FTS5 with Porter stemming. Search across titles and content. Results show highlighted snippets. Press one shortcut and start typing.
 
-![Appearance Settings](static/noctodeus-4.png)
+**Daily Notes** — Click any date in the sidebar calendar to create or open a journal entry. Templated with frontmatter, tasks section, and notes section.
 
-![Executable Code Blocks](static/noctodeus-5.png)
+**GitHub Sync** — Push and pull your notes to a private GitHub repo. One button. Automatic three-way merge. Conflicts fork into separate files — nothing is ever lost.
 
-## Stack
+**15+ Themes** — Dark, light, and warm palettes. Each theme is crafted with consistent color tokens across every UI element. Switch instantly from settings.
 
-### Core
+**Customizable** — Rebind any keyboard shortcut. Override fonts. Inject custom CSS. Adjust editor width, font size, and more.
 
-| Layer | Technology | Purpose |
-|-------|-----------|---------|
-| Desktop Shell | [Tauri 2](https://tauri.app) | Native desktop wrapper with Rust backend |
-| Frontend Framework | [SvelteKit](https://kit.svelte.dev) + [Svelte 5](https://svelte.dev) | Reactive UI with runes-based state |
-| Build Tool | [Vite 6](https://vitejs.dev) | Dev server, HMR, bundling |
-| Language | [TypeScript 5.6](https://typescriptlang.org) | Type-safe frontend code |
-| Backend Language | [Rust](https://rust-lang.org) (2021 edition) | Performance-critical backend logic |
+**Multiple Cores** — Keep personal notes, work projects, and research in separate vaults. Switch between them from the sidebar.
 
-### Editor
+<p align="center">
+  <img src="static/noctodeus-2.png" alt="Graph View" width="800" />
+</p>
 
-| Library | Purpose |
-|---------|---------|
-| [TipTap 3](https://tiptap.dev) | Headless rich text editor framework |
-| [ProseMirror](https://prosemirror.net) | Document model and editing primitives |
-| [lowlight](https://github.com/wooorm/lowlight) | Syntax highlighting (Tokyo Night theme) |
-| [markdown-it](https://github.com/markdown-it/markdown-it) | Markdown parsing with plugins (mark, sub, sup, KaTeX) |
-| [KaTeX](https://katex.org) | LaTeX math rendering via @vscode/markdown-it-katex |
+---
 
-TipTap Extensions: Starter Kit, Table, Highlight, Subscript, Superscript, Underline, TextAlign, Typography, TextStyle, Color, CharacterCount, Focus, Code Block Lowlight, Image, Link, Placeholder, Task List, Task Item, Suggestion, Executable Block
+## Download
 
-### UI
+Get the latest release for your platform:
 
-| Library | Purpose |
-|---------|---------|
-| [Tailwind CSS v4](https://tailwindcss.com) | Utility-first styling with CSS-native @theme tokens |
-| [shadcn-svelte](https://shadcn-svelte.com) | Accessible component primitives (Button, Dialog, Command, etc.) |
-| [Lucide](https://lucide.dev) | Icon library |
-| [JetBrainsMono Nerd Font](https://www.nerdfonts.com) | Monospace UI font with file-type glyphs |
-| [anime.js v4](https://animejs.com) | Staggered entry animations, transitions, micro-interactions |
-| SCSS | Custom layout partials for shell, sidebar, panels |
+| Platform | Architecture | Download |
+|----------|-------------|----------|
+| macOS | Apple Silicon (M1+) | [`.dmg`](https://github.com/neur0map/noctodeus/releases/latest) |
+| macOS | Intel | [`.dmg`](https://github.com/neur0map/noctodeus/releases/latest) |
+| Windows | x64 | [`.exe`](https://github.com/neur0map/noctodeus/releases/latest) |
+| Linux | x64 | [`.AppImage`](https://github.com/neur0map/noctodeus/releases/latest) / [`.deb`](https://github.com/neur0map/noctodeus/releases/latest) |
 
-### Data
+Or build from source — see [Development](#development) below.
 
-| Technology | Purpose |
-|-----------|---------|
-| [SQLite](https://sqlite.org) via [rusqlite](https://github.com/rusqlite/rusqlite) | Local database with FTS5 full-text search, WAL mode |
-| File System | Markdown files stored as plain `.md` on disk |
-| `localStorage` | Frontend preferences and settings persistence |
+---
 
-### Backend (Rust Crates)
+## Getting Started
 
-| Crate | Purpose |
-|-------|---------|
-| `tauri` | App framework, IPC, window management |
-| `rusqlite` | SQLite with bundled engine, FTS5 virtual tables |
-| `tokio` | Async runtime, persistent Python kernel management |
-| `notify` | File system watcher for live indexing |
-| `walkdir` | Recursive directory scanning |
-| `tracing` + `tracing-subscriber` + `tracing-appender` | Structured logging with file rotation |
-| `serde` + `serde_json` | Serialization between Rust and frontend |
-| `sha2` + `hex` | Content hashing for change detection |
-| `trash` | Cross-platform move-to-trash |
-| `chrono` | Date/time handling |
-| `uuid` | Unique identifier generation |
-| `toml` | Configuration file parsing |
-| `dirs` | Platform-specific directory resolution |
-| `thiserror` | Error type derivation |
+1. **Create a core** — Pick an empty folder (or an existing folder with markdown files). This becomes your vault.
+2. **Start writing** — New cores include a welcome guide that walks through every feature.
+3. **Link ideas** — Type `[[` to create wiki-links between notes. The graph grows as you write.
+4. **Set up sync** — Go to Settings > Sync, paste a GitHub PAT and repo URL, and click Connect.
 
-### Tauri Plugins
+---
 
-| Plugin | Purpose |
-|--------|---------|
-| `tauri-plugin-dialog` | Native open/save file dialogs |
-| `tauri-plugin-fs` | File system read/write from frontend |
-| `tauri-plugin-opener` | Open files and URLs with system default apps |
+## Keyboard Shortcuts
 
-### Dev & Testing
+All shortcuts are customizable in Settings > Hotkeys.
 
-| Tool | Purpose |
-|------|---------|
-| [Vitest](https://vitest.dev) | Unit testing |
-| [Testing Library](https://testing-library.com/svelte) | Component testing |
-| [jsdom](https://github.com/jsdom/jsdom) | DOM environment for tests |
-| [ESLint 9](https://eslint.org) | Linting |
-| [Prettier](https://prettier.io) | Code formatting (with Svelte plugin) |
-| `svelte-check` | Type checking |
+| Action | macOS | Windows / Linux |
+|--------|-------|-----------------|
+| Quick Open | `Cmd+P` | `Ctrl+P` |
+| Search | `Cmd+K` | `Ctrl+K` |
+| Command Palette | `Cmd+Shift+P` | `Ctrl+Shift+P` |
+| New Note | `Cmd+N` | `Ctrl+N` |
+| Toggle Sidebar | `Cmd+B` | `Ctrl+B` |
+| Toggle Panel | `Cmd+\` | `Ctrl+\` |
+| Find in Note | `Cmd+F` | `Ctrl+F` |
+| Delete File | `Cmd+Backspace` | `Ctrl+Backspace` |
 
-## Architecture
+---
 
-```
-noctodeus/
-├── src/                          # Frontend (SvelteKit SPA)
-│   ├── lib/
-│   │   ├── bridge/               # Tauri command wrappers
-│   │   ├── components/           # UI components
-│   │   │   ├── codeblock/        # Executable code block (tabs, editor, output drawer)
-│   │   │   ├── common/           # Modals, dialogs, menus, focus manager
-│   │   │   ├── editor/           # Properties panel
-│   │   │   ├── filetree/         # File tree with keyboard nav
-│   │   │   ├── graph/            # Knowledge graph visualization
-│   │   │   ├── layout/           # AppShell, Sidebar, ContentArea, TabBar, Dialogs
-│   │   │   ├── panels/           # Note details, outline, backlinks
-│   │   │   ├── quickopen/        # Global search (Cmd+K)
-│   │   │   ├── sidebar/          # Calendar widget
-│   │   │   ├── tabs/             # Tab bar with drag reorder
-│   │   │   └── ui/               # shadcn-svelte generated components
-│   │   ├── editor/               # TipTap editor, extensions, serializer
-│   │   ├── stores/               # Svelte 5 rune-based state
-│   │   ├── styles/               # Tailwind theme, SCSS layout partials
-│   │   ├── themes/               # 8 visual themes with runtime application
-│   │   ├── types/                # TypeScript interfaces
-│   │   └── utils/                # Shortcuts, motion, nerd-icons
-│   └── routes/                   # SvelteKit pages
-├── src-tauri/                    # Backend (Rust)
-│   └── src/
-│       ├── commands/             # Tauri IPC command handlers
-│       ├── core/                 # Core (vault) state management
-│       ├── db/                   # SQLite schema, queries, migrations
-│       ├── indexer/              # FTS indexing, file scanning, alias extraction
-│       ├── kernel/               # Persistent Python kernel management
-│       └── watcher/              # File system change detection
-└── static/                       # Static assets (logo, favicon, fonts, screenshots)
-```
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Desktop | [Tauri 2](https://tauri.app) + Rust |
+| Frontend | [SvelteKit](https://kit.svelte.dev) + [Svelte 5](https://svelte.dev) + TypeScript |
+| Editor | [TipTap 3](https://tiptap.dev) + ProseMirror |
+| Database | SQLite (rusqlite) with FTS5 full-text search |
+| Styling | Tailwind CSS v4 + shadcn-svelte |
+| Sync | Git CLI (GitHub) |
+
+---
 
 ## Development
 
 ```bash
-# Install dependencies
-npm install
+# Prerequisites: Node.js 18+, Rust toolchain, git
+# On Linux: sudo apt install libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
 
-# Run in development mode (frontend + Tauri)
-cargo tauri dev
+npm install
+npm run tauri dev
+
+# Tests
+cd src-tauri && cargo test
+npm test
 
 # Type check
 npm run check
 
-# Run tests
-npm test
-
-# Build for production
-cargo tauri build
+# Production build
+npm run tauri build
 ```
 
-## Platform Support
+---
 
-Runs on macOS, Windows, and Linux. Keyboard shortcuts adapt automatically (Cmd on macOS, Ctrl on Windows/Linux). File paths are normalized to forward slashes internally for cross-platform consistency.
+## Contributing
 
-## Status
+Issues and pull requests are welcome. If you find a bug or have a feature request, [open an issue](https://github.com/neur0map/noctodeus/issues).
 
-Early development. Not ready for production use.
+---
 
 ## License
 
-This project is licensed under the [GNU Affero General Public License v3.0](LICENSE).
+[GNU Affero General Public License v3.0](LICENSE)

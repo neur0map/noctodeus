@@ -16,6 +16,8 @@
   import { getGraphState } from "../lib/stores/graph.svelte";
   import { getTabsState } from "../lib/stores/tabs.svelte";
   import { getPinnedState } from "../lib/stores/pinned.svelte";
+  import { getSyncState } from "../lib/stores/sync.svelte";
+  import { syncSmart, syncPush, syncPull } from "../lib/bridge/sync";
   import {
     readFile,
     createFile,
@@ -41,6 +43,7 @@
   const editorState = getEditorState();
   const tabsState = getTabsState();
   const graphState = getGraphState();
+  const syncState = getSyncState();
 
   // --- State ---
   let currentFilePath = $state<string | null>(null);
@@ -179,6 +182,56 @@
       label: "Toggle Right Panel",
       shortcut: formatShortcutLabel(APP_SHORTCUTS.toggle_right_panel),
       action: () => ui.toggleRightPanel(),
+    },
+    {
+      id: "sync-now",
+      label: "Sync Now",
+      action: async () => {
+        ui.hideCommandPalette();
+        const result = await syncState.sync();
+        if (result) {
+          const total = result.filesPushed + result.filesPulled;
+          toast.success(total > 0 ? `Synced -- ${total} files updated` : 'Already up to date');
+        } else if (syncState.lastError) {
+          toast.error(`Sync failed: ${syncState.lastError}`);
+        }
+      },
+    },
+    {
+      id: "sync-push",
+      label: "Sync: Push Only",
+      action: async () => {
+        ui.hideCommandPalette();
+        try {
+          const result = await syncPush();
+          toast.success(`Pushed ${result.filesPushed} file(s)`);
+          await syncState.refresh();
+        } catch (err) {
+          toast.error(`Push failed: ${err}`);
+        }
+      },
+    },
+    {
+      id: "sync-pull",
+      label: "Sync: Pull Only",
+      action: async () => {
+        ui.hideCommandPalette();
+        try {
+          const result = await syncPull();
+          toast.success(`Pulled ${result.filesPulled} file(s)`);
+          await syncState.refresh();
+        } catch (err) {
+          toast.error(`Pull failed: ${err}`);
+        }
+      },
+    },
+    {
+      id: "sync-settings",
+      label: "Sync: Open Settings",
+      action: () => {
+        ui.hideCommandPalette();
+        ui.showSettings();
+      },
     },
   ]);
 

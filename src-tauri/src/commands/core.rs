@@ -17,11 +17,11 @@ use crate::watcher::DebouncedWatcher;
 
 /// Persisted registry entry stored in `cores.json` inside the app data dir.
 #[derive(Debug, Clone, Serialize, Deserialize)]
-struct CoreEntry {
-    id: String,
-    name: String,
-    path: String,
-    last_opened: Option<String>,
+pub struct CoreEntry {
+    pub id: String,
+    pub name: String,
+    pub path: String,
+    pub last_opened: Option<String>,
 }
 
 // ---------------------------------------------------------------------------
@@ -50,6 +50,11 @@ fn read_cores_registry() -> Result<Vec<CoreEntry>, NoctoError> {
     let contents = fs::read_to_string(&path)?;
     let entries: Vec<CoreEntry> = serde_json::from_str(&contents)?;
     Ok(entries)
+}
+
+/// Public access to the cores registry for sync.
+pub fn read_cores_registry_pub() -> Result<Vec<CoreEntry>, NoctoError> {
+    read_cores_registry()
 }
 
 /// Writes the cores registry back to disk.
@@ -164,6 +169,12 @@ pub async fn core_create(path: String, name: String, app: tauri::AppHandle, stat
 
     ensure_noctodeus_dir(&core_path)?;
     let manifest = create_manifest(&core_path, &name)?;
+
+    // Populate welcome content for new cores (non-fatal if it fails)
+    if let Err(e) = crate::core::welcome::write_welcome_content(&core_path) {
+        tracing::warn!("failed to write welcome content: {e}");
+    }
+
     let pool = open_db(&core_path)?;
 
     let now = Utc::now().to_rfc3339();

@@ -5,6 +5,7 @@
   import Palette from "@lucide/svelte/icons/palette";
   import FileText from "@lucide/svelte/icons/file-text";
   import Keyboard from "@lucide/svelte/icons/keyboard";
+  import RefreshCw from "@lucide/svelte/icons/refresh-cw";
   import X from "@lucide/svelte/icons/x";
 
   import SettingsGeneral from './settings/SettingsGeneral.svelte';
@@ -12,6 +13,7 @@
   import SettingsAppearance from './settings/SettingsAppearance.svelte';
   import SettingsFiles from './settings/SettingsFiles.svelte';
   import SettingsHotkeys from './settings/SettingsHotkeys.svelte';
+  import SettingsSync from './settings/SettingsSync.svelte';
 
   let {
     visible = false,
@@ -23,7 +25,7 @@
 
   const settings = getSettings();
 
-  type Section = 'general' | 'editor' | 'appearance' | 'files' | 'hotkeys';
+  type Section = 'general' | 'editor' | 'appearance' | 'files' | 'hotkeys' | 'sync';
 
   let activeSection = $state<Section>('general');
 
@@ -33,6 +35,7 @@
     { id: 'appearance', label: 'Appearance' },
     { id: 'files', label: 'Files & Links' },
     { id: 'hotkeys', label: 'Hotkeys' },
+    { id: 'sync', label: 'Sync' },
   ];
 
   function handleKeydown(e: KeyboardEvent) {
@@ -68,6 +71,7 @@
                 {:else if section.id === 'appearance'}<Palette size={14} />
                 {:else if section.id === 'files'}<FileText size={14} />
                 {:else if section.id === 'hotkeys'}<Keyboard size={14} />
+                {:else if section.id === 'sync'}<RefreshCw size={14} />
                 {/if}
               </span>
               <span>{section.label}</span>
@@ -96,6 +100,8 @@
             <SettingsFiles {settings} />
           {:else if activeSection === 'hotkeys'}
             <SettingsHotkeys {settings} />
+          {:else if activeSection === 'sync'}
+            <SettingsSync {settings} />
           {/if}
         </div>
       </div>

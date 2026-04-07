@@ -35,6 +35,18 @@ pub enum NoctoError {
     IndexerFailed { detail: String },
     #[error("Unexpected error: {detail}")]
     Unexpected { detail: String },
+
+    // Sync
+    #[error("Sync failed: {detail}")]
+    SyncFailed { detail: String },
+    #[error("Sync in progress")]
+    SyncBusy,
+    #[error("Sync not configured")]
+    SyncNotConfigured,
+    #[error("Git not found: install git from git-scm.com")]
+    GitNotFound,
+    #[error("Sync conflict: {detail}")]
+    SyncConflict { detail: String },
 }
 
 impl NoctoError {
@@ -52,6 +64,11 @@ impl NoctoError {
             NoctoError::WatcherFailed { .. } => "watcher_failed",
             NoctoError::IndexerFailed { .. } => "indexer_failed",
             NoctoError::Unexpected { .. } => "unexpected",
+            NoctoError::SyncFailed { .. } => "sync_failed",
+            NoctoError::SyncBusy => "sync_busy",
+            NoctoError::SyncNotConfigured => "sync_not_configured",
+            NoctoError::GitNotFound => "git_not_found",
+            NoctoError::SyncConflict { .. } => "sync_conflict",
         }
     }
 }

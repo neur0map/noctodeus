@@ -9,6 +9,7 @@
   import CoreSwitcher from "$lib/components/common/CoreSwitcher.svelte";
   import Ellipsis from "@lucide/svelte/icons/ellipsis";
   import Settings from "@lucide/svelte/icons/settings";
+  import SyncButton from "$lib/components/layout/SyncButton.svelte";
   import { nerdIcon } from "$lib/utils/nerd-icons";
 
   let {
@@ -88,6 +89,7 @@
         onopen={() => window.dispatchEvent(new CustomEvent('noctodeus-open-core'))}
       />
       <div class="sidebar-footer__actions">
+        <SyncButton />
         <button
           class="sidebar-footer__btn"
           class:sidebar-footer__btn--active={ui.panelModalVisible}
