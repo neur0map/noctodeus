@@ -3,7 +3,7 @@
 ## Current Stack (can build now with what we have)
 
 - [x] **UI Overhaul — Midnight Tokyo** (deep retheme, Nerd Fonts, restyled shadcn, Bear/Raycast-inspired craft, two-column layout, 8 themes, editable keybinds, graph redesign)
-- [ ] Executable code blocks (multi-file code regions in notes, run inline, output below block)
+- [x] Executable code blocks (multi-file code regions in notes, run inline, output below block)
 - [ ] Split pane editing (side-by-side notes, note + graph, note + output)
 - [ ] Version history / file recovery (automatic snapshots, restore previous versions)
 - [ ] Quick capture (global hotkey to capture a thought without opening the full app)
