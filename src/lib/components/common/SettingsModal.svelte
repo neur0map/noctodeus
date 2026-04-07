@@ -118,20 +118,36 @@
 
           {:else if activeSection === 'appearance'}
             <div class="settings__section">
-              <div class="settings__row">
+              <div class="settings__row settings__row--theme">
                 <div class="settings__row-info">
                   <span class="settings__row-label">Theme</span>
                   <span class="settings__row-desc">Choose the interface theme.</span>
                 </div>
-                <select
-                  class="settings__select"
-                  value={settings.theme}
-                  onchange={(e) => settings.update('theme', e.currentTarget.value)}
-                >
-                  {#each THEMES as theme}
-                    <option value={theme.id}>{theme.name}</option>
-                  {/each}
-                </select>
+              </div>
+              <div class="theme-grid">
+                {#each ['dark', 'light', 'warm'] as group}
+                  <div class="theme-grid__group">
+                    <span class="theme-grid__group-label">{group}</span>
+                    <div class="theme-grid__cards">
+                      {#each THEMES.filter(t => t.group === group) as theme (theme.id)}
+                        <button
+                          class="theme-card"
+                          class:theme-card--active={settings.theme === theme.id}
+                          style="background: {theme.preview.bg};"
+                          onclick={() => settings.update('theme', theme.id)}
+                        >
+                          <span class="theme-card__name" style="color: {theme.preview.text};">{theme.name}</span>
+                          <span class="theme-card__sample" style="color: {theme.preview.textMuted};">
+                            Lorem ipsum <strong style="color: {theme.preview.text};">dolor sit</strong> amet, consectetur.
+                          </span>
+                          <span class="theme-card__sample" style="color: {theme.preview.textMuted};">
+                            Mauris <em style="color: {theme.preview.link};">semper</em> pharetra.
+                          </span>
+                        </button>
+                      {/each}
+                    </div>
+                  </div>
+                {/each}
               </div>
               <div class="settings__row">
                 <div class="settings__row-info">
@@ -227,6 +243,9 @@
                   onchange={(e) => settings.update('customCSS', e.currentTarget.value)}
                   rows={5}
                 ></textarea>
+                <span class="settings__row-desc" style="margin-top: 4px; font-size: 10px;">
+                  Selectors: .ProseMirror (editor), .app-shell (layout), :root (tokens)
+                </span>
               </div>
             </div>
 
@@ -709,6 +728,96 @@
 
   .settings__css-editor::placeholder {
     color: var(--color-placeholder);
+  }
+
+  /* ── Theme row (no bottom border — grid follows) ── */
+  .settings__row--theme {
+    border-bottom: none;
+    padding-bottom: 8px;
+  }
+
+  /* ── Theme preview grid ── */
+  .theme-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  }
+
+  .theme-grid__group-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-variant: small-caps;
+    color: var(--text-muted, var(--color-placeholder));
+    letter-spacing: 0.04em;
+    padding-left: 2px;
+    margin-bottom: 6px;
+    display: block;
+  }
+
+  .theme-grid__cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .theme-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(128, 128, 128, 0.1);
+    cursor: pointer;
+    text-align: left;
+    transition: border-color 150ms ease-out;
+  }
+
+  .theme-card:hover {
+    border-color: rgba(128, 128, 128, 0.2);
+  }
+
+  /* Active theme gets the glow-trace animation */
+  .theme-card--active {
+    border-color: transparent;
+  }
+
+  .theme-card--active::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: conic-gradient(
+      from var(--glow-angle, 0deg),
+      transparent 0%,
+      transparent 65%,
+      rgba(122, 162, 247, 0.15) 75%,
+      rgba(122, 162, 247, 0.35) 82%,
+      rgba(122, 162, 247, 0.15) 89%,
+      transparent 100%
+    );
+    -webkit-mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    animation: glow-trace 6s linear infinite;
+    pointer-events: none;
+  }
+
+  .theme-card__name {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.3;
+  }
+
+  .theme-card__sample {
+    font-size: 11px;
+    line-height: 1.5;
   }
 
   @media (prefers-reduced-motion: reduce) {
