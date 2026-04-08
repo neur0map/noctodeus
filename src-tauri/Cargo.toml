@@ -37,6 +37,13 @@ hex = "0.4"
 tauri-plugin-dialog = "2.6.0"
 async-trait = "0.1"
 tauri-plugin-fs = "2.5.0"
+tauri-plugin-clipboard-manager = "2"
 tempfile = "3"
+aes-gcm = "0.10"
+rand = "0.8"
+base64 = "0.22"
+reqwest = { version = "0.12", features = ["json", "rustls-tls"], default-features = false }
+pbkdf2 = "0.12"
+hmac = "0.12"
 
 [dev-dependencies]

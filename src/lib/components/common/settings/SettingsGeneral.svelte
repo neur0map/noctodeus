@@ -23,4 +23,17 @@
       <span class="settings__toggle-track"></span>
     </label>
   </div>
+  <div class="settings__row settings__row--vertical">
+    <div class="settings__row-info">
+      <span class="settings__row-label">Cryptgeon server</span>
+      <span class="settings__row-desc">For larger notes or private hosting, run your own instance.</span>
+    </div>
+    <input
+      class="settings__font-input"
+      type="text"
+      placeholder="https://cryptgeon.org"
+      value={settings.cryptgeonServer}
+      onchange={(e) => settings.update('cryptgeonServer', e.currentTarget.value)}
+    />
+  </div>
 </div>

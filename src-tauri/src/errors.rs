@@ -47,6 +47,10 @@ pub enum NoctoError {
     GitNotFound,
     #[error("Sync conflict: {detail}")]
     SyncConflict { detail: String },
+
+    // Share
+    #[error("Share failed: {detail}")]
+    ShareFailed { detail: String },
 }
 
 impl NoctoError {
@@ -69,6 +73,7 @@ impl NoctoError {
             NoctoError::SyncNotConfigured => "sync_not_configured",
             NoctoError::GitNotFound => "git_not_found",
             NoctoError::SyncConflict { .. } => "sync_conflict",
+            NoctoError::ShareFailed { .. } => "share_failed",
         }
     }
 }

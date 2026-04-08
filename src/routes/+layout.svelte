@@ -41,6 +41,7 @@
   import { handleExport as doExport } from "../lib/utils/export";
 
   import FocusManager from "../lib/components/common/FocusManager.svelte";
+  import ShareModal from "../lib/components/common/ShareModal.svelte";
 
   let { children }: { children: Snippet } = $props();
 
@@ -153,6 +154,10 @@
   let exportDialogVisible = $state(false);
   let exportDialogPath = $state('');
 
+  // Share modal state
+  let shareModalVisible = $state(false);
+  let shareContent = $state('');
+
   // Search state
   let searchResults = $state<SearchHit[]>([]);
 
@@ -243,6 +248,17 @@
     }
   }
 
+  async function handleShareNote(path: string) {
+    try {
+      const { readFile } = await import('../lib/bridge/commands');
+      const { content } = await readFile(path);
+      shareContent = content;
+      shareModalVisible = true;
+    } catch (err) {
+      logger.error(`Failed to read file for sharing: ${err}`);
+    }
+  }
+
   function handleTreeContextMenu(path: string, isDir: boolean, e: MouseEvent) {
     ctxTargetPath = path;
     ctxTargetIsDir = isDir;
@@ -262,6 +278,7 @@
       { id: 'rename', label: 'Rename' },
       { id: 'duplicate', label: 'Duplicate' },
       { id: 'export', label: 'Export...' },
+      { id: 'share', label: 'Share encrypted link' },
       { id: 'sep1', label: '', separator: true },
       { id: 'delete', label: 'Delete', danger: true },
     ];
@@ -314,6 +331,10 @@
         } catch (err) {
           logger.error(`Duplicate failed: ${err}`);
         }
+        break;
+      }
+      case 'share': {
+        await handleShareNote(ctxTargetPath);
         break;
       }
       case 'delete': {
@@ -415,6 +436,21 @@
         `Tauri event subscription failed (expected in browser dev mode): ${err}`,
       );
     }
+
+    const handleShareEvent = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      shareContent = detail.content;
+      shareModalVisible = true;
+    };
+    window.addEventListener('noctodeus-share', handleShareEvent);
+    unlisteners.push(() => window.removeEventListener('noctodeus-share', handleShareEvent));
+
+    const handleShareFileEvent = async (e: Event) => {
+      const path = (e as CustomEvent).detail.path;
+      await handleShareNote(path);
+    };
+    window.addEventListener('noctodeus-share-file', handleShareFileEvent);
+    unlisteners.push(() => window.removeEventListener('noctodeus-share-file', handleShareFileEvent));
   });
 
   onDestroy(() => {
@@ -651,6 +687,12 @@
   onExport={handleExport}
   onExportCancel={() => exportDialogVisible = false}
   onFileOpen={(path) => { ui.hideTasks(); handleFileSelect(path); }}
+/>
+
+<ShareModal
+  visible={shareModalVisible}
+  content={shareContent}
+  onclose={() => shareModalVisible = false}
 />
 
 </FocusManager>

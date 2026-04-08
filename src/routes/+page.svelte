@@ -233,6 +233,15 @@
         ui.showSettings();
       },
     },
+    {
+      id: "share-note",
+      label: "Share: Encrypted Link",
+      action: async () => {
+        ui.hideCommandPalette();
+        if (!currentFilePath || !currentContent) return;
+        window.dispatchEvent(new CustomEvent('noctodeus-share', { detail: { content: currentContent } }));
+      },
+    },
   ]);
 
   // --- Helpers ---

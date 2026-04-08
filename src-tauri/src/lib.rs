@@ -5,6 +5,7 @@ pub mod errors;
 pub mod events;
 pub mod indexer;
 pub mod logging;
+pub mod share;
 pub mod sync;
 pub mod watcher;
 
@@ -34,6 +35,7 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
+        .plugin(tauri_plugin_clipboard_manager::init())
         .manage(AppState::new())
         .setup(|app| {
             let handle = app.handle().clone();
@@ -106,6 +108,9 @@ pub fn run() {
             commands::sync_disable_core,
             commands::sync_resolve,
             commands::sync_disconnect,
+            // Share commands
+            commands::share_note,
+            commands::share_status,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

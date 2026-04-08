@@ -3,8 +3,10 @@
   import SaveIndicator from '$lib/editor/SaveIndicator.svelte';
   import { getTabsState } from '$lib/stores/tabs.svelte';
   import { getEditorState } from '$lib/stores/editor.svelte';
+  import { getFilesState } from '$lib/stores/files.svelte';
   import { getUiState } from '$lib/stores/ui.svelte';
   import { nerdIcon } from '$lib/utils/nerd-icons';
+  import Share2 from '@lucide/svelte/icons/share-2';
 
   let {
     isMarkdownActive = false,
@@ -14,7 +16,15 @@
 
   const tabsState = getTabsState();
   const editor = getEditorState();
+  const files = getFilesState();
   const ui = getUiState();
+
+  let hasActiveFile = $derived(!!files.activeFilePath);
+
+  function handleShare() {
+    if (!files.activeFilePath) return;
+    window.dispatchEvent(new CustomEvent('noctodeus-share-file', { detail: { path: files.activeFilePath } }));
+  }
 </script>
 
 <div class="tab-bar-row">
@@ -38,6 +48,11 @@
     <span class="search-trigger__text">Search...</span>
     <span class="search-trigger__shortcut">&#8984;K</span>
   </button>
+  {#if hasActiveFile}
+    <button class="share-trigger" onclick={handleShare} title="Share encrypted link">
+      <Share2 size={13} />
+    </button>
+  {/if}
 </div>
 
 <style>
@@ -90,5 +105,26 @@
     font-size: 10px;
     opacity: 0.5;
     margin-left: 4px;
+  }
+
+  .share-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    margin-right: 8px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-muted, var(--color-placeholder));
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: color 150ms ease-out, background 150ms ease-out;
+  }
+
+  .share-trigger:hover {
+    color: var(--color-foreground);
+    background: var(--color-hover);
   }
 </style>
