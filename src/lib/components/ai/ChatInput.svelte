@@ -69,22 +69,21 @@
   .ci {
     display: flex;
     align-items: flex-end;
-    gap: 6px;
-    padding: 10px 12px;
+    gap: 8px;
+    padding: 12px 14px;
     border-top: 1px solid var(--color-border);
-    background: var(--color-hover);
   }
 
   .ci__textarea {
     flex: 1;
     min-height: 22px;
-    max-height: calc(22px * 6);
-    padding: 8px 12px;
+    max-height: calc(22px * 8);
+    padding: 10px 14px;
     font-family: var(--font-mono);
     font-size: 13px;
     line-height: 22px;
     color: var(--color-foreground);
-    background: var(--color-hover);
+    background: var(--color-background);
     border: 1px solid var(--color-border);
     border-radius: 6px;
     outline: none;
@@ -92,11 +91,11 @@
     overflow-y: auto;
     scrollbar-width: thin;
     scrollbar-color: var(--color-border) transparent;
-    transition: border-color 150ms;
+    transition: border-color 150ms, box-shadow 150ms;
 
     &:focus {
-      border-color: rgba(122, 162, 247, 0.4);
-      box-shadow: 0 0 0 1px rgba(122, 162, 247, 0.08);
+      border-color: var(--color-accent);
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-accent) 15%, transparent);
     }
 
     &::placeholder {
@@ -108,8 +107,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 32px;
-    height: 32px;
+    width: 34px;
+    height: 34px;
     border: none;
     border-radius: 6px;
     cursor: pointer;
@@ -120,17 +119,17 @@
   .ci__btn--send {
     background: var(--color-accent, #7AA2F7);
     color: #fff;
-    &:hover { filter: brightness(1.15); }
+    &:hover { filter: brightness(1.1); }
   }
 
   .ci__btn--hidden {
-    opacity: 0.2;
+    opacity: 0.15;
     pointer-events: none;
   }
 
   .ci__btn--stop {
-    background: rgba(247, 118, 142, 0.15);
+    background: color-mix(in srgb, #f7768e 15%, transparent);
     color: #f7768e;
-    &:hover { background: rgba(247, 118, 142, 0.25); }
+    &:hover { background: color-mix(in srgb, #f7768e 25%, transparent); }
   }
 </style>

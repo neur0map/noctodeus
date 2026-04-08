@@ -181,7 +181,7 @@
     font-size: 11px;
     line-height: 1.5;
     color: var(--color-muted-foreground);
-    background: rgba(0, 0, 0, 0.2);
+    background: var(--color-hover);
     border: 1px solid var(--color-border);
     border-radius: 6px;
     white-space: pre-wrap;
