@@ -368,6 +368,17 @@ pub async fn core_scan(state: State<'_, AppState>) -> CmdResult<Vec<FileInfo>> {
         }
     }
 
+    // Background memvid indexing (lexical-only, non-blocking)
+    let index_path = active.core_path.clone();
+    let index_pool = active.db.clone();
+    tokio::spawn(async move {
+        let _ = tokio::task::spawn_blocking(move || {
+            if let Ok(mut mv) = crate::ai::memory::open_memory(&index_path) {
+                let _ = crate::ai::memory::index_all_notes(&mut mv, &index_path, &index_pool, false);
+            }
+        }).await;
+    });
+
     Ok(files)
 }
 

@@ -247,6 +247,28 @@
           score: 1,
         }));
     }
+
+    // Also try RAG search in parallel and merge results
+    try {
+      const corePath = core.activeCore?.path;
+      if (corePath) {
+        const { ragSearch } = await import('../lib/bridge/rag');
+        const ragResults = await ragSearch(sanitized, corePath, 10);
+        const existingPaths = new Set(searchResults.map(r => r.path));
+        for (const rr of ragResults) {
+          if (!existingPaths.has(rr.path) && rr.path) {
+            searchResults = [...searchResults, {
+              path: rr.path,
+              title: rr.title,
+              snippet: rr.chunk,
+              score: rr.score,
+            }];
+          }
+        }
+      }
+    } catch {
+      // RAG not available, continue with FTS5 results
+    }
   }
 
   async function handleShareNote(path: string) {

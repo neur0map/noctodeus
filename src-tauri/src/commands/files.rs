@@ -146,6 +146,19 @@ pub async fn file_create(
             info.title.as_deref(),
             &file_content,
         );
+
+        // Background memvid index (lexical-only, non-blocking)
+        let cp = active.core_path.clone();
+        let path_clone = path.clone();
+        let content_clone = file_content.clone();
+        tokio::spawn(async move {
+            let _ = tokio::task::spawn_blocking(move || {
+                if let Ok(mut mv) = crate::ai::memory::open_memory(&cp) {
+                    let _ = crate::ai::memory::index_note(&mut mv, &path_clone, None, &content_clone, None);
+                    let _ = mv.commit();
+                }
+            }).await;
+        });
     }
 
     Ok(info)
@@ -217,6 +230,19 @@ pub async fn file_write(
             info.title.as_deref(),
             &content,
         );
+
+        // Background memvid index (lexical-only, non-blocking)
+        let cp = active.core_path.clone();
+        let path_clone = path.clone();
+        let content_clone = content.clone();
+        tokio::spawn(async move {
+            let _ = tokio::task::spawn_blocking(move || {
+                if let Ok(mut mv) = crate::ai::memory::open_memory(&cp) {
+                    let _ = crate::ai::memory::index_note(&mut mv, &path_clone, None, &content_clone, None);
+                    let _ = mv.commit();
+                }
+            }).await;
+        });
     }
 
     Ok(info)

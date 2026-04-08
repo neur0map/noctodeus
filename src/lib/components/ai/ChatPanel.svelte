@@ -131,6 +131,7 @@
 
     return {
       coreName: coreState.activeCore?.name,
+      corePath: coreState.activeCore?.path,
       activeFilePath: filesState.activeFilePath ?? undefined,
       noteList,
     };

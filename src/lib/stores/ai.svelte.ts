@@ -71,12 +71,13 @@ function parseToolCalls(text: string): ParsedToolCall[] {
 
 export interface AiContext {
   coreName?: string;
+  corePath?: string;
   activeFilePath?: string;
   activeFileContent?: string;
   noteList?: string[]; // top-level note paths for awareness
 }
 
-function buildSystemPrompt(userPrompt: string, tools: McpTool[], ctx?: AiContext): string {
+function buildSystemPrompt(userPrompt: string, tools: McpTool[], ctx?: AiContext, ragContext?: string): string {
   const parts: string[] = [];
 
   // Identity + boundaries
@@ -113,6 +114,11 @@ function buildSystemPrompt(userPrompt: string, tools: McpTool[], ctx?: AiContext
     if (ctxLines.length > 0) {
       parts.push('Current context:\n' + ctxLines.join('\n'));
     }
+  }
+
+  // RAG context from memvid search
+  if (ragContext) {
+    parts.push('Relevant notes from the user\'s vault:\n' + ragContext);
   }
 
   // User's custom system prompt (from settings)
@@ -207,8 +213,19 @@ export function getAiState() {
       const mcp = getMcpState();
       const availableTools = mcp.tools;
 
-      // Build the full system prompt with identity, context, and tools
-      let fullSystemPrompt = buildSystemPrompt(systemPrompt ?? '', availableTools, context);
+      // Fetch RAG context from memvid before building system prompt
+      let noteContext = '';
+      if (context?.corePath) {
+        try {
+          const { ragContext: fetchRagContext } = await import('$lib/bridge/rag');
+          noteContext = await fetchRagContext(content, context.corePath, 2000);
+        } catch {
+          // RAG not available
+        }
+      }
+
+      // Build the full system prompt with identity, context, RAG, and tools
+      let fullSystemPrompt = buildSystemPrompt(systemPrompt ?? '', availableTools, context, noteContext);
 
       await this._sendRound(fullSystemPrompt, availableTools, 0);
     },
