@@ -103,13 +103,13 @@ export function createEditorExtensions(
     }),
 
     // Drag handle (Notion-style 6-dot grip)
+    // The extension handles draggable, dragstart, NodeSelection, and
+    // dataTransfer internally — render() only provides the visual element.
     DragHandle.configure({
       nested: true,
       render() {
         const el = document.createElement('div');
         el.className = 'drag-handle';
-        el.setAttribute('draggable', 'true');
-        el.setAttribute('data-drag-handle', '');
         el.setAttribute('role', 'button');
         el.setAttribute('aria-label', 'Drag to move');
         el.setAttribute('tabindex', '-1');
@@ -123,18 +123,6 @@ export function createEditorExtensions(
           <circle cx="10" cy="16" r="1.5"/>
         </svg>`;
         return el;
-      },
-      onElementDragStart(e) {
-        // Create a compact drag ghost instead of the browser's default
-        // which snapshots the entire block and can be huge
-        if (!e.dataTransfer) return;
-        const ghost = document.createElement('div');
-        ghost.className = 'drag-ghost';
-        ghost.textContent = 'Moving block...';
-        document.body.appendChild(ghost);
-        e.dataTransfer.setDragImage(ghost, 0, 0);
-        // Clean up after the browser captures the image
-        requestAnimationFrame(() => ghost.remove());
       },
     }),
 

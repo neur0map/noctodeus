@@ -483,8 +483,9 @@
 /* --------------------------------------------------------------------------
    Drag Handle (Notion-style 6-dot grip)
    -------------------------------------------------------------------------- */
-/* The drag handle element. The extension controls visibility via inline
-   opacity styles and floating-ui positioning. We style appearance only. */
+/* The drag handle element. The extension controls draggable, dragstart,
+   visibility, and positioning internally via floating-ui. We only style
+   the appearance. */
 .drag-handle {
   display: flex;
   align-items: center;
@@ -498,9 +499,6 @@
   color: var(--text-muted, var(--color-placeholder));
   cursor: grab;
   transition: background 80ms ease, color 80ms ease;
-  pointer-events: auto;
-  -webkit-user-drag: element;
-  user-select: none;
 }
 
 .drag-handle:hover {
@@ -511,31 +509,6 @@
 .drag-handle:active {
   cursor: grabbing;
   background: color-mix(in srgb, var(--text-primary, var(--color-foreground)) 14%, transparent);
-}
-
-/* Compact drag ghost shown while dragging instead of huge block snapshot */
-.drag-ghost {
-  position: fixed;
-  top: -100px;
-  left: -100px;
-  padding: 6px 12px;
-  border-radius: 6px;
-  background: var(--surface-2, var(--color-card));
-  color: var(--text-secondary, var(--color-foreground));
-  font-family: var(--font-content);
-  font-size: 12px;
-  white-space: nowrap;
-  pointer-events: none;
-  z-index: 9999;
-}
-
-/* While a drag is in progress, highlight the drop target */
-.ProseMirror .is-dragging {
-  opacity: 0.4;
-}
-
-.ProseMirror .drop-indicator {
-  border-top: 2px solid var(--accent-blue, var(--color-accent));
 }
 
 /* --------------------------------------------------------------------------
