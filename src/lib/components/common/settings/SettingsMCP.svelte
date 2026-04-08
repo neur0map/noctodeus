@@ -1,16 +1,58 @@
 <script lang="ts">
   import { getSettings } from '../../../stores/settings.svelte';
   import { getMcpState } from '$lib/stores/mcp.svelte';
+  import { getCoreState } from '$lib/stores/core.svelte';
   import Play from '@lucide/svelte/icons/play';
   import Square from '@lucide/svelte/icons/square';
   import Plus from '@lucide/svelte/icons/plus';
   import Trash2 from '@lucide/svelte/icons/trash-2';
   import Wrench from '@lucide/svelte/icons/wrench';
+  import Copy from '@lucide/svelte/icons/copy';
+  import Server from '@lucide/svelte/icons/server';
 
   type Settings = ReturnType<typeof getSettings>;
   let { settings }: { settings: Settings } = $props();
 
   const mcp = getMcpState();
+  const coreState = getCoreState();
+
+  let corePath = $derived(coreState.activeCore?.path ?? '/path/to/your/vault');
+  let copied = $state<string | null>(null);
+
+  // Generate config snippets for external AI tools
+  let claudeConfig = $derived(JSON.stringify({
+    mcpServers: {
+      noctodeus: {
+        command: "noctodeus-mcp",
+        args: [corePath]
+      }
+    }
+  }, null, 2));
+
+  let cursorConfig = $derived(JSON.stringify({
+    "mcpServers": {
+      "noctodeus": {
+        "command": "noctodeus-mcp",
+        "args": [corePath]
+      }
+    }
+  }, null, 2));
+
+  async function copyConfig(text: string, label: string) {
+    try {
+      const { writeText } = await import('@tauri-apps/plugin-clipboard-manager');
+      await writeText(text);
+      copied = label;
+      setTimeout(() => { copied = null; }, 2000);
+    } catch {
+      // Fallback
+      try {
+        await navigator.clipboard.writeText(text);
+        copied = label;
+        setTimeout(() => { copied = null; }, 2000);
+      } catch {}
+    }
+  }
 
   let newName = $state('');
   let newCommand = $state('');
@@ -136,10 +178,72 @@
 </script>
 
 <div class="settings__section">
+  <!-- Noctodeus as MCP Server -->
+  <div class="settings__row settings__row--vertical">
+    <div class="settings__row-info">
+      <div class="mcp-section-head">
+        <Server size={14} />
+        <span class="settings__row-label">Noctodeus as MCP Server</span>
+      </div>
+      <span class="settings__row-desc">
+        Let external AI tools (Claude Desktop, Cursor, Windsurf) read, search, and write your notes.
+        Add the config below to your AI tool's MCP settings.
+      </span>
+    </div>
+
+    <div class="mcp-server-config">
+      <div class="mcp-config-tabs">
+        <span class="mcp-config-label">Claude Desktop</span>
+        <span class="mcp-config-path">~/Library/Application Support/Claude/claude_desktop_config.json</span>
+      </div>
+      <div class="mcp-config-block">
+        <pre class="mcp-config-code">{claudeConfig}</pre>
+        <button
+          class="mcp-config-copy"
+          onclick={() => copyConfig(claudeConfig, 'claude')}
+        >
+          {#if copied === 'claude'}
+            Copied
+          {:else}
+            <Copy size={12} /> Copy
+          {/if}
+        </button>
+      </div>
+    </div>
+
+    <div class="mcp-server-config">
+      <div class="mcp-config-tabs">
+        <span class="mcp-config-label">Cursor / Windsurf / Generic</span>
+        <span class="mcp-config-path">Settings &gt; MCP Servers</span>
+      </div>
+      <div class="mcp-config-block">
+        <pre class="mcp-config-code">{cursorConfig}</pre>
+        <button
+          class="mcp-config-copy"
+          onclick={() => copyConfig(cursorConfig, 'cursor')}
+        >
+          {#if copied === 'cursor'}
+            Copied
+          {:else}
+            <Copy size={12} /> Copy
+          {/if}
+        </button>
+      </div>
+    </div>
+
+    <div class="mcp-server-tools">
+      <span class="settings__row-desc">
+        9 tools available: search, read, create, update, delete, list, memory_set, memory_get, memory_list
+      </span>
+    </div>
+  </div>
+
+  <div class="mcp-divider"></div>
+
   <!-- Explanation -->
   <div class="settings__row">
     <div class="settings__row-info">
-      <span class="settings__row-label">What is MCP?</span>
+      <span class="settings__row-label">Connect AI Tools to Noctodeus</span>
       <span class="settings__row-desc">
         MCP (Model Context Protocol) lets the AI use external tools — search the web, read files, query APIs, and more.
         Add a server below and the AI chat will automatically see its tools.
@@ -536,6 +640,92 @@
     text-decoration: none;
   }
   .mcp-link:hover { text-decoration: underline; }
+
+  .mcp-section-head {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--color-accent, #7AA2F7);
+  }
+
+  .mcp-divider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.04);
+    margin: 4px 0;
+  }
+
+  .mcp-server-config {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    width: 100%;
+  }
+
+  .mcp-config-tabs {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+
+  .mcp-config-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--color-foreground);
+  }
+
+  .mcp-config-path {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.2);
+  }
+
+  .mcp-config-block {
+    position: relative;
+    width: 100%;
+  }
+
+  .mcp-config-code {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    line-height: 1.5;
+    color: var(--color-muted-foreground);
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin: 0;
+    overflow-x: auto;
+    white-space: pre;
+    scrollbar-width: thin;
+  }
+
+  .mcp-config-copy {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--color-placeholder);
+    background: rgba(255, 255, 255, 0.06);
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: color 150ms, background 150ms;
+  }
+
+  .mcp-config-copy:hover {
+    color: var(--color-foreground);
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  .mcp-server-tools {
+    padding: 4px 0;
+  }
 
   /* ── Presets ── */
   .mcp-presets {
