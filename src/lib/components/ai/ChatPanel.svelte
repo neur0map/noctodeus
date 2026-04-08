@@ -23,9 +23,13 @@
     oninsert?: (content: string) => void;
   } = $props();
 
+  import { getMcpState } from '$lib/stores/mcp.svelte';
+  import Wrench from '@lucide/svelte/icons/wrench';
+
   const ai = getAiState();
   const settings = getSettings();
   const ui = getUiState();
+  const mcp = getMcpState();
 
   let scrollEl: HTMLDivElement | undefined = $state();
   let inputRef: ChatInput | undefined = $state();
@@ -136,6 +140,11 @@
         </div>
       </div>
       <div class="cp__head-actions">
+        {#if mcp.tools.length > 0}
+          <span class="cp__tools-badge" title="{mcp.tools.length} MCP tools active">
+            <Wrench size={10} /> {mcp.tools.length}
+          </span>
+        {/if}
         {#if ai.messages.length > 0}
           <button class="cp__head-btn" onclick={() => ai.clear()} title="Clear conversation">
             <Trash2 size={13} />
@@ -422,6 +431,18 @@
     background: rgba(247, 118, 142, 0.06);
     border: 1px solid rgba(247, 118, 142, 0.15);
     border-radius: 6px;
+  }
+
+  .cp__tools-badge {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    padding: 2px 6px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: #9ece6a;
+    background: rgba(158, 206, 106, 0.08);
+    border-radius: 4px;
   }
 
   @media (prefers-reduced-motion: reduce) {
