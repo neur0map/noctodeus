@@ -289,12 +289,6 @@
     display: flex;
     height: 100%;
     background: var(--color-background);
-    animation: rc-fade 250ms cubic-bezier(0.16, 1, 0.3, 1) both;
-  }
-
-  @keyframes rc-fade {
-    from { opacity: 0; }
-    to { opacity: 1; }
   }
 
   /* ── Left column: Sources ── */
@@ -305,6 +299,12 @@
     flex-shrink: 0;
     background: var(--surface-1, var(--color-card));
     border-right: 1px solid rgba(255, 255, 255, 0.04);
+    animation: rc-slide-left 350ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  @keyframes rc-slide-left {
+    from { opacity: 0; transform: translateX(-12px); }
+    to { opacity: 1; transform: translateX(0); }
   }
 
   .rc__sources-head {
@@ -367,6 +367,7 @@
     color: rgba(255, 255, 255, 0.15);
     text-align: center;
     padding: 24px;
+    animation: rc-fade-up 400ms cubic-bezier(0.16, 1, 0.3, 1) 150ms both;
 
     p {
       font-family: var(--font-sans);
@@ -387,11 +388,13 @@
     background: rgba(255, 255, 255, 0.02);
     border: 1px solid rgba(255, 255, 255, 0.04);
     border-radius: 4px;
-    transition: background 150ms, border-color 150ms;
+    transition: background 150ms, border-color 150ms, transform 150ms;
+    animation: rc-card-in 300ms cubic-bezier(0.16, 1, 0.3, 1) both;
 
     &:hover {
       background: rgba(255, 255, 255, 0.04);
-      border-color: rgba(255, 255, 255, 0.06);
+      border-color: rgba(255, 255, 255, 0.08);
+      transform: translateX(2px);
     }
 
     &:hover .rc__source-remove {
@@ -605,6 +608,17 @@
     flex-direction: column;
     min-width: 0;
     background: var(--color-background);
+    animation: rc-slide-right 400ms cubic-bezier(0.16, 1, 0.3, 1) 80ms both;
+  }
+
+  @keyframes rc-slide-right {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes rc-card-in {
+    from { opacity: 0; transform: translateX(-6px); }
+    to { opacity: 1; transform: translateX(0); }
   }
 
   /* ── Header ── */
@@ -615,6 +629,7 @@
     padding: 14px 20px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.04);
     flex-shrink: 0;
+    animation: rc-fade-up 300ms cubic-bezier(0.16, 1, 0.3, 1) 100ms both;
   }
 
   .rc__head-left {
@@ -733,6 +748,12 @@
     padding: 40px 32px;
     text-align: center;
     gap: 12px;
+    animation: rc-fade-up 450ms cubic-bezier(0.16, 1, 0.3, 1) 200ms both;
+  }
+
+  @keyframes rc-fade-up {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 
   .rc__empty-icon {
@@ -812,6 +833,7 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .rc { animation: none; }
+    .rc, .rc__sources, .rc__chat, .rc__head,
+    .rc__source-card, .rc__sources-empty, .rc__empty { animation: none; }
   }
 </style>
