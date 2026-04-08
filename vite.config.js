@@ -1,19 +1,19 @@
 import { defineConfig } from "vite";
 import { sveltekit } from "@sveltejs/kit/vite";
 import tailwindcss from "@tailwindcss/vite";
-import react from "@vitejs/plugin-react";
 
 // @ts-expect-error process is a nodejs global
 const host = process.env.TAURI_DEV_HOST;
 
 // https://vite.dev/config/
 export default defineConfig(async () => ({
-  plugins: [
-    // React plugin processes only .tsx/.jsx files — no conflict with Svelte
-    react({ include: /\.(tsx|jsx)$/ }),
-    tailwindcss(),
-    sveltekit(),
-  ],
+  plugins: [tailwindcss(), sveltekit()],
+  // Use esbuild's built-in JSX transform for .tsx files (no @vitejs/plugin-react
+  // needed — its Fast Refresh preamble conflicts with SvelteKit's pipeline)
+  esbuild: {
+    jsx: /** @type {'automatic'} */ ('automatic'),
+    jsxImportSource: 'react',
+  },
   // Ensure React/BlockNote packages are bundled client-side, not SSR'd
   ssr: {
     noExternal: ['@blocknote/core', '@blocknote/react', '@blocknote/mantine', '@mantine/core'],
