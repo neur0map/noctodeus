@@ -179,7 +179,7 @@
           </div>
         </div>
       {:else}
-        {#each ai.messages as msg (msg.timestamp ?? 0)}
+        {#each ai.messages as msg, i (i)}
           <ChatMessage message={msg} {oninsert} />
         {/each}
         {#if ai.error}
