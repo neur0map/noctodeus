@@ -100,10 +100,20 @@ impl DebouncedWatcher {
     }
 }
 
-/// Returns true if the path is inside a `.noctodeus/` directory.
-fn is_noctodeus_path(path: &Path) -> bool {
+/// Returns true if the path is inside a directory that should be ignored
+/// (app metadata, other tools' config, OS junk).
+fn is_ignored_path(path: &Path) -> bool {
+    const IGNORED: &[&str] = &[
+        ".noctodeus", ".obsidian", ".logseq", ".git", ".trash",
+        ".svn", ".hg", "node_modules", ".vscode", "logseq",
+    ];
     path.components().any(|c| {
-        matches!(c, std::path::Component::Normal(name) if name == ".noctodeus")
+        if let std::path::Component::Normal(name) = c {
+            let s = name.to_string_lossy();
+            IGNORED.contains(&s.as_ref()) || s == ".DS_Store" || s == "Thumbs.db"
+        } else {
+            false
+        }
     })
 }
 
@@ -145,7 +155,7 @@ fn debounce_loop(
                 let paths: Vec<PathBuf> = event
                     .paths
                     .into_iter()
-                    .filter(|p| !is_noctodeus_path(p))
+                    .filter(|p| !is_ignored_path(p))
                     .collect();
 
                 if paths.is_empty() {
@@ -379,11 +389,11 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_is_noctodeus_path() {
-        assert!(is_noctodeus_path(Path::new("/home/user/core/.noctodeus/meta.db")));
-        assert!(is_noctodeus_path(Path::new("/home/user/core/.noctodeus/logs/core.log")));
-        assert!(!is_noctodeus_path(Path::new("/home/user/core/notes/hello.md")));
-        assert!(!is_noctodeus_path(Path::new("/home/user/core/noctodeus-notes.md")));
+    fn test_is_ignored_path() {
+        assert!(is_ignored_path(Path::new("/home/user/core/.noctodeus/meta.db")));
+        assert!(is_ignored_path(Path::new("/home/user/core/.noctodeus/logs/core.log")));
+        assert!(!is_ignored_path(Path::new("/home/user/core/notes/hello.md")));
+        assert!(!is_ignored_path(Path::new("/home/user/core/noctodeus-notes.md")));
     }
 
     #[test]

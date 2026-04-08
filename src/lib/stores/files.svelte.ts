@@ -13,7 +13,7 @@ let tree = $derived.by(() => {
   return buildTree(fileMap, expandedDirs, sortMode, filterQuery);
 });
 
-const HIDDEN_FILES = new Set(['.DS_Store', '.noctodeus', 'Thumbs.db', '.git', '.gitignore', 'media']);
+const HIDDEN_FILES = new Set(['.DS_Store', '.noctodeus', '.obsidian', '.logseq', 'logseq', '.git', '.gitignore', '.trash', '.svn', '.hg', '.vscode', 'node_modules', 'Thumbs.db', 'desktop.ini', 'media']);
 
 function buildTree(files: Map<string, FileNode>, expanded: Set<string>, sort: SortMode, filter: string): TreeNode[] {
   const childMap = new Map<string, TreeNode[]>();

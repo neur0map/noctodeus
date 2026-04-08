@@ -26,7 +26,7 @@ pub fn scan_directory(core_path: &Path) -> Result<Vec<FileInfo>, NoctoError> {
     for entry in WalkDir::new(core_path)
         .follow_links(false)
         .into_iter()
-        .filter_entry(|e| !is_noctodeus_dir(e))
+        .filter_entry(|e| !should_skip(e))
     {
         let entry = entry?;
         let entry_path = entry.path();
@@ -328,9 +328,28 @@ fn compute_hash(path: &Path) -> Option<String> {
 
 use crate::indexer::util::is_markdown;
 
-/// Filter predicate for `WalkDir`: skip `.noctodeus/` directories.
-fn is_noctodeus_dir(entry: &walkdir::DirEntry) -> bool {
-    entry.file_type().is_dir() && entry.file_name() == ".noctodeus"
+/// Filter predicate for `WalkDir`: skip directories and files that
+/// shouldn't appear in the file tree or be indexed.
+fn should_skip(entry: &walkdir::DirEntry) -> bool {
+    let name = entry.file_name().to_string_lossy();
+
+    // Skip junk files
+    if name == ".DS_Store" || name == "Thumbs.db" || name == "desktop.ini" {
+        return true;
+    }
+
+    // Skip hidden directories (dotfiles) that belong to other apps or the OS
+    if entry.file_type().is_dir() {
+        match name.as_ref() {
+            ".noctodeus" | ".obsidian" | ".logseq" | ".git" | ".trash"
+            | ".svn" | ".hg" | "node_modules" | ".vscode" => return true,
+            // Also skip the logseq/ data directory (not hidden but app-specific)
+            "logseq" => return true,
+            _ => {}
+        }
+    }
+
+    false
 }
 
 #[cfg(test)]

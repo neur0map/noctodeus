@@ -49,7 +49,7 @@
   let currentFilePath = $state<string | null>(null);
   let currentContent = $state<string | null>(null);
   let currentMetadata = $state<FileNode | null>(null);
-  const HIDDEN_NAMES = new Set(['.DS_Store', '.noctodeus', 'Thumbs.db', '.git', '.gitignore']);
+  const HIDDEN_NAMES = new Set(['.DS_Store', '.noctodeus', '.obsidian', '.logseq', 'logseq', '.git', '.gitignore', '.trash', '.svn', '.hg', '.vscode', 'node_modules', 'Thumbs.db', 'desktop.ini']);
 
   let recentFiles = $derived(
     Array.from(files.fileMap.values())
