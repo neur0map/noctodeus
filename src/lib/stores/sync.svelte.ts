@@ -30,7 +30,7 @@ export function getSyncState() {
         status = await syncStatus();
         lastError = null;
       } catch (err) {
-        lastError = String(err);
+        lastError = ((err as any)?.message || (err as any)?.detail || (typeof err === 'string' ? err : JSON.stringify(err)));
       }
     },
 
@@ -42,8 +42,8 @@ export function getSyncState() {
         await this.refresh();
         return result;
       } catch (err) {
-        lastError = String(err);
-        status = { ...status, syncing: false, error: String(err) };
+        lastError = ((err as any)?.message || (err as any)?.detail || (typeof err === 'string' ? err : JSON.stringify(err)));
+        status = { ...status, syncing: false, error: ((err as any)?.message || (err as any)?.detail || (typeof err === 'string' ? err : JSON.stringify(err))) };
         return null;
       }
     },

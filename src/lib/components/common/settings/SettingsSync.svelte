@@ -35,7 +35,7 @@
       await syncState.refresh();
       await loadCores();
     } catch (err) {
-      error = String(err);
+      error = (err as any)?.message || (err as any)?.detail || (typeof err === 'string' ? err : JSON.stringify(err));
     }
     connecting = false;
   }
@@ -48,7 +48,7 @@
       token = '';
       repoUrl = '';
     } catch (err) {
-      error = String(err);
+      error = (err as any)?.message || (err as any)?.detail || (typeof err === 'string' ? err : JSON.stringify(err));
     }
   }
 
@@ -62,7 +62,7 @@
       await syncState.refresh();
       await loadCores();
     } catch (err) {
-      error = String(err);
+      error = (err as any)?.message || (err as any)?.detail || (typeof err === 'string' ? err : JSON.stringify(err));
     }
   }
 

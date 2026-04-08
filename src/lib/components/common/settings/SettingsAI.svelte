@@ -57,9 +57,9 @@
       });
       testStatus = 'success';
       testMessage = 'Connection successful.';
-    } catch (err) {
+    } catch (err: any) {
       testStatus = 'error';
-      testMessage = String(err);
+      testMessage = err?.message || err?.detail || (typeof err === 'string' ? err : JSON.stringify(err));
     }
   }
 </script>

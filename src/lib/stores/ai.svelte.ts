@@ -81,7 +81,8 @@ export function getAiState() {
           systemPrompt,
         });
       } catch (err) {
-        error = String(err);
+        const { errorMessage: errMsg } = await import('$lib/utils/errors');
+        error = errMsg(err);
         streaming = false;
         // Remove the empty assistant message on error
         const last = messages[messages.length - 1];

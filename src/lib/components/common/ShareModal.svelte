@@ -69,8 +69,8 @@
       const { toast } = await import('$lib/stores/toast.svelte');
       toast.success('Encrypted link copied');
       onclose();
-    } catch (err) {
-      error = String(err);
+    } catch (err: any) {
+      error = err?.message || err?.detail || (typeof err === 'string' ? err : JSON.stringify(err));
     }
     sharing = false;
   }
