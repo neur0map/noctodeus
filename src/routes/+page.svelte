@@ -242,14 +242,6 @@
         window.dispatchEvent(new CustomEvent('noctodeus-share', { detail: { content: currentContent } }));
       },
     },
-    {
-      id: "import-obsidian",
-      label: "Import: Obsidian Vault",
-      action: () => {
-        ui.hideCommandPalette();
-        window.dispatchEvent(new CustomEvent('noctodeus-import-obsidian'));
-      },
-    },
   ]);
 
   // --- Helpers ---

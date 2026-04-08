@@ -14,8 +14,6 @@
   import SettingsFiles from './settings/SettingsFiles.svelte';
   import SettingsHotkeys from './settings/SettingsHotkeys.svelte';
   import SettingsSync from './settings/SettingsSync.svelte';
-  import SettingsImport from './settings/SettingsImport.svelte';
-  import Download from "@lucide/svelte/icons/download";
 
   let {
     visible = false,
@@ -27,7 +25,7 @@
 
   const settings = getSettings();
 
-  type Section = 'general' | 'editor' | 'appearance' | 'files' | 'hotkeys' | 'sync' | 'import';
+  type Section = 'general' | 'editor' | 'appearance' | 'files' | 'hotkeys' | 'sync';
 
   let activeSection = $state<Section>('general');
 
@@ -38,7 +36,6 @@
     { id: 'files', label: 'Files & Links' },
     { id: 'hotkeys', label: 'Hotkeys' },
     { id: 'sync', label: 'Sync' },
-    { id: 'import', label: 'Import' },
   ];
 
   function handleKeydown(e: KeyboardEvent) {
@@ -75,7 +72,6 @@
                 {:else if section.id === 'files'}<FileText size={14} />
                 {:else if section.id === 'hotkeys'}<Keyboard size={14} />
                 {:else if section.id === 'sync'}<RefreshCw size={14} />
-                {:else if section.id === 'import'}<Download size={14} />
                 {/if}
               </span>
               <span>{section.label}</span>
@@ -106,8 +102,6 @@
             <SettingsHotkeys {settings} />
           {:else if activeSection === 'sync'}
             <SettingsSync {settings} />
-          {:else if activeSection === 'import'}
-            <SettingsImport {settings} />
           {/if}
         </div>
       </div>

@@ -170,9 +170,21 @@ pub async fn core_create(path: String, name: String, app: tauri::AppHandle, stat
     ensure_noctodeus_dir(&core_path)?;
     let manifest = create_manifest(&core_path, &name)?;
 
-    // Populate welcome content for new cores (non-fatal if it fails)
-    if let Err(e) = crate::core::welcome::write_welcome_content(&core_path) {
-        tracing::warn!("failed to write welcome content: {e}");
+    // Only populate welcome content if the folder has no existing files
+    // (i.e., it's a fresh empty folder, not an Obsidian vault or markdown folder)
+    let has_existing_files = std::fs::read_dir(&core_path)
+        .map(|entries| {
+            entries.filter_map(|e| e.ok()).any(|e| {
+                let name = e.file_name().to_string_lossy().to_string();
+                !name.starts_with('.') && name != ".noctodeus"
+            })
+        })
+        .unwrap_or(false);
+
+    if !has_existing_files {
+        if let Err(e) = crate::core::welcome::write_welcome_content(&core_path) {
+            tracing::warn!("failed to write welcome content: {e}");
+        }
     }
 
     let pool = open_db(&core_path)?;
@@ -217,13 +229,11 @@ pub async fn core_create(path: String, name: String, app: tauri::AppHandle, stat
     Ok(info)
 }
 
-/// Open an existing Core and set it as the active core.
+/// Open a folder as a Core. Smart detection:
 ///
-/// 1. Validates folder and `.noctodeus/` exist
-/// 2. Loads manifest
-/// 3. Opens SQLite DB
-/// 4. Stores as active core in AppState
-/// 5. Updates registry last_opened
+/// - Has `.noctodeus/` → open as existing core
+/// - Has `.obsidian/` or `.md` files → create core (skip .obsidian/, .logseq/, etc.)
+/// - Empty → create core with welcome content
 #[tauri::command]
 pub async fn core_open(path: String, app: tauri::AppHandle, state: State<'_, AppState>) -> CmdResult<CoreInfo> {
     let core_path = PathBuf::from(&path);
@@ -233,8 +243,16 @@ pub async fn core_open(path: String, app: tauri::AppHandle, state: State<'_, App
     }
 
     let noctodeus_dir = core_path.join(".noctodeus");
+
+    // If no .noctodeus/ exists, this isn't a core yet — create one
     if !noctodeus_dir.exists() {
-        return Err(NoctoError::CoreNotFound { path: path.clone() });
+        let folder_name = core_path
+            .file_name()
+            .map(|n| n.to_string_lossy().to_string())
+            .unwrap_or_else(|| "untitled".to_string());
+
+        tracing::info!(path = %path, "folder is not a core, initializing as new core");
+        return core_create(path, folder_name, app, state).await;
     }
 
     let manifest = load_manifest(&core_path)?;
