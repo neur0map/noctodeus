@@ -91,8 +91,24 @@
     }
   });
 
-  function handleSend(text: string) {
-    ai.send(text, settings.aiSystemPrompt || undefined);
+  async function handleSend(text: string) {
+    if (!ai.provider) {
+      // Provider not synced yet — force sync now
+      const apiKey = settings.aiApiKey;
+      const baseUrl = settings.aiBaseUrl;
+      const model = settings.aiModel;
+      const id = settings.aiProviderId;
+      if (apiKey && baseUrl && model) {
+        ai.setProvider({
+          id: id || 'custom',
+          name: providerLabel() || 'Custom',
+          baseUrl,
+          apiKey,
+          model,
+        });
+      }
+    }
+    await ai.send(text, settings.aiSystemPrompt || undefined);
   }
 
   function handleSuggestion(text: string) {

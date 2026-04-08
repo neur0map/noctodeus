@@ -51,7 +51,11 @@ export function getAiState() {
     },
 
     async send(content: string, systemPrompt?: string) {
-      if (!provider || streaming) return;
+      if (streaming) return;
+      if (!provider) {
+        error = 'No AI provider configured. Open Settings > AI to set one up.';
+        return;
+      }
       error = null;
 
       // Add user message
