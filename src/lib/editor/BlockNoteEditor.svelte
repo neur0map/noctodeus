@@ -28,38 +28,39 @@
     async function bootstrap() {
       if (!containerEl) return;
 
-      const [
-        { createElement },
-        { createRoot },
-        { default: BlockNoteWrapper },
-      ] = await Promise.all([
-        import('react'),
-        import('react-dom/client'),
-        import('./blocknote/BlockNoteWrapper'),
-      ]);
+      try {
+        const React = await import('react');
+        const ReactDOM = await import('react-dom/client');
+        const { default: BlockNoteWrapper } = await import('./blocknote/BlockNoteWrapper');
 
-      if (destroyed) return;
+        if (destroyed) return;
 
-      reactRoot = createRoot(containerEl);
+        reactRoot = ReactDOM.createRoot(containerEl);
 
-      reactRoot.render(
-        createElement(BlockNoteWrapper, {
-          initialContent,
-          onContentChange: () => {
-            oncontentchange?.();
-          },
-          onNavigate: onnavigate,
-          onEditorReady: (handle: EditorHandle) => {
-            editorHandle = handle;
-            oneditorready?.(handle);
-          },
-          onEditorDestroy: () => {
-            editorHandle = undefined;
-            oneditordestroy?.();
-          },
-          darkMode: document.documentElement.classList.contains('dark'),
-        }),
-      );
+        reactRoot.render(
+          React.createElement(BlockNoteWrapper, {
+            initialContent,
+            onContentChange: () => {
+              oncontentchange?.();
+            },
+            onNavigate: onnavigate,
+            onEditorReady: (handle: EditorHandle) => {
+              editorHandle = handle;
+              oneditorready?.(handle);
+            },
+            onEditorDestroy: () => {
+              editorHandle = undefined;
+              oneditordestroy?.();
+            },
+            darkMode: document.documentElement.classList.contains('dark'),
+          }),
+        );
+      } catch (err) {
+        console.error('[BlockNoteEditor] Failed to mount React:', err);
+        if (containerEl) {
+          containerEl.textContent = `Editor failed to load: ${err}`;
+        }
+      }
     }
 
     bootstrap();
@@ -94,12 +95,12 @@
 <style>
   .blocknote-container {
     width: 100%;
-    height: 100%;
-    overflow: auto;
+    min-height: 100%;
+    flex: 1;
   }
 
   .blocknote-container :global(.bn-container) {
-    height: 100%;
+    min-height: 100%;
     font-family: var(--font-content);
   }
 
@@ -107,5 +108,11 @@
     max-width: 900px;
     margin: 0 auto;
     padding: 36px 28px;
+    min-height: 300px;
+  }
+
+  /* Ensure Mantine styles don't get blocked by CSP */
+  .blocknote-container :global(.mantine-ScrollArea-root) {
+    height: 100%;
   }
 </style>

@@ -14,6 +14,10 @@ export default defineConfig(async () => ({
     tailwindcss(),
     sveltekit(),
   ],
+  // Ensure React/BlockNote packages are bundled client-side, not SSR'd
+  ssr: {
+    noExternal: ['@blocknote/core', '@blocknote/react', '@blocknote/mantine', '@mantine/core'],
+  },
   test: {
     environment: 'jsdom',
     include: ['src/**/*.test.ts'],
