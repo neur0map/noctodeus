@@ -231,7 +231,7 @@
     display: flex;
     flex-direction: column;
     height: 100%;
-    background: #0a0c10;
+    background: var(--color-background);
     border-left: 1px solid rgba(255, 255, 255, 0.04);
     animation: cp-slide 250ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }

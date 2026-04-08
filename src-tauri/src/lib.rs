@@ -124,6 +124,9 @@ pub fn run() {
             commands::mcp_list_servers,
             commands::mcp_list_tools,
             commands::mcp_call_tool,
+            // RAG commands
+            commands::rag_search,
+            commands::rag_context,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

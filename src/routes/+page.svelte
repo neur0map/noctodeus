@@ -6,6 +6,7 @@
   import CommandPalette from "../lib/components/command/CommandPalette.svelte";
   import Worksurface from "../lib/components/layout/Worksurface.svelte";
   import EditorComponent from "../lib/editor/Editor.svelte";
+  import ResearchChat from "../lib/components/ai/ResearchChat.svelte";
 
   import type { Command } from "../lib/types/ui";
 
@@ -251,6 +252,14 @@
         ui.toggleAiChat();
       },
     },
+    {
+      id: "research-open",
+      label: "Research: Open",
+      action: () => {
+        ui.hideCommandPalette();
+        ui.showResearch();
+      },
+    },
   ]);
 
   // --- Helpers ---
@@ -480,7 +489,9 @@
 
 </script>
 
-{#if currentFilePath && currentContent !== null}
+{#if ui.researchVisible}
+  <ResearchChat />
+{:else if currentFilePath && currentContent !== null}
   {#if isMarkdown}
     <Worksurface flush={true}>
       {#snippet toolbar()}

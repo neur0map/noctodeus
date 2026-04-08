@@ -1,4 +1,6 @@
+pub mod bm25;
 pub mod providers;
+pub mod rag;
 pub mod stream;
 
 use serde::{Deserialize, Serialize};
