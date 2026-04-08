@@ -197,7 +197,7 @@
     max-height: 80vh;
     background: var(--surface-2, var(--color-popover));
     border: none;
-    border-radius: 12px;
+    border-radius: 8px;
     box-shadow: var(--shadow-modal, 0 8px 32px rgba(0,0,0,0.4));
     overflow: hidden;
     animation: tasks-modal-in 450ms var(--ease-expo-out) both;
@@ -257,7 +257,7 @@
     color: var(--text-muted, var(--color-placeholder));
     background: var(--surface-3, var(--color-hover));
     border: none;
-    border-radius: 16px;
+    border-radius: 10px;
     cursor: pointer;
     transition: all 150ms ease-out;
   }

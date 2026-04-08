@@ -91,7 +91,7 @@
     overflow-y: auto;
     background: var(--color-popover);
     border: 1px solid var(--color-border);
-    border-radius: 10px;
+    border-radius: 6px;
     box-shadow: var(--shadow-float);
     padding: 4px;
     animation: slash-enter 250ms var(--ease-expo-out) both;

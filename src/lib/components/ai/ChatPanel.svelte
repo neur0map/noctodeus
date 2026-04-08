@@ -331,7 +331,7 @@
     justify-content: center;
     width: 48px;
     height: 48px;
-    border-radius: 12px;
+    border-radius: 6px;
     background: rgba(255, 255, 255, 0.03);
     color: var(--color-placeholder);
     margin-bottom: 4px;
@@ -369,7 +369,7 @@
     color: var(--color-accent, #7AA2F7);
     background: rgba(122, 162, 247, 0.1);
     border: 1px solid rgba(122, 162, 247, 0.2);
-    border-radius: 8px;
+    border-radius: 6px;
     cursor: pointer;
     transition: background 150ms, border-color 150ms;
 
@@ -399,7 +399,7 @@
     color: var(--color-muted-foreground);
     background: rgba(255, 255, 255, 0.02);
     border: 1px solid rgba(255, 255, 255, 0.04);
-    border-radius: 8px;
+    border-radius: 6px;
     cursor: pointer;
     text-align: left;
     transition: background 150ms, border-color 150ms, color 150ms;

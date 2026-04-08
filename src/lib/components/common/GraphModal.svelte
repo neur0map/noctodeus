@@ -52,7 +52,7 @@
     width: min(85vw, 1000px);
     height: min(80vh, 700px);
     background: var(--surface-2, var(--color-popover));
-    border-radius: 12px;
+    border-radius: 8px;
     box-shadow: var(--shadow-modal, 0 8px 32px rgba(0, 0, 0, 0.4));
     z-index: 51;
     display: flex;

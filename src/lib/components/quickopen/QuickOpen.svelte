@@ -254,7 +254,7 @@
       rgba(26, 30, 46, 0.98) 0%,
       rgba(19, 22, 31, 0.99) 100%
     );
-    border-radius: 14px;
+    border-radius: 10px;
     border: 1px solid rgba(122, 162, 247, 0.06);
     box-shadow:
       0 0 0 1px rgba(0, 0, 0, 0.3),

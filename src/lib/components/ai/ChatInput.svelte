@@ -86,7 +86,7 @@
     color: var(--color-foreground);
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.06);
-    border-radius: 8px;
+    border-radius: 6px;
     outline: none;
     resize: none;
     overflow-y: auto;
@@ -111,7 +111,7 @@
     width: 32px;
     height: 32px;
     border: none;
-    border-radius: 8px;
+    border-radius: 6px;
     cursor: pointer;
     flex-shrink: 0;
     transition: background 150ms, color 150ms, opacity 150ms;

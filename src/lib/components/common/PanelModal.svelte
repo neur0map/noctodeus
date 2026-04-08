@@ -245,7 +245,7 @@
       rgba(19, 22, 31, 0.99) 0%,
       rgba(13, 16, 24, 1) 100%
     );
-    border-radius: 14px;
+    border-radius: 6px;
     border: 1px solid rgba(255, 255, 255, 0.05);
     box-shadow:
       0 0 0 1px rgba(0, 0, 0, 0.4),
@@ -265,7 +265,7 @@
     gap: 2px;
     padding: 14px 18px 6px;
     background: rgba(255, 255, 255, 0.015);
-    border-radius: 10px;
+    border-radius: 6px;
     margin: 12px 14px 0;
   }
 
@@ -320,7 +320,7 @@
 
   .sp__card {
     background: rgba(255, 255, 255, 0.035);
-    border-radius: 11px;
+    border-radius: 6px;
     padding: 13px 13px 10px;
     display: flex;
     flex-direction: column;
@@ -378,7 +378,7 @@
     align-items: center;
     justify-content: space-between;
     background: rgba(255, 255, 255, 0.035);
-    border-radius: 11px;
+    border-radius: 6px;
     padding: 11px 13px;
   }
 

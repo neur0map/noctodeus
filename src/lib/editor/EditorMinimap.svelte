@@ -140,7 +140,7 @@
     right: 0;
     background: var(--color-popover);
     border: 1px solid var(--color-border);
-    border-radius: 10px;
+    border-radius: 6px;
     box-shadow: var(--shadow-float);
     backdrop-filter: blur(16px);
     padding: 8px;

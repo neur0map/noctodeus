@@ -172,7 +172,7 @@
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
-    border-radius: 12px;
+    border-radius: 8px;
     box-shadow: var(--shadow-elevated, 0 2px 8px rgba(0, 0, 0, 0.25));
     padding: 4px;
     animation: bt-in 250ms var(--ease-expo-out) both;

@@ -134,7 +134,7 @@
     width: 560px;
     max-height: 400px;
     background: var(--color-popover);
-    border-radius: 12px;
+    border-radius: 8px;
     box-shadow: var(--shadow-float);
     overflow: hidden;
     display: flex;

@@ -145,7 +145,7 @@
     height: min(580px, 80vh);
     background: var(--surface-2, var(--color-popover));
     border: none;
-    border-radius: 14px;
+    border-radius: 6px;
     box-shadow: var(--shadow-modal, 0 8px 32px rgba(0,0,0,0.4));
     overflow: hidden;
     animation: settings-in 450ms cubic-bezier(0.16, 1, 0.3, 1) both;
@@ -359,7 +359,7 @@
       width: 36px;
       height: 20px;
       background: var(--color-hover);
-      border-radius: 10px;
+      border-radius: 6px;
       transition: background 150ms var(--ease-expo-out);
       position: relative;
     }
@@ -607,7 +607,7 @@
       flex-direction: column;
       gap: 4px;
       padding: 14px;
-      border-radius: 10px;
+      border-radius: 6px;
       border: 1px solid rgba(128, 128, 128, 0.1);
       cursor: pointer;
       text-align: left;

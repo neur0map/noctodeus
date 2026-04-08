@@ -217,7 +217,7 @@
     width: min(560px, 92vw);
     background: var(--surface-2, #14151b);
     border: 1px solid rgba(255, 255, 255, 0.06);
-    border-radius: 16px;
+    border-radius: 6px;
     box-shadow:
       0 0 0 1px rgba(0, 0, 0, 0.3),
       0 16px 48px rgba(0, 0, 0, 0.5),
@@ -252,7 +252,7 @@
     justify-content: center;
     width: 36px;
     height: 36px;
-    border-radius: 10px;
+    border-radius: 6px;
     background: rgba(122, 162, 247, 0.1);
     color: var(--color-accent, #7AA2F7);
     flex-shrink: 0;
@@ -281,7 +281,7 @@
     width: 32px;
     height: 32px;
     border: none;
-    border-radius: 8px;
+    border-radius: 6px;
     background: transparent;
     color: var(--color-placeholder);
     cursor: pointer;
@@ -295,7 +295,7 @@
     padding: 14px 16px;
     background: rgba(0, 0, 0, 0.25);
     border: 1px solid rgba(255, 255, 255, 0.04);
-    border-radius: 10px;
+    border-radius: 6px;
     margin-top: 20px;
   }
 
@@ -389,7 +389,7 @@
     color: var(--color-muted-foreground);
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.06);
-    border-radius: 8px;
+    border-radius: 6px;
     cursor: pointer;
     transition: all 150ms ease-out;
     text-align: center;
@@ -421,7 +421,7 @@
     color: var(--color-foreground);
     background: rgba(0, 0, 0, 0.2);
     border: 1px solid rgba(255, 255, 255, 0.06);
-    border-radius: 8px;
+    border-radius: 6px;
     outline: none;
     transition: border-color 150ms ease-out;
 
@@ -438,7 +438,7 @@
     padding: 8px 12px;
     background: rgba(247, 118, 142, 0.06);
     border: 1px solid rgba(247, 118, 142, 0.15);
-    border-radius: 8px;
+    border-radius: 6px;
   }
 
   /* ── Actions ── */
@@ -458,7 +458,7 @@
     font-family: var(--font-mono);
     font-size: 12px;
     font-weight: 500;
-    border-radius: 10px;
+    border-radius: 6px;
     cursor: pointer;
     transition: all 150ms ease-out;
 

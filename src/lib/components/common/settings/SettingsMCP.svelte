@@ -692,7 +692,7 @@
     color: var(--color-muted-foreground);
     background: rgba(0, 0, 0, 0.3);
     border: 1px solid rgba(255, 255, 255, 0.04);
-    border-radius: 8px;
+    border-radius: 6px;
     padding: 10px 14px;
     margin: 0;
     overflow-x: auto;
@@ -743,7 +743,7 @@
     padding: 8px 12px;
     background: rgba(255, 255, 255, 0.02);
     border: 1px solid rgba(255, 255, 255, 0.04);
-    border-radius: 8px;
+    border-radius: 6px;
     cursor: pointer;
     text-align: left;
     transition: background 150ms, border-color 150ms;

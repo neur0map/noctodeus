@@ -86,7 +86,7 @@
     width: 320px;
     background: var(--color-popover);
     border: 1px solid var(--color-border);
-    border-radius: 12px;
+    border-radius: 8px;
     box-shadow: var(--shadow-float);
     padding: 20px;
     display: flex;

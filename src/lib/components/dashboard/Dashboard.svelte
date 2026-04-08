@@ -264,7 +264,7 @@
     padding: 20px;
     background: rgba(255, 255, 255, 0.02);
     border: 1px solid var(--color-border);
-    border-radius: 12px;
+    border-radius: 8px;
     cursor: pointer;
     text-align: left;
     opacity: 0;
@@ -304,7 +304,7 @@
 
   .ds__graph {
     height: 200px;
-    border-radius: 10px;
+    border-radius: 6px;
     overflow: hidden;
     border: 1px solid var(--color-border);
   }

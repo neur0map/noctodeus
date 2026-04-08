@@ -92,7 +92,7 @@
   .tcb {
     margin: 4px 16px;
     border: 1px solid rgba(122, 162, 247, 0.12);
-    border-radius: 8px;
+    border-radius: 6px;
     background: rgba(122, 162, 247, 0.04);
     overflow: hidden;
     animation: tcb-in 200ms ease both;

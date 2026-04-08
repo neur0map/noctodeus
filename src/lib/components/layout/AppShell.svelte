@@ -47,7 +47,7 @@
     grid-template-columns: 276px 1fr;
     height: calc(100vh - 8px);
     margin: 0 8px 8px 8px;
-    border-radius: 16px;
+    border-radius: 10px;
     background: var(--color-background);
     overflow: hidden;
     box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
@@ -78,7 +78,7 @@
     overflow: hidden;
     border-right: 1px solid var(--border-subtle, var(--color-border));
     background: var(--surface-1, var(--color-card));
-    border-radius: 16px 0 0 16px;
+    border-radius: 10px 0 0 10px;
     transition: width 150ms var(--ease-expo-out);
   }
 
