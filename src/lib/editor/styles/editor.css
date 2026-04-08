@@ -499,6 +499,8 @@
   cursor: grab;
   transition: background 80ms ease, color 80ms ease;
   pointer-events: auto;
+  -webkit-user-drag: element;
+  user-select: none;
 }
 
 .drag-handle:hover {

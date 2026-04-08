@@ -106,12 +106,13 @@ export function createEditorExtensions(
     DragHandle.configure({
       nested: true,
       render() {
-        const el = document.createElement('button');
-        el.type = 'button';
+        const el = document.createElement('div');
         el.className = 'drag-handle';
-        el.setAttribute('aria-label', 'Drag to move');
         el.setAttribute('draggable', 'true');
         el.setAttribute('data-drag-handle', '');
+        el.setAttribute('role', 'button');
+        el.setAttribute('aria-label', 'Drag to move');
+        el.setAttribute('tabindex', '-1');
         // 6-dot grid icon (2 cols × 3 rows)
         el.innerHTML = `<svg width="14" height="20" viewBox="0 0 14 20" fill="currentColor">
           <circle cx="4" cy="4" r="1.5"/>
