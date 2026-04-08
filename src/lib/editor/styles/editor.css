@@ -483,8 +483,6 @@
 /* --------------------------------------------------------------------------
    Drag Handle (Notion-style 6-dot grip)
    -------------------------------------------------------------------------- */
-/* The extension controls positioning (fixed + floating-ui) and visibility
-   (inline opacity styles) — we only style appearance. */
 .drag-handle {
   display: flex;
   align-items: center;
@@ -498,6 +496,8 @@
   color: var(--text-muted, var(--color-placeholder));
   cursor: grab;
   transition: background 80ms ease, color 80ms ease;
+  pointer-events: auto;
+  z-index: 50;
 }
 
 .drag-handle:hover {
