@@ -4,17 +4,15 @@
   import { getCoreState } from '$lib/stores/core.svelte';
 
   import X from '@lucide/svelte/icons/x';
-  import Diamond from '@lucide/svelte/icons/diamond';
   import FileText from '@lucide/svelte/icons/file-text';
   import Image from '@lucide/svelte/icons/image';
   import FolderClosed from '@lucide/svelte/icons/folder-closed';
   import HardDrive from '@lucide/svelte/icons/hard-drive';
   import Check from '@lucide/svelte/icons/check';
-  import CircleDot from '@lucide/svelte/icons/circle-dot';
-  import Circle from '@lucide/svelte/icons/circle';
+  import ArrowRight from '@lucide/svelte/icons/arrow-right';
+  import ArrowLeft from '@lucide/svelte/icons/arrow-left';
   import FolderOpen from '@lucide/svelte/icons/folder-open';
-  import Loader from '@lucide/svelte/icons/loader';
-  import CheckCircle from '@lucide/svelte/icons/check-circle-2';
+  import CircleCheck from '@lucide/svelte/icons/circle-check';
 
   let {
     visible = false,
@@ -26,21 +24,18 @@
 
   const core = getCoreState();
 
-  // --- Wizard state ---
   let step = $state(1);
   let vaultPath = $state<string | null>(null);
   let scan = $state<VaultScan | null>(null);
   let scanning = $state(false);
   let scanError = $state<string | null>(null);
-
-  // Step 2 options
   let createNewCore = $state(true);
   let coreName = $state('');
-
-  // Step 3 state
   let importing = $state(false);
   let importError = $state<string | null>(null);
   let result = $state<ImportResult | null>(null);
+
+  let hasActiveCore = $derived(core.activeCore !== null);
 
   function formatBytes(bytes: number): string {
     if (bytes < 1024) return bytes + ' B';
@@ -49,44 +44,28 @@
   }
 
   function resetWizard() {
-    step = 1;
-    vaultPath = null;
-    scan = null;
-    scanning = false;
-    scanError = null;
-    createNewCore = true;
-    coreName = '';
-    importing = false;
-    importError = null;
-    result = null;
+    step = 1; vaultPath = null; scan = null; scanning = false;
+    scanError = null; createNewCore = true; coreName = '';
+    importing = false; importError = null; result = null;
   }
 
-  function handleClose() {
-    resetWizard();
-    onclose();
-  }
+  function handleClose() { resetWizard(); onclose(); }
 
   async function handleBrowse() {
     try {
       const { open } = await import('@tauri-apps/plugin-dialog');
       const selected = await open({ directory: true, title: 'Select Obsidian vault' });
       if (!selected || typeof selected !== 'string') return;
-
       vaultPath = selected;
       scanning = true;
       scanError = null;
       step = 2;
-
       try {
         scan = await importScan(selected);
         coreName = scan.name;
-      } catch (err) {
-        scanError = String(err);
-      }
+      } catch (err) { scanError = String(err); }
       scanning = false;
-    } catch (err) {
-      scanError = String(err);
-    }
+    } catch (err) { scanError = String(err); }
   }
 
   async function handleImport() {
@@ -94,34 +73,22 @@
     importing = true;
     importError = null;
     step = 3;
-
     try {
-      const targetPath = core.activeCore?.path ?? '';
-      result = await importObsidian(
-        vaultPath,
-        targetPath,
-        createNewCore,
-        createNewCore ? coreName || null : null,
-      );
-    } catch (err) {
-      importError = String(err);
-    }
+      const targetPath = createNewCore ? '' : (core.activeCore?.path ?? '');
+      result = await importObsidian(vaultPath, targetPath, createNewCore, createNewCore ? coreName || null : null);
+    } catch (err) { importError = String(err); }
     importing = false;
   }
 
   async function handleOpenCore() {
-    if (!result || !createNewCore || !coreName) {
-      handleClose();
-      return;
-    }
+    if (!result || !createNewCore || !coreName) { handleClose(); return; }
     try {
       const { openCore, scanCore } = await import('$lib/bridge/commands');
       const { getFilesState } = await import('$lib/stores/files.svelte');
       const coreInfo = await openCore(coreName);
       core.setCore(coreInfo);
       const fileTree = await scanCore();
-      const files = getFilesState();
-      files.setFiles(fileTree);
+      getFilesState().setFiles(fileTree);
     } catch (err) {
       const { toast } = await import('$lib/stores/toast.svelte');
       toast.error(`Failed to open core: ${err}`);
@@ -129,830 +96,552 @@
     handleClose();
   }
 
-  function handleKeydown(e: KeyboardEvent) {
-    if (e.key === 'Escape') {
-      e.preventDefault();
-      handleClose();
-    }
-  }
-
-  function handleBackdrop(e: MouseEvent) {
-    if (e.target === e.currentTarget) handleClose();
-  }
-
-  let hasActiveCore = $derived(core.activeCore !== null);
+  function handleKeydown(e: KeyboardEvent) { if (e.key === 'Escape') { e.preventDefault(); handleClose(); } }
+  function handleBackdrop(e: MouseEvent) { if (e.target === e.currentTarget) handleClose(); }
 </script>
 
 {#if visible}
   <!-- svelte-ignore a11y_no_static_element_interactions -->
-  <div class="iw-backdrop" onclick={handleBackdrop} onkeydown={handleKeydown}>
+  <div class="imp-bg" onclick={handleBackdrop} onkeydown={handleKeydown}>
     <!-- svelte-ignore a11y_no_static_element_interactions -->
-    <div class="iw" onkeydown={handleKeydown}>
+    <div class="imp" onkeydown={handleKeydown}>
 
-      <!-- Header -->
-      <div class="iw__head">
-        <div class="iw__head-left">
-          <div class="iw__icon-wrap">
-            <Diamond size={16} />
-          </div>
-          <div>
-            <h3 class="iw__title">Import from Obsidian</h3>
-            <span class="iw__subtitle">Bring your vault into Noctodeus</span>
+      <!-- Top bar: step + close -->
+      <div class="imp__bar">
+        <div class="imp__progress">
+          {#each [1, 2, 3] as s}
+            <div class="imp__dot" class:imp__dot--now={step === s} class:imp__dot--done={step > s}></div>
+          {/each}
+        </div>
+        <button class="imp__x" onclick={handleClose}><X size={14} /></button>
+      </div>
+
+      <!-- STEP 1: Pick folder -->
+      {#if step === 1}
+        <div class="imp__center">
+          <div class="imp__drop" onclick={handleBrowse} role="button" tabindex="0" onkeydown={(e) => e.key === 'Enter' && handleBrowse()}>
+            <FolderOpen size={28} strokeWidth={1.5} />
+            <span class="imp__drop-text">Drop an Obsidian vault here or click to browse</span>
+            <span class="imp__drop-hint">Select the root folder that contains your .obsidian directory</span>
           </div>
         </div>
-        <button class="iw__close" onclick={handleClose}><X size={14} /></button>
-      </div>
 
-      <!-- Step indicator -->
-      <div class="iw__steps">
-        {#each [1, 2, 3] as s}
-          <div class="iw__step-dot" class:iw__step-dot--active={step === s} class:iw__step-dot--done={step > s}>
-            {#if step > s}
-              <Check size={10} />
-            {:else if step === s}
-              <CircleDot size={14} />
-            {:else}
-              <Circle size={14} />
-            {/if}
-          </div>
-          {#if s < 3}
-            <div class="iw__step-line" class:iw__step-line--done={step > s}></div>
-          {/if}
-        {/each}
-      </div>
-
-      <!-- Body -->
-      <div class="iw__body">
-
-        <!-- Step 1: Select Vault -->
-        {#if step === 1}
-          <div class="iw__step iw__step-select">
-            <div class="iw__vault-icon">
-              <Diamond size={48} strokeWidth={1.2} />
+      <!-- STEP 2: Preview -->
+      {:else if step === 2}
+        <div class="imp__scroll">
+          {#if scanning}
+            <div class="imp__loading">
+              <div class="imp__pulse"></div>
+              <span>Scanning vault...</span>
             </div>
-            <p class="iw__step-heading">Select your Obsidian vault folder</p>
-            <p class="iw__step-desc">Choose the root folder of your Obsidian vault to begin scanning.</p>
-            <button class="iw__btn iw__btn--primary iw__btn--browse" onclick={handleBrowse}>
-              <FolderOpen size={14} />
-              Browse
+          {:else if scanError}
+            <div class="imp__err">{scanError}</div>
+            <button class="imp__link" onclick={() => { step = 1; scanError = null; }}>
+              <ArrowLeft size={12} /> Try again
             </button>
-          </div>
-        {/if}
+          {:else if scan}
+            <div class="imp__vault-header">
+              <span class="imp__vault-name">{scan.name}</span>
+              <span class="imp__vault-path">{vaultPath}</span>
+            </div>
 
-        <!-- Step 2: Scanning / Preview -->
-        {#if step === 2}
-          <div class="iw__step iw__step-preview">
-            {#if scanning}
-              <div class="iw__scanning">
-                <div class="iw__spinner"></div>
-                <span>Scanning vault...</span>
+            <div class="imp__grid">
+              <div class="imp__cell">
+                <FileText size={15} class="imp__cell-ico" />
+                <span class="imp__cell-num">{scan.markdownCount}</span>
+                <span class="imp__cell-lbl">notes</span>
               </div>
-            {:else if scanError}
-              <div class="iw__error">{scanError}</div>
-              <button class="iw__btn iw__btn--ghost" onclick={() => { step = 1; scanError = null; }}>
-                Go Back
-              </button>
-            {:else if scan}
-              <!-- Vault name -->
-              <div class="iw__vault-name">{scan.name}</div>
-
-              <!-- Stats grid -->
-              <div class="iw__stats">
-                <div class="iw__stat">
-                  <div class="iw__stat-icon"><FileText size={14} /></div>
-                  <div class="iw__stat-value">{scan.markdownCount.toLocaleString()}</div>
-                  <div class="iw__stat-label">Markdown</div>
-                </div>
-                <div class="iw__stat">
-                  <div class="iw__stat-icon"><Image size={14} /></div>
-                  <div class="iw__stat-value">{scan.mediaCount.toLocaleString()}</div>
-                  <div class="iw__stat-label">Media</div>
-                </div>
-                <div class="iw__stat">
-                  <div class="iw__stat-icon"><FolderClosed size={14} /></div>
-                  <div class="iw__stat-value">{scan.folderCount.toLocaleString()}</div>
-                  <div class="iw__stat-label">Folders</div>
-                </div>
-                <div class="iw__stat">
-                  <div class="iw__stat-icon"><HardDrive size={14} /></div>
-                  <div class="iw__stat-value">{formatBytes(scan.totalSizeBytes)}</div>
-                  <div class="iw__stat-label">Total size</div>
-                </div>
+              <div class="imp__cell">
+                <Image size={15} class="imp__cell-ico" />
+                <span class="imp__cell-num">{scan.mediaCount}</span>
+                <span class="imp__cell-lbl">media</span>
               </div>
-
-              <!-- Compatibility badges -->
-              <div class="iw__badges">
-                <div class="iw__badge" class:iw__badge--ok={scan.hasWikiLinks}>
-                  {#if scan.hasWikiLinks}<Check size={12} />{/if}
-                  Wiki-links
-                </div>
-                <div class="iw__badge" class:iw__badge--ok={scan.hasFrontmatter}>
-                  {#if scan.hasFrontmatter}<Check size={12} />{/if}
-                  Frontmatter
-                </div>
+              <div class="imp__cell">
+                <FolderClosed size={15} class="imp__cell-ico" />
+                <span class="imp__cell-num">{scan.folderCount}</span>
+                <span class="imp__cell-lbl">folders</span>
               </div>
+              <div class="imp__cell">
+                <HardDrive size={15} class="imp__cell-ico" />
+                <span class="imp__cell-num">{formatBytes(scan.totalSizeBytes)}</span>
+                <span class="imp__cell-lbl">total</span>
+              </div>
+            </div>
 
-              <!-- Sample files -->
-              {#if scan.sampleFiles.length > 0}
-                <div class="iw__samples">
-                  <div class="iw__label-row">
-                    <span class="iw__label">Sample files</span>
-                  </div>
-                  <div class="iw__sample-list">
-                    {#each scan.sampleFiles.slice(0, 5) as file}
-                      <div class="iw__sample-file">
-                        <FileText size={12} />
-                        <span>{file}</span>
-                      </div>
-                    {/each}
-                  </div>
-                </div>
+            <div class="imp__tags">
+              {#if scan.hasWikiLinks}
+                <span class="imp__tag imp__tag--ok"><Check size={11} /> Wiki-links</span>
               {/if}
+              {#if scan.hasFrontmatter}
+                <span class="imp__tag imp__tag--ok"><Check size={11} /> Frontmatter</span>
+              {/if}
+              {#if scan.mediaCount > 0}
+                <span class="imp__tag imp__tag--ok"><Check size={11} /> Attachments</span>
+              {/if}
+            </div>
 
-              <!-- Import options -->
-              <div class="iw__options">
-                <button
-                  class="iw__option"
-                  class:iw__option--selected={createNewCore}
-                  onclick={() => { createNewCore = true; }}
-                >
-                  <div class="iw__option-radio">
-                    {#if createNewCore}<CircleDot size={16} />{:else}<Circle size={16} />{/if}
-                  </div>
-                  <div class="iw__option-content">
-                    <span class="iw__option-title">Create new core</span>
-                    <input
-                      class="iw__input"
-                      type="text"
-                      placeholder="Core name"
-                      bind:value={coreName}
-                      onfocus={() => { createNewCore = true; }}
-                    />
-                  </div>
-                </button>
-
-                {#if hasActiveCore}
-                  <button
-                    class="iw__option"
-                    class:iw__option--selected={!createNewCore}
-                    onclick={() => { createNewCore = false; }}
-                  >
-                    <div class="iw__option-radio">
-                      {#if !createNewCore}<CircleDot size={16} />{:else}<Circle size={16} />{/if}
-                    </div>
-                    <div class="iw__option-content">
-                      <span class="iw__option-title">Import into current core</span>
-                      <span class="iw__option-desc">{core.activeCore?.name}</span>
-                    </div>
-                  </button>
+            {#if scan.sampleFiles.length > 0}
+              <div class="imp__files">
+                {#each scan.sampleFiles.slice(0, 4) as f}
+                  <span class="imp__file"><FileText size={11} /> {f}</span>
+                {/each}
+                {#if scan.markdownCount > 4}
+                  <span class="imp__file imp__file--more">and {scan.markdownCount - 4} more</span>
                 {/if}
               </div>
-
-              <!-- Import button -->
-              <div class="iw__actions">
-                <button class="iw__btn iw__btn--ghost" onclick={() => { step = 1; }}>
-                  Back
-                </button>
-                <button
-                  class="iw__btn iw__btn--primary"
-                  onclick={handleImport}
-                  disabled={createNewCore && !coreName.trim()}
-                >
-                  Import
-                </button>
-              </div>
             {/if}
-          </div>
-        {/if}
 
-        <!-- Step 3: Importing / Complete -->
-        {#if step === 3}
-          <div class="iw__step iw__step-progress">
-            {#if importing}
-              <div class="iw__importing">
-                <div class="iw__spinner"></div>
-                <span class="iw__import-text">Importing files...</span>
-              </div>
-            {:else if importError}
-              <div class="iw__error">{importError}</div>
-              <div class="iw__actions">
-                <button class="iw__btn iw__btn--ghost" onclick={() => { step = 2; importError = null; }}>
-                  Go Back
-                </button>
-              </div>
-            {:else if result}
-              <div class="iw__success">
-                <div class="iw__success-icon">
-                  <CheckCircle size={40} strokeWidth={1.2} />
-                </div>
-                <p class="iw__step-heading">Import Complete</p>
-                <div class="iw__result-stats">
-                  <div class="iw__result-stat">
-                    <span class="iw__result-value">{result.filesImported}</span>
-                    <span class="iw__result-label">Files imported</span>
-                  </div>
-                  <div class="iw__result-sep"></div>
-                  <div class="iw__result-stat">
-                    <span class="iw__result-value">{result.foldersCreated}</span>
-                    <span class="iw__result-label">Folders created</span>
-                  </div>
-                  <div class="iw__result-sep"></div>
-                  <div class="iw__result-stat">
-                    <span class="iw__result-value">{result.skipped}</span>
-                    <span class="iw__result-label">Skipped</span>
-                  </div>
-                </div>
-              </div>
-              <div class="iw__actions">
+            <div class="imp__dest">
+              <button class="imp__dest-opt" class:imp__dest-opt--on={createNewCore} onclick={() => { createNewCore = true; }}>
+                <span class="imp__radio" class:imp__radio--on={createNewCore}></span>
+                <span>New core</span>
                 {#if createNewCore}
-                  <button class="iw__btn iw__btn--primary" onclick={handleOpenCore}>
-                    Open Core
-                  </button>
+                  <input class="imp__name" type="text" placeholder="Core name" bind:value={coreName} onfocus={() => { createNewCore = true; }} />
                 {/if}
-                <button class="iw__btn iw__btn--ghost" onclick={handleClose}>
-                  Done
+              </button>
+              {#if hasActiveCore}
+                <button class="imp__dest-opt" class:imp__dest-opt--on={!createNewCore} onclick={() => { createNewCore = false; }}>
+                  <span class="imp__radio" class:imp__radio--on={!createNewCore}></span>
+                  <span>Into "{core.activeCore?.name}"</span>
                 </button>
+              {/if}
+            </div>
+
+            <div class="imp__row">
+              <button class="imp__back" onclick={() => { step = 1; }}>
+                <ArrowLeft size={13} /> Back
+              </button>
+              <button class="imp__go" onclick={handleImport} disabled={createNewCore && !coreName.trim()}>
+                Import {scan.markdownCount} notes <ArrowRight size={13} />
+              </button>
+            </div>
+          {/if}
+        </div>
+
+      <!-- STEP 3: Progress / Done -->
+      {:else if step === 3}
+        <div class="imp__center">
+          {#if importing}
+            <div class="imp__loading">
+              <div class="imp__pulse"></div>
+              <span>Importing files...</span>
+            </div>
+          {:else if importError}
+            <div class="imp__err">{importError}</div>
+            <button class="imp__link" onclick={() => { step = 2; importError = null; }}>
+              <ArrowLeft size={12} /> Go back
+            </button>
+          {:else if result}
+            <div class="imp__done">
+              <CircleCheck size={36} strokeWidth={1.5} />
+              <span class="imp__done-title">Done</span>
+              <div class="imp__done-stats">
+                <span><strong>{result.filesImported}</strong> imported</span>
+                <span class="imp__done-dot"></span>
+                <span><strong>{result.foldersCreated}</strong> folders</span>
+                {#if result.skipped > 0}
+                  <span class="imp__done-dot"></span>
+                  <span><strong>{result.skipped}</strong> skipped</span>
+                {/if}
               </div>
-            {/if}
-          </div>
-        {/if}
+            </div>
+            <div class="imp__row imp__row--center">
+              {#if createNewCore}
+                <button class="imp__go" onclick={handleOpenCore}>Open Core</button>
+              {/if}
+              <button class="imp__back" onclick={handleClose}>Close</button>
+            </div>
+          {/if}
+        </div>
+      {/if}
 
-      </div>
-
-      <!-- Footer -->
-      <div class="iw__foot">
-        Your files stay local. Nothing is uploaded.
-      </div>
-
+      <div class="imp__foot">Your files stay on your machine.</div>
     </div>
   </div>
 {/if}
 
 <style lang="scss">
-  /* ── Backdrop ── */
-  .iw-backdrop {
+  .imp-bg {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.65);
-    backdrop-filter: blur(12px);
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(16px);
     z-index: 600;
     display: flex;
     align-items: center;
     justify-content: center;
-    animation: iw-fade 200ms ease both;
+    animation: imp-in 180ms ease both;
   }
+  @keyframes imp-in { from { opacity: 0; } }
 
-  @keyframes iw-fade {
-    from { opacity: 0; }
-    to { opacity: 1; }
-  }
-
-  /* ── Modal ── */
-  .iw {
-    width: min(580px, 92vw);
-    max-height: 90vh;
-    background: var(--surface-2, #14151b);
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    border-radius: 16px;
-    box-shadow:
-      0 0 0 1px rgba(0, 0, 0, 0.3),
-      0 16px 48px rgba(0, 0, 0, 0.5),
-      0 0 80px rgba(122, 162, 247, 0.03);
-    overflow: hidden;
+  .imp {
+    width: min(500px, 90vw);
+    max-height: 85vh;
     display: flex;
     flex-direction: column;
-    animation: iw-up 350ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    background: #0e0f14;
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 14px;
+    box-shadow: 0 24px 64px rgba(0,0,0,0.6);
+    overflow: hidden;
+    animation: imp-up 300ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  @keyframes imp-up {
+    from { opacity: 0; transform: translateY(16px) scale(0.96); }
   }
 
-  @keyframes iw-up {
-    from { opacity: 0; transform: translateY(12px) scale(0.97); }
-    to { opacity: 1; transform: translateY(0) scale(1); }
-  }
-
-  /* ── Header ── */
-  .iw__head {
+  .imp__bar {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 20px 24px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    padding: 14px 18px;
   }
 
-  .iw__head-left {
+  .imp__progress {
     display: flex;
-    align-items: center;
-    gap: 12px;
+    gap: 6px;
   }
 
-  .iw__icon-wrap {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 36px;
-    height: 36px;
-    border-radius: 10px;
-    background: rgba(122, 162, 247, 0.1);
-    color: var(--color-accent, #7AA2F7);
-    flex-shrink: 0;
-  }
-
-  .iw__title {
-    font-family: var(--font-sans);
-    font-size: 15px;
-    font-weight: 600;
-    color: var(--color-foreground);
-    letter-spacing: -0.01em;
-    line-height: 1.2;
-  }
-
-  .iw__subtitle {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    color: var(--color-placeholder);
-    letter-spacing: 0.01em;
-  }
-
-  .iw__close {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    border: none;
-    border-radius: 8px;
-    background: transparent;
-    color: var(--color-placeholder);
-    cursor: pointer;
-    transition: color 150ms, background 150ms;
-    &:hover { color: var(--color-foreground); background: rgba(255, 255, 255, 0.06); }
-  }
-
-  /* ── Step indicator ── */
-  .iw__steps {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0;
-    padding: 16px 24px 0;
-  }
-
-  .iw__step-dot {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 24px;
-    height: 24px;
+  .imp__dot {
+    width: 6px; height: 6px;
     border-radius: 50%;
-    color: rgba(255, 255, 255, 0.2);
-    transition: color 150ms ease-out;
-
-    &--active {
-      color: var(--color-accent, #7AA2F7);
-    }
-
-    &--done {
-      color: #9ece6a;
-    }
+    background: rgba(255,255,255,0.1);
+    transition: all 200ms;
+    &--now { background: var(--color-accent, #7AA2F7); box-shadow: 0 0 8px rgba(122,162,247,0.4); }
+    &--done { background: #9ece6a; }
   }
 
-  .iw__step-line {
-    width: 48px;
-    height: 1px;
-    background: rgba(255, 255, 255, 0.08);
-    margin: 0 4px;
-    transition: background 150ms ease-out;
-
-    &--done {
-      background: rgba(158, 206, 106, 0.4);
-    }
+  .imp__x {
+    width: 28px; height: 28px;
+    display: flex; align-items: center; justify-content: center;
+    border: none; border-radius: 6px;
+    background: transparent; color: rgba(255,255,255,0.25);
+    cursor: pointer;
+    &:hover { color: var(--color-foreground); background: rgba(255,255,255,0.06); }
   }
 
-  /* ── Body ── */
-  .iw__body {
-    padding: 20px 24px 24px;
-    overflow-y: auto;
+  /* ── Step 1: Drop zone ── */
+  .imp__center {
     flex: 1;
-    min-height: 0;
-  }
-
-  .iw__step {
     display: flex;
     flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
     gap: 16px;
   }
 
-  /* ── Step 1: Select ── */
-  .iw__step-select {
-    align-items: center;
-    padding: 24px 0;
-    text-align: center;
-  }
-
-  .iw__vault-icon {
+  .imp__drop {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    justify-content: center;
-    width: 88px;
-    height: 88px;
-    border-radius: 20px;
-    background: rgba(122, 162, 247, 0.06);
-    border: 1px solid rgba(122, 162, 247, 0.12);
-    color: var(--color-accent, #7AA2F7);
-    margin-bottom: 8px;
-  }
-
-  .iw__step-heading {
-    font-family: var(--font-sans);
-    font-size: 15px;
-    font-weight: 600;
-    color: var(--color-foreground);
-    letter-spacing: -0.01em;
-  }
-
-  .iw__step-desc {
-    font-family: var(--font-mono);
-    font-size: 12px;
-    color: var(--color-placeholder);
-    line-height: 1.5;
-    max-width: 320px;
-  }
-
-  .iw__btn--browse {
-    margin-top: 8px;
-    padding: 12px 32px;
-    width: auto;
-  }
-
-  /* ── Step 2: Preview ── */
-  .iw__scanning {
-    display: flex;
-    align-items: center;
-    justify-content: center;
     gap: 10px;
-    padding: 40px 0;
-    font-family: var(--font-mono);
-    font-size: 12px;
-    color: var(--color-placeholder);
-  }
-
-  .iw__vault-name {
-    font-family: var(--font-sans);
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--color-foreground);
-    padding: 10px 14px;
-    background: rgba(0, 0, 0, 0.25);
-    border: 1px solid rgba(255, 255, 255, 0.04);
-    border-radius: 10px;
-  }
-
-  .iw__stats {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 8px;
-  }
-
-  .iw__stat {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-    padding: 14px 8px;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    border-radius: 10px;
-  }
-
-  .iw__stat-icon {
-    color: var(--color-accent, #7AA2F7);
-    opacity: 0.7;
-  }
-
-  .iw__stat-value {
-    font-family: var(--font-mono);
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--color-foreground);
-  }
-
-  .iw__stat-label {
-    font-family: var(--font-mono);
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--color-placeholder);
-  }
-
-  /* ── Badges ── */
-  .iw__badges {
-    display: flex;
-    gap: 8px;
-  }
-
-  .iw__badge {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    padding: 6px 12px;
-    font-family: var(--font-mono);
-    font-size: 11px;
-    color: var(--color-placeholder);
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    border-radius: 6px;
-
-    &--ok {
-      color: #9ece6a;
-      background: rgba(158, 206, 106, 0.06);
-      border-color: rgba(158, 206, 106, 0.15);
-    }
-  }
-
-  /* ── Samples ── */
-  .iw__samples {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .iw__label-row {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    color: var(--color-placeholder);
-  }
-
-  .iw__label {
-    font-family: var(--font-mono);
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--color-placeholder);
-  }
-
-  .iw__sample-list {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    padding: 10px 14px;
-    background: rgba(0, 0, 0, 0.25);
-    border: 1px solid rgba(255, 255, 255, 0.04);
-    border-radius: 10px;
-  }
-
-  .iw__sample-file {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-family: var(--font-mono);
-    font-size: 11px;
-    color: var(--color-muted-foreground);
-    padding: 4px 0;
-
-    span {
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-  }
-
-  /* ── Options ── */
-  .iw__options {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .iw__option {
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
-    padding: 14px 16px;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    border-radius: 10px;
-    cursor: pointer;
-    text-align: left;
+    padding: 40px 32px;
     width: 100%;
-    transition: all 150ms ease-out;
-
+    border: 1.5px dashed rgba(255,255,255,0.08);
+    border-radius: 12px;
+    color: rgba(255,255,255,0.3);
+    cursor: pointer;
+    transition: all 200ms;
     &:hover {
-      background: rgba(255, 255, 255, 0.05);
-      border-color: rgba(255, 255, 255, 0.1);
-    }
-
-    &--selected {
-      background: rgba(122, 162, 247, 0.06);
-      border-color: rgba(122, 162, 247, 0.2);
+      border-color: rgba(122,162,247,0.3);
+      color: rgba(255,255,255,0.5);
+      background: rgba(122,162,247,0.03);
     }
   }
 
-  .iw__option-radio {
-    color: var(--color-placeholder);
-    padding-top: 1px;
-    flex-shrink: 0;
-
-    .iw__option--selected & {
-      color: var(--color-accent, #7AA2F7);
-    }
-  }
-
-  .iw__option-content {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    flex: 1;
-    min-width: 0;
-  }
-
-  .iw__option-title {
+  .imp__drop-text {
     font-family: var(--font-sans);
     font-size: 13px;
     font-weight: 500;
     color: var(--color-foreground);
   }
 
-  .iw__option-desc {
+  .imp__drop-hint {
     font-family: var(--font-mono);
     font-size: 11px;
-    color: var(--color-placeholder);
+    color: rgba(255,255,255,0.2);
   }
 
-  .iw__input {
-    padding: 8px 12px;
-    font-family: var(--font-mono);
-    font-size: 12px;
-    color: var(--color-foreground);
-    background: rgba(0, 0, 0, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    border-radius: 8px;
-    outline: none;
-    width: 100%;
-    transition: border-color 150ms ease-out;
-
-    &:focus { border-color: rgba(122, 162, 247, 0.4); }
-    &::placeholder { color: rgba(255, 255, 255, 0.15); }
-  }
-
-  /* ── Actions ── */
-  .iw__actions {
-    display: flex;
-    gap: 10px;
-    padding-top: 6px;
-  }
-
-  .iw__btn {
+  /* ── Step 2: Preview ── */
+  .imp__scroll {
     flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    padding: 12px 0;
-    font-family: var(--font-mono);
-    font-size: 12px;
-    font-weight: 500;
-    border-radius: 10px;
-    cursor: pointer;
-    transition: all 150ms ease-out;
-
-    &:disabled { opacity: 0.35; cursor: default; pointer-events: none; }
-  }
-
-  .iw__btn--primary {
-    background: var(--color-accent, #7AA2F7);
-    color: #fff;
-    border: none;
-    position: relative;
-
-    &:hover { filter: brightness(1.1); }
-
-    &::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      border-radius: inherit;
-      box-shadow: 0 0 20px rgba(122, 162, 247, 0.2);
-      opacity: 0;
-      transition: opacity 200ms;
-    }
-    &:hover::after { opacity: 1; }
-  }
-
-  .iw__btn--ghost {
-    background: transparent;
-    color: var(--color-muted-foreground);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-
-    &:hover {
-      color: var(--color-foreground);
-      border-color: rgba(255, 255, 255, 0.15);
-      background: rgba(255, 255, 255, 0.03);
-    }
-  }
-
-  /* ── Step 3: Progress / Complete ── */
-  .iw__importing {
+    overflow-y: auto;
+    padding: 0 20px 20px;
     display: flex;
     flex-direction: column;
-    align-items: center;
     gap: 14px;
-    padding: 40px 0;
   }
 
-  .iw__import-text {
-    font-family: var(--font-mono);
-    font-size: 12px;
-    color: var(--color-placeholder);
-  }
-
-  .iw__success {
+  .imp__loading {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 12px;
-    padding: 16px 0;
+    padding: 48px 0;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: rgba(255,255,255,0.3);
   }
 
-  .iw__success-icon {
-    color: #9ece6a;
+  .imp__pulse {
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: var(--color-accent, #7AA2F7);
+    animation: imp-pulse 1s ease-in-out infinite alternate;
+  }
+  @keyframes imp-pulse {
+    from { opacity: 0.3; transform: scale(0.8); }
+    to { opacity: 1; transform: scale(1.2); }
   }
 
-  .iw__result-stats {
+  .imp__vault-header {
     display: flex;
-    align-items: center;
-    gap: 0;
-    padding: 16px 0;
-    width: 100%;
+    flex-direction: column;
+    gap: 2px;
   }
 
-  .iw__result-stat {
-    flex: 1;
+  .imp__vault-name {
+    font-family: var(--font-sans);
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--color-foreground);
+    letter-spacing: -0.02em;
+  }
+
+  .imp__vault-path {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: rgba(255,255,255,0.15);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .imp__grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+  }
+
+  .imp__cell {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 4px;
+    gap: 2px;
+    padding: 12px 4px;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.04);
+    border-radius: 8px;
   }
 
-  .iw__result-value {
+  .imp__cell :global(.imp__cell-ico) { color: rgba(255,255,255,0.2); }
+
+  .imp__cell-num {
     font-family: var(--font-mono);
-    font-size: 20px;
+    font-size: 14px;
     font-weight: 600;
     color: var(--color-foreground);
   }
 
-  .iw__result-label {
+  .imp__cell-lbl {
     font-family: var(--font-mono);
-    font-size: 10px;
+    font-size: 9px;
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    color: var(--color-placeholder);
+    color: rgba(255,255,255,0.2);
   }
 
-  .iw__result-sep {
-    width: 1px;
-    height: 32px;
-    background: rgba(255, 255, 255, 0.06);
+  .imp__tags {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
   }
 
-  /* ── Error ── */
-  .iw__error {
+  .imp__tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
     font-family: var(--font-mono);
-    font-size: 11px;
-    color: #f7768e;
-    line-height: 1.4;
+    font-size: 10px;
+    border-radius: 4px;
+    color: rgba(255,255,255,0.2);
+    background: rgba(255,255,255,0.02);
+    &--ok {
+      color: #9ece6a;
+      background: rgba(158,206,106,0.06);
+    }
+  }
+
+  .imp__files {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
     padding: 8px 12px;
-    background: rgba(247, 118, 142, 0.06);
-    border: 1px solid rgba(247, 118, 142, 0.15);
+    background: rgba(0,0,0,0.3);
     border-radius: 8px;
   }
 
-  /* ── Spinner ── */
-  .iw__spinner {
-    width: 20px;
-    height: 20px;
-    border: 2px solid rgba(255, 255, 255, 0.15);
-    border-top-color: var(--color-accent, #7AA2F7);
+  .imp__file {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: rgba(255,255,255,0.35);
+    padding: 3px 0;
+    &--more { color: rgba(255,255,255,0.15); font-style: italic; padding-left: 17px; }
+  }
+
+  .imp__dest {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .imp__dest-opt {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    width: 100%;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.04);
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--color-muted-foreground);
+    text-align: left;
+    transition: all 150ms;
+    &:hover { border-color: rgba(255,255,255,0.08); }
+    &--on {
+      border-color: rgba(122,162,247,0.25);
+      background: rgba(122,162,247,0.04);
+      color: var(--color-foreground);
+    }
+  }
+
+  .imp__radio {
+    width: 12px; height: 12px;
     border-radius: 50%;
-    animation: iw-spin 600ms linear infinite;
+    border: 1.5px solid rgba(255,255,255,0.15);
+    flex-shrink: 0;
+    transition: all 150ms;
+    &--on {
+      border-color: var(--color-accent);
+      background: var(--color-accent);
+      box-shadow: inset 0 0 0 2px #0e0f14;
+    }
   }
 
-  @keyframes iw-spin {
-    to { transform: rotate(360deg); }
+  .imp__name {
+    flex: 1;
+    margin-left: auto;
+    padding: 4px 8px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--color-foreground);
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 4px;
+    outline: none;
+    max-width: 180px;
+    &:focus { border-color: rgba(122,162,247,0.3); }
+    &::placeholder { color: rgba(255,255,255,0.12); }
   }
 
-  /* ── Footer ── */
-  .iw__foot {
-    padding: 12px 24px;
-    border-top: 1px solid rgba(255, 255, 255, 0.04);
+  .imp__row {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    &--center { justify-content: center; }
+  }
+
+  .imp__back {
+    display: flex; align-items: center; gap: 6px;
+    padding: 8px 14px;
+    font-family: var(--font-mono); font-size: 11px;
+    color: rgba(255,255,255,0.3);
+    background: transparent; border: none; border-radius: 6px;
+    cursor: pointer;
+    &:hover { color: var(--color-foreground); }
+  }
+
+  .imp__go {
+    display: flex; align-items: center; gap: 6px;
+    padding: 9px 18px;
+    font-family: var(--font-mono); font-size: 12px; font-weight: 500;
+    color: #fff;
+    background: var(--color-accent, #7AA2F7);
+    border: none; border-radius: 8px;
+    cursor: pointer;
+    transition: filter 150ms;
+    &:hover { filter: brightness(1.15); }
+    &:disabled { opacity: 0.3; cursor: default; }
+  }
+
+  .imp__link {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-family: var(--font-mono); font-size: 11px;
+    color: var(--color-accent); background: none; border: none;
+    cursor: pointer;
+    &:hover { text-decoration: underline; }
+  }
+
+  .imp__err {
+    font-family: var(--font-mono); font-size: 11px;
+    color: #f7768e; line-height: 1.4;
+    padding: 10px 14px;
+    background: rgba(247,118,142,0.05);
+    border: 1px solid rgba(247,118,142,0.12);
+    border-radius: 8px;
+  }
+
+  /* ── Step 3: Done ── */
+  .imp__done {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    color: #9ece6a;
+  }
+
+  .imp__done-title {
+    font-family: var(--font-sans);
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--color-foreground);
+  }
+
+  .imp__done-stats {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: rgba(255,255,255,0.35);
+    strong { color: var(--color-foreground); font-weight: 600; }
+  }
+
+  .imp__done-dot {
+    width: 3px; height: 3px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.1);
+  }
+
+  .imp__foot {
+    padding: 10px 18px;
     font-family: var(--font-mono);
     font-size: 10px;
-    color: rgba(255, 255, 255, 0.2);
+    color: rgba(255,255,255,0.12);
     text-align: center;
+    border-top: 1px solid rgba(255,255,255,0.03);
   }
 
-  /* ── Reduced motion ── */
   @media (prefers-reduced-motion: reduce) {
-    .iw-backdrop, .iw { animation: none; }
-    .iw__spinner { animation: none; }
+    .imp-bg, .imp { animation: none; }
+    .imp__pulse { animation: none; }
   }
 </style>
