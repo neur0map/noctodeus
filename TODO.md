@@ -10,14 +10,19 @@
 - [ ] Queryable database views (filter, sort, group notes by metadata — table/kanban/calendar)
 - [ ] Task management across vault (inline tasks with due dates, filtered/queried, kanban view)
 
+## Next Up
+
+- [ ] **Skills system** — SKILL.md prompt templates that auto-switch AI behavior. Drop a skill file in `skills/` with YAML frontmatter (name, description, keywords) + markdown prompt body. AI matches keywords and injects the skill into system prompt. Files: `ai/skills.rs` (parser, scanner, matcher), `commands/skills.rs` (skills_list, skills_match), `SkillBadge.svelte` in chat.
+- [ ] **S3 + WebDAV sync backends** — Alternative sync backends implementing the existing `SyncBackend` trait. S3: AWS Signature V4 signing via sha2+hmac, put/get/list/delete objects. WebDAV: PROPFIND/PUT/GET/DELETE/MKCOL via reqwest with basic auth. Settings UI: backend picker (GitHub/S3/WebDAV) with per-backend config fields.
+
 ## Needs 3rd Party Libraries or Plugins
 
 - [ ] Canvas / infinite whiteboard (tldraw or excalidraw integration)
 - [ ] Spaced repetition / flashcards (SM-2 algorithm, review scheduler)
 - [ ] Web clipper (browser extension to capture pages/highlights into vault)
 - [ ] Excalidraw / visual sketching (embedded hand-drawn diagrams)
-- [ ] AI integration — context-aware (semantic search, summarize, Q&A across vault)
-- [ ] Sync across devices (E2E encrypted, conflict resolution)
+- [x] ~~AI integration — context-aware (semantic search, summarize, Q&A across vault)~~ — DONE: AI chat sidebar, RAG with memvid, MCP tools, Research Chat
+- [x] ~~Sync across devices (E2E encrypted, conflict resolution)~~ — DONE: GitHub sync with three-way merge + fork-on-conflict
 - [ ] Spellcheck (research proper implementation for Tauri/WKWebView)
 
 ## Needs Custom Architecture / Major Engineering
@@ -60,3 +65,25 @@
 - [x] Unlinked mentions detection (scan for title/alias text, one-click convert to wiki link)
 - [x] Import files and folders into core
 - [x] Custom appearance (accent color picker, font overrides, editor width, custom CSS injection)
+- [x] SQLite hardening (r2d2 connection pool, schema migrations, WAL+busy_timeout)
+- [x] Links table + backend graph (wiki-link indexing in SQL, graph_links/stats/backlinks commands)
+- [x] File watcher → incremental indexer (watcher spawns on core open, emits Tauri events)
+- [x] Graceful shutdown (window close handler stops watcher, releases core)
+- [x] Security hardening (CSP, scoped FS/asset permissions)
+- [x] Deduplicated is_markdown() into shared util
+- [x] SettingsModal split into 5 tab sub-components
+- [x] Export logic extracted to utils/export.ts
+- [x] GitHub sync (PAT auth via GIT_ASKPASS, push/pull, three-way merge, fork-on-conflict, auto-tag releases)
+- [x] Encrypted note sharing via cryptgeon (AES-256-GCM, occulto-compatible format, ShareModal)
+- [x] Smart core_open (auto-detects Obsidian vaults, markdown folders, empty folders)
+- [x] Dotfile filtering (.obsidian, .logseq, .git, .DS_Store excluded from scanner, watcher, file tree)
+- [x] Welcome content (9 markdown files covering all features, auto-populated on new core)
+- [x] CI/CD (GitHub Actions: CI on push, release on tag with macOS ARM/x64 + Windows + Linux builds)
+- [x] AI chat sidebar (SSE streaming, provider presets, settings tab, 3 toggle methods)
+- [x] MCP client (process manager, JSON-RPC, tool calling loop, one-click presets, env vars)
+- [x] MCP server (noctodeus-mcp binary: 9 tools for external AI agents to read/search/write notes)
+- [x] RAG with memvid (Tantivy BM25 + bge-small-en-v1.5 embeddings, hybrid search, auto-index)
+- [x] Semantic search in Cmd+K (RAG results merged with FTS5)
+- [x] AI native RAG (auto-searches notes before every message, injects relevant context)
+- [x] Research Chat (full-screen two-column layout, add source notes, separate conversation)
+- [x] Noctodeus as MCP server setup instructions in settings (copy-to-clipboard config)
