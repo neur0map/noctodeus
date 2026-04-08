@@ -24,42 +24,34 @@ pub fn is_cancelled() -> bool {
     CANCELLED.load(Ordering::Relaxed)
 }
 
-/// Check if a model is a reasoning/thinking model that requires special parameters.
-fn is_reasoning_model(model: &str) -> bool {
-    let m = model.to_lowercase();
-    // OpenAI reasoning models
-    m.starts_with("o1") || m.starts_with("o3") || m.starts_with("o4")
-    // Also match models that contain "reasoning" or "thinking" in their name
-    || m.contains("reasoning") || m.contains("thinking")
-}
-
-/// Build the JSON request body, adapting parameters to the model type.
-/// Reasoning models (o1, o3, o4-mini, etc.) don't support `temperature` or
-/// `max_tokens` — they use `max_completion_tokens` instead.
+/// Build the JSON request body.
+/// Uses only widely-supported parameters. Avoids `max_tokens` which newer
+/// OpenAI models reject — uses `max_completion_tokens` instead.
+/// Only includes `temperature` for non-reasoning models.
 fn build_request_body(
     model: &str,
     messages: &[serde_json::Value],
     request: &ChatRequest,
 ) -> serde_json::Value {
+    let m = model.to_lowercase();
+    let is_reasoning = m.starts_with("o1") || m.starts_with("o3") || m.starts_with("o4")
+        || m.contains("reasoning") || m.contains("thinking");
+
     let mut body = json!({
         "model": model,
         "messages": messages,
         "stream": true,
     });
 
-    if is_reasoning_model(model) {
-        // Reasoning models: use max_completion_tokens, no temperature
-        if let Some(max) = request.max_tokens {
-            body["max_completion_tokens"] = json!(max);
-        } else {
-            body["max_completion_tokens"] = json!(16384);
-        }
-    } else {
-        // Standard models: use temperature + max_tokens
+    // Only set temperature for non-reasoning models
+    if !is_reasoning {
         body["temperature"] = json!(request.temperature.unwrap_or(0.7));
-        if let Some(max) = request.max_tokens {
-            body["max_tokens"] = json!(max);
-        }
+    }
+
+    // Always use max_completion_tokens (works on both old and new OpenAI models)
+    // Never send max_tokens — it's deprecated on newer models
+    if let Some(max) = request.max_tokens {
+        body["max_completion_tokens"] = json!(max);
     }
 
     body

@@ -77,7 +77,6 @@
         },
         messages: [{ role: 'user', content: 'Say "connected" and nothing else.' }],
         systemPrompt: 'Respond with only the word "connected".',
-        maxTokens: 16,
       });
       testStatus = 'success';
       testMessage = 'Connection successful.';
