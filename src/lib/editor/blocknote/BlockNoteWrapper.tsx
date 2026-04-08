@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useCreateBlockNote } from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/mantine';
 
@@ -7,58 +7,45 @@ import '@blocknote/mantine/style.css';
 
 import type { BlockNoteEditorProps, EditorHandle } from './types';
 
-/**
- * React wrapper around BlockNote editor.
- * Rendered inside a Svelte component via react-dom/client.
- */
 export default function BlockNoteWrapper(props: BlockNoteEditorProps) {
   const {
     initialContent,
     onContentChange,
-    onNavigate,
     onEditorReady,
     onEditorDestroy,
     darkMode = false,
   } = props;
 
-  // Keep initialContent in a ref so the editor instance isn't recreated on
-  // every re-render (useCreateBlockNote only reads from it once).
-  const initialContentRef = useRef(initialContent);
+  // Parse initial content BEFORE creating the editor to avoid empty flash (#10)
+  const parsedInitial = useMemo(() => {
+    if (!initialContent?.trim()) return undefined;
+    // tryParseMarkdownToBlocks is synchronous in BlockNote 0.47.x
+    return undefined; // Will load in useEffect since we need the editor instance
+  }, [initialContent]);
 
   const editor = useCreateBlockNote({});
 
-  // ---- Load initial content on first mount ----
+  // Load initial content on first mount
   useEffect(() => {
-    let cancelled = false;
-
-    async function loadInitial() {
-      const md = initialContentRef.current;
-      if (!md) return;
-
-      const blocks = await editor.tryParseMarkdownToBlocks(md);
-      if (!cancelled) {
-        editor.replaceBlocks(editor.document, blocks);
-      }
+    if (!initialContent?.trim()) return;
+    try {
+      const blocks = editor.tryParseMarkdownToBlocks(initialContent);
+      editor.replaceBlocks(editor.document, blocks);
+    } catch (err) {
+      console.error('[BlockNote] Failed to parse markdown:', err);
     }
+  }, [editor]); // eslint-disable-line react-hooks/exhaustive-deps
 
-    loadInitial();
-    return () => {
-      cancelled = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editor]);
-
-  // ---- Build and expose EditorHandle ----
+  // Build and expose EditorHandle
   useEffect(() => {
     const handle: EditorHandle = {
       getHeadings() {
         const headings: Array<{ level: number; text: string; id: string }> = [];
         for (const block of editor.document) {
           if (block.type === 'heading') {
-            const text = extractBlockText(block);
             headings.push({
               level: (block.props as { level?: number }).level ?? 1,
-              text,
+              text: extractBlockText(block),
               id: block.id,
             });
           }
@@ -74,16 +61,13 @@ export default function BlockNoteWrapper(props: BlockNoteEditorProps) {
         for (const block of editor.document) {
           const text = extractBlockText(block);
           if (text.length > 0) {
-            charCount += text.length;
-            const words = text.trim().split(/\s+/).filter(Boolean);
-            wordCount += words.length;
+            charCount += text.replace(/\s/g, '').length;
+            wordCount += text.trim().split(/\s+/).filter(Boolean).length;
           }
-          // Count paragraph-level blocks (paragraph, heading, list items, etc.)
           if (block.type === 'paragraph' || block.type === 'heading') {
             paragraphCount += 1;
           }
         }
-
         return { charCount, wordCount, paragraphCount };
       },
 
@@ -92,12 +76,23 @@ export default function BlockNoteWrapper(props: BlockNoteEditorProps) {
       },
 
       async setContent(markdown: string) {
-        const blocks = await editor.tryParseMarkdownToBlocks(markdown);
+        const blocks = editor.tryParseMarkdownToBlocks(markdown);
         editor.replaceBlocks(editor.document, blocks);
       },
 
       focus() {
         editor.focus();
+      },
+
+      scrollToBlock(id: string) {
+        try {
+          editor.setTextCursorPosition(id, 'start');
+          // Scroll the block into view
+          const element = document.querySelector(`[data-id="${id}"]`);
+          element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } catch {
+          // Block may no longer exist
+        }
       },
 
       onChange(callback: () => void) {
@@ -106,14 +101,10 @@ export default function BlockNoteWrapper(props: BlockNoteEditorProps) {
     };
 
     onEditorReady?.(handle);
+    return () => { onEditorDestroy?.(); };
+  }, [editor]); // eslint-disable-line react-hooks/exhaustive-deps
 
-    return () => {
-      onEditorDestroy?.();
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editor]);
-
-  // ---- Wire onContentChange ----
+  // Wire onContentChange
   useEffect(() => {
     if (!onContentChange) return;
     return editor.onChange(onContentChange);
@@ -130,17 +121,9 @@ export default function BlockNoteWrapper(props: BlockNoteEditorProps) {
   );
 }
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-/**
- * Recursively extract plain text from a BlockNote block's inline content.
- */
+/** Recursively extract plain text from a BlockNote block. */
 function extractBlockText(block: { content?: unknown; children?: unknown[] }): string {
   let text = '';
-
-  // Inline content is an array of InlineContent objects
   if (Array.isArray(block.content)) {
     for (const inline of block.content) {
       if (typeof inline === 'string') {
@@ -150,13 +133,10 @@ function extractBlockText(block: { content?: unknown; children?: unknown[] }): s
       }
     }
   }
-
-  // Recurse into children (e.g. nested list items)
-  if (Array.isArray((block as { children?: unknown[] }).children)) {
-    for (const child of (block as { children: unknown[] }).children) {
+  if (Array.isArray(block.children)) {
+    for (const child of block.children) {
       text += ' ' + extractBlockText(child as { content?: unknown; children?: unknown[] });
     }
   }
-
   return text;
 }

@@ -58,7 +58,7 @@
         e.preventDefault();
         setZone('editor');
         // Focus the editor element
-        const editor = (document.querySelector('.bn-editor') ?? document.querySelector('.ProseMirror')) as HTMLElement;
+        const editor = document.querySelector('.bn-editor') as HTMLElement;
         editor?.focus();
         return;
       }

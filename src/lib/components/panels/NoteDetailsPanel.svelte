@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onDestroy } from 'svelte';
   import type { EditorHandle } from '$lib/editor/blocknote/types';
   import type { FileNode } from '../../types/core';
   import FileText from '@lucide/svelte/icons/file-text';
@@ -34,6 +35,8 @@
     updateCounts(editor);
     cleanup = editor.onChange(() => updateCounts(editor!));
   });
+
+  onDestroy(() => { cleanup?.(); });
 
   function formatDate(unixSeconds: number | undefined): string {
     if (!unixSeconds) return '—';

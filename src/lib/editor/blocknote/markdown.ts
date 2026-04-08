@@ -8,12 +8,13 @@ export function splitFrontmatter(markdown: string): [string, string] {
     return ['', markdown];
   }
 
-  const endIndex = trimmed.indexOf('---', 3);
+  // Find closing --- on its own line (not inside a YAML value)
+  const endIndex = trimmed.indexOf('\n---', 3);
   if (endIndex === -1) {
     return ['', markdown];
   }
 
-  const fmEnd = endIndex + 3;
+  const fmEnd = endIndex + 4; // includes the \n---
   const frontmatter = trimmed.slice(0, fmEnd);
   const body = trimmed.slice(fmEnd).trimStart();
   return [frontmatter, body];

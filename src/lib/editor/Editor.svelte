@@ -104,7 +104,14 @@
 
   onMount(() => {
     return () => {
-      if (debounceTimer) clearTimeout(debounceTimer);
+      // Flush any pending autosave before unmounting
+      if (debounceTimer) {
+        clearTimeout(debounceTimer);
+        debounceTimer = undefined;
+      }
+      if (editorState.dirty && editorHandle) {
+        save();
+      }
       activeEditorState.set(null);
     };
   });

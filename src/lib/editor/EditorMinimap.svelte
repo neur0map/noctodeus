@@ -64,7 +64,7 @@
           class:mm__item--h2={item.level === 2}
           class:mm__item--h3={item.level === 3}
           onmouseenter={() => activeIndex = i}
-          onclick={() => {}}
+          onclick={() => editor?.scrollToBlock(item.id)}
         >
           {item.text || 'Untitled'}
         </button>

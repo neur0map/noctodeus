@@ -18,6 +18,9 @@ export interface EditorHandle {
   /** Focus the editor */
   focus(): void;
 
+  /** Scroll to a block by its ID */
+  scrollToBlock(id: string): void;
+
   /** Subscribe to content changes. Returns unsubscribe function. */
   onChange(callback: () => void): () => void;
 }

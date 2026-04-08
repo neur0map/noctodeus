@@ -47,6 +47,7 @@
       {#each headings as h (h.id)}
         <button
           class="outline__item outline__item--h{h.level}"
+          onclick={() => editor?.scrollToBlock(h.id)}
         >
           {h.text || 'Untitled'}
         </button>
