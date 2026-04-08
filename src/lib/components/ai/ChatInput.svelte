@@ -13,46 +13,28 @@
   } = $props();
 
   let text = $state('');
-  let textareaEl: HTMLTextAreaElement | undefined = $state();
-
-  let hasText = $derived(text.trim().length > 0);
-
-  function autoResize() {
-    if (!textareaEl) return;
-    textareaEl.style.height = 'auto';
-    const maxHeight = 6 * 22; // ~6 lines at ~22px line-height
-    textareaEl.style.height = `${Math.min(textareaEl.scrollHeight, maxHeight)}px`;
-  }
-
-  function handleKeydown(e: KeyboardEvent) {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      send();
-    }
-  }
 
   function send() {
     const trimmed = text.trim();
     if (!trimmed || streaming) return;
     onsend(trimmed);
     text = '';
-    if (textareaEl) {
-      textareaEl.style.height = 'auto';
-    }
   }
 
-  export function focus() {
-    textareaEl?.focus();
+  function onkeydown(e: KeyboardEvent) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      e.stopPropagation();
+      send();
+    }
   }
 </script>
 
-<div class="ci" class:ci--focus={false}>
+<div class="ci">
   <textarea
     class="ci__textarea"
-    bind:this={textareaEl}
     bind:value={text}
-    oninput={autoResize}
-    onkeydown={handleKeydown}
+    {onkeydown}
     placeholder="Ask anything..."
     rows="1"
   ></textarea>
@@ -61,8 +43,13 @@
     <button class="ci__btn ci__btn--stop" onclick={onstop} title="Stop generating">
       <Square size={14} />
     </button>
-  {:else if hasText}
-    <button class="ci__btn ci__btn--send" onclick={send} title="Send message">
+  {:else}
+    <button
+      class="ci__btn ci__btn--send"
+      class:ci__btn--hidden={!text.trim()}
+      onclick={send}
+      title="Send message"
+    >
       <ArrowUp size={14} />
     </button>
   {/if}
@@ -117,38 +104,23 @@
     border-radius: 8px;
     cursor: pointer;
     flex-shrink: 0;
-    transition: background 150ms, color 150ms, transform 100ms;
-    animation: ci-pop 150ms ease both;
-
-    &:active {
-      transform: scale(0.92);
-    }
+    transition: background 150ms, color 150ms, opacity 150ms;
   }
 
   .ci__btn--send {
     background: var(--color-accent, #7AA2F7);
     color: #fff;
+    &:hover { filter: brightness(1.15); }
+  }
 
-    &:hover {
-      filter: brightness(1.15);
-    }
+  .ci__btn--hidden {
+    opacity: 0.2;
+    pointer-events: none;
   }
 
   .ci__btn--stop {
     background: rgba(247, 118, 142, 0.15);
     color: #f7768e;
-
-    &:hover {
-      background: rgba(247, 118, 142, 0.25);
-    }
-  }
-
-  @keyframes ci-pop {
-    from { opacity: 0; transform: scale(0.85); }
-    to { opacity: 1; transform: scale(1); }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .ci__btn { animation: none; }
+    &:hover { background: rgba(247, 118, 142, 0.25); }
   }
 </style>
