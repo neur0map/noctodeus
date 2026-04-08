@@ -52,7 +52,7 @@
               editorHandle = undefined;
               oneditordestroy?.();
             },
-            darkMode: document.documentElement.classList.contains('dark'),
+            darkMode: document.documentElement.getAttribute('data-theme') === 'dark',
           }),
         );
       } catch (err) {
@@ -99,9 +99,28 @@
     flex: 1;
   }
 
+  /* Map BlockNote's CSS variables to Noctodeus theme tokens */
+  .blocknote-container :global([data-color-scheme]) {
+    --bn-colors-editor-background: var(--background, var(--color-background)) !important;
+    --bn-colors-editor-text: var(--foreground, var(--color-foreground)) !important;
+    --bn-colors-menu-background: var(--popover, var(--color-popover)) !important;
+    --bn-colors-menu-text: var(--foreground, var(--color-foreground)) !important;
+    --bn-colors-tooltip-background: var(--popover, var(--color-popover)) !important;
+    --bn-colors-tooltip-text: var(--foreground, var(--color-foreground)) !important;
+    --bn-colors-hovered-background: var(--hover, var(--color-accent)) !important;
+    --bn-colors-hovered-text: var(--foreground, var(--color-foreground)) !important;
+    --bn-colors-selected-background: var(--accent, var(--color-accent)) !important;
+    --bn-colors-selected-text: var(--accent-foreground, var(--color-foreground)) !important;
+    --bn-colors-disabled-background: var(--muted, var(--color-card)) !important;
+    --bn-colors-disabled-text: var(--muted-foreground, var(--color-placeholder)) !important;
+    --bn-colors-shadow: var(--shadow-float, 0 4px 16px rgba(0,0,0,0.12)) !important;
+    --bn-colors-border: var(--border, var(--color-border)) !important;
+    --bn-colors-side-menu: var(--text-muted, var(--color-placeholder)) !important;
+    --bn-font-family: var(--font-content) !important;
+  }
+
   .blocknote-container :global(.bn-container) {
     min-height: 100%;
-    font-family: var(--font-content);
   }
 
   .blocknote-container :global(.bn-editor) {
@@ -109,10 +128,5 @@
     margin: 0 auto;
     padding: 36px 28px;
     min-height: 300px;
-  }
-
-  /* Ensure Mantine styles don't get blocked by CSP */
-  .blocknote-container :global(.mantine-ScrollArea-root) {
-    height: 100%;
   }
 </style>
