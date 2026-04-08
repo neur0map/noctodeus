@@ -123,6 +123,18 @@ export function createEditorExtensions(
         </svg>`;
         return el;
       },
+      onElementDragStart(e) {
+        // Create a compact drag ghost instead of the browser's default
+        // which snapshots the entire block and can be huge
+        if (!e.dataTransfer) return;
+        const ghost = document.createElement('div');
+        ghost.className = 'drag-ghost';
+        ghost.textContent = 'Moving block...';
+        document.body.appendChild(ghost);
+        e.dataTransfer.setDragImage(ghost, 0, 0);
+        // Clean up after the browser captures the image
+        requestAnimationFrame(() => ghost.remove());
+      },
     }),
 
     // Custom extensions
