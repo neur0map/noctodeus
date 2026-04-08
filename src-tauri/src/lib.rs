@@ -3,6 +3,7 @@ pub mod core;
 pub mod db;
 pub mod errors;
 pub mod events;
+pub mod import;
 pub mod indexer;
 pub mod logging;
 pub mod share;
@@ -111,6 +112,9 @@ pub fn run() {
             // Share commands
             commands::share_note,
             commands::share_status,
+            // Import commands
+            commands::import_scan,
+            commands::import_obsidian,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -42,6 +42,7 @@
 
   import FocusManager from "../lib/components/common/FocusManager.svelte";
   import ShareModal from "../lib/components/common/ShareModal.svelte";
+  import ImportWizard from "../lib/components/common/ImportWizard.svelte";
 
   let { children }: { children: Snippet } = $props();
 
@@ -157,6 +158,9 @@
   // Share modal state
   let shareModalVisible = $state(false);
   let shareContent = $state('');
+
+  // Import wizard state
+  let importWizardVisible = $state(false);
 
   // Search state
   let searchResults = $state<SearchHit[]>([]);
@@ -451,6 +455,10 @@
     };
     window.addEventListener('noctodeus-share-file', handleShareFileEvent);
     unlisteners.push(() => window.removeEventListener('noctodeus-share-file', handleShareFileEvent));
+
+    const handleImportEvent = () => { importWizardVisible = true; };
+    window.addEventListener('noctodeus-import-obsidian', handleImportEvent);
+    unlisteners.push(() => window.removeEventListener('noctodeus-import-obsidian', handleImportEvent));
   });
 
   onDestroy(() => {
@@ -693,6 +701,11 @@
   visible={shareModalVisible}
   content={shareContent}
   onclose={() => shareModalVisible = false}
+/>
+
+<ImportWizard
+  visible={importWizardVisible}
+  onclose={() => importWizardVisible = false}
 />
 
 </FocusManager>

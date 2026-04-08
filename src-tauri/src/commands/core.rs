@@ -81,7 +81,7 @@ fn open_db(core_path: &Path) -> Result<crate::db::DbPool, NoctoError> {
 
 /// Upserts a core entry in the registry (updates name/last_opened if the id
 /// already exists, otherwise appends).
-fn upsert_registry_entry(entry: CoreEntry) -> Result<(), NoctoError> {
+pub(crate) fn upsert_registry_entry(entry: CoreEntry) -> Result<(), NoctoError> {
     let mut entries = read_cores_registry()?;
     if let Some(existing) = entries.iter_mut().find(|e| e.id == entry.id) {
         existing.name = entry.name;
