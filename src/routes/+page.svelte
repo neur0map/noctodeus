@@ -33,7 +33,7 @@
   import { logger } from "../lib/logger";
   import { APP_SHORTCUTS, formatShortcutLabel } from "../lib/utils/shortcuts";
   import type { FileNode } from "../lib/types/core";
-  import { parseMarkdown } from "../lib/editor/serializer";
+  import MarkdownIt from 'markdown-it';
   import PropertiesPanel from "../lib/components/editor/PropertiesPanel.svelte";
   import Eye from "@lucide/svelte/icons/eye";
   import PencilLine from "@lucide/svelte/icons/pencil-line";
@@ -69,7 +69,8 @@
     if (!viewMode) {
       // Flush editor content before switching to view
       editorRef?.flush();
-      renderedHtml = parseMarkdown(currentContent ?? '');
+      const md = new MarkdownIt();
+      renderedHtml = md.render(currentContent ?? '');
     }
     viewMode = !viewMode;
   }

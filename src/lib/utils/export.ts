@@ -51,8 +51,8 @@ export async function handleExport(
     } else if (format === 'html') {
       const { content } = await readFile(targetPath);
       const md = includeMedia ? content : stripMediaFromMarkdown(content);
-      const { parseMarkdown } = await import('../editor/serializer');
-      const html = parseMarkdown(md);
+      const MarkdownIt = (await import('markdown-it')).default;
+      const html = new MarkdownIt().render(md);
       const fullHtml = `<!DOCTYPE html>\n<html>\n<head>\n<meta charset="utf-8">\n<title>${baseName}</title>\n<style>${EXPORT_CSS}</style>\n</head>\n<body>\n${html}\n</body>\n</html>`;
       const savePath = await saveDialog({
         defaultPath: `${baseName}.html`,

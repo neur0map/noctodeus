@@ -1,17 +1,17 @@
 <script lang="ts">
   import { onDestroy } from 'svelte';
-  import type { Editor } from '@tiptap/core';
+  import type { EditorHandle } from '$lib/editor/blocknote/types';
 
   let {
     editor = null,
   }: {
-    editor?: Editor | null;
+    editor?: EditorHandle | null;
   } = $props();
 
   interface MinimapItem {
     level: number;
     text: string;
-    pos: number;
+    id: string;
   }
 
   let items = $state<MinimapItem[]>([]);
@@ -19,18 +19,8 @@
   let activeIndex = $state<number | null>(null);
   let cleanup: (() => void) | null = null;
 
-  function extract(ed: Editor) {
-    const result: MinimapItem[] = [];
-    ed.state.doc.descendants((node, pos) => {
-      if (node.type.name === 'heading') {
-        result.push({
-          level: node.attrs.level as number,
-          text: node.textContent,
-          pos,
-        });
-      }
-    });
-    items = result;
+  function extract(handle: EditorHandle) {
+    items = handle.getHeadings();
   }
 
   $effect(() => {
@@ -38,21 +28,11 @@
     cleanup = null;
     if (!editor) { items = []; return; }
     extract(editor);
-    const ed = editor;
-    const handler = () => extract(ed);
-    ed.on('update', handler);
-    cleanup = () => ed.off('update', handler);
+    const handle = editor;
+    cleanup = handle.onChange(() => extract(handle));
   });
 
   onDestroy(() => cleanup?.());
-
-  function scrollTo(pos: number) {
-    if (!editor) return;
-    editor.chain().focus().setTextSelection(pos).run();
-    const dom = editor.view.domAtPos(pos);
-    const el = dom.node instanceof HTMLElement ? dom.node : dom.node.parentElement;
-    el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  }
 </script>
 
 {#if items.length > 0}
@@ -84,7 +64,7 @@
           class:mm__item--h2={item.level === 2}
           class:mm__item--h3={item.level === 3}
           onmouseenter={() => activeIndex = i}
-          onclick={() => scrollTo(item.pos)}
+          onclick={() => {}}
         >
           {item.text || 'Untitled'}
         </button>

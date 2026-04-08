@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { Editor } from '@tiptap/core';
+  import type { EditorHandle } from '$lib/editor/blocknote/types';
   import type { FileNode } from '../../types/core';
   import FileText from '@lucide/svelte/icons/file-text';
   import Clock from '@lucide/svelte/icons/clock';
@@ -10,7 +10,7 @@
     editor = null,
     fileNode = null,
   }: {
-    editor?: Editor | null;
+    editor?: EditorHandle | null;
     fileNode?: FileNode | null;
   } = $props();
 
@@ -19,11 +19,10 @@
   let readingTime = $state('0 min');
   let cleanup: (() => void) | null = null;
 
-  function updateCounts(ed: Editor) {
-    const text = ed.state.doc.textContent;
-    charCount = text.replace(/\s/g, '').length;
-    const words = text.split(/\s+/).filter(w => w.length > 0);
-    wordCount = words.length;
+  function updateCounts(handle: EditorHandle) {
+    const stats = handle.getStats();
+    charCount = stats.charCount;
+    wordCount = stats.wordCount;
     const minutes = Math.max(1, Math.ceil(wordCount / 200));
     readingTime = `${minutes} min`;
   }
@@ -33,9 +32,7 @@
     cleanup = null;
     if (!editor) { wordCount = 0; charCount = 0; readingTime = '0 min'; return; }
     updateCounts(editor);
-    const handler = () => updateCounts(editor!);
-    editor.on('update', handler);
-    cleanup = () => editor!.off('update', handler);
+    cleanup = editor.onChange(() => updateCounts(editor!));
   });
 
   function formatDate(unixSeconds: number | undefined): string {

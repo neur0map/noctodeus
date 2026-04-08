@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { Editor } from '@tiptap/core';
+  import type { EditorHandle } from '$lib/editor/blocknote/types';
   import OutlinePanel from "$lib/components/panels/OutlinePanel.svelte";
   import BacklinksPanel from "$lib/components/panels/BacklinksPanel.svelte";
   import { getFilesState } from "$lib/stores/files.svelte";
@@ -44,12 +44,11 @@
   let readingTime = $state('0m');
   let cleanup: (() => void) | null = null;
 
-  function updateCounts(ed: Editor) {
-    const text = ed.state.doc.textContent;
-    charCount = text.replace(/\s/g, '').length;
-    const words = text.split(/\s+/).filter(w => w.length > 0);
-    wordCount = words.length;
-    paragraphCount = ed.state.doc.content.childCount;
+  function updateCounts(handle: EditorHandle) {
+    const stats = handle.getStats();
+    charCount = stats.charCount;
+    wordCount = stats.wordCount;
+    paragraphCount = stats.paragraphCount;
     const minutes = Math.max(1, Math.ceil(wordCount / 200));
     readingTime = `${minutes}m`;
   }
@@ -57,12 +56,10 @@
   $effect(() => {
     cleanup?.();
     cleanup = null;
-    const ed = activeEditorState.editor;
-    if (!ed) { wordCount = 0; charCount = 0; paragraphCount = 0; readingTime = '0m'; return; }
-    updateCounts(ed);
-    const handler = () => updateCounts(ed);
-    ed.on('update', handler);
-    cleanup = () => ed.off('update', handler);
+    const handle = activeEditorState.handle;
+    if (!handle) { wordCount = 0; charCount = 0; paragraphCount = 0; readingTime = '0m'; return; }
+    updateCounts(handle);
+    cleanup = handle.onChange(() => updateCounts(handle));
   });
 
   function formatDateTime(unixSeconds: number | undefined): string {
@@ -205,7 +202,7 @@
       {:else if activeTab === 'outline'}
         <div class="sp__section-title">Outline</div>
         <div class="sp__panel-content">
-          <OutlinePanel editor={activeEditorState.editor} />
+          <OutlinePanel editor={activeEditorState.handle} />
         </div>
 
       {:else if activeTab === 'backlinks'}

@@ -1,41 +1,27 @@
 <script lang="ts">
   import { onDestroy } from 'svelte';
-  import type { Editor } from '@tiptap/core';
+  import type { EditorHandle } from '$lib/editor/blocknote/types';
 
   let {
     editor = null,
   }: {
-    editor?: Editor | null;
+    editor?: EditorHandle | null;
   } = $props();
 
   interface HeadingItem {
     id: string;
     level: number;
     text: string;
-    pos: number;
   }
 
   let headings = $state<HeadingItem[]>([]);
   let cleanup: (() => void) | null = null;
 
-  function extractHeadings(ed: Editor) {
-    const items: HeadingItem[] = [];
-    ed.state.doc.descendants((node, pos) => {
-      if (node.type.name === 'heading') {
-        items.push({
-          id: `h-${pos}`,
-          level: node.attrs.level as number,
-          text: node.textContent,
-          pos,
-        });
-      }
-    });
-    headings = items;
+  function extractHeadings(handle: EditorHandle) {
+    headings = handle.getHeadings();
   }
 
-  // Watch for editor changes and subscribe to updates
   $effect(() => {
-    // Clean up previous listener
     cleanup?.();
     cleanup = null;
 
@@ -44,28 +30,12 @@
       return;
     }
 
-    // Extract immediately
     extractHeadings(editor);
-
-    // Listen for future updates
-    const ed = editor;
-    const handler = () => extractHeadings(ed);
-    ed.on('update', handler);
-    cleanup = () => ed.off('update', handler);
+    const handle = editor;
+    cleanup = handle.onChange(() => extractHeadings(handle));
   });
 
   onDestroy(() => { cleanup?.(); });
-
-  function scrollToHeading(pos: number) {
-    if (!editor) return;
-    editor.chain().focus().setTextSelection(pos).run();
-    const dom = editor.view.domAtPos(pos);
-    if (dom.node instanceof HTMLElement) {
-      dom.node.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    } else if (dom.node.parentElement) {
-      dom.node.parentElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-  }
 </script>
 
 <div class="outline">
@@ -77,7 +47,6 @@
       {#each headings as h (h.id)}
         <button
           class="outline__item outline__item--h{h.level}"
-          onclick={() => scrollToHeading(h.pos)}
         >
           {h.text || 'Untitled'}
         </button>

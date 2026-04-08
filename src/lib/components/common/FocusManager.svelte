@@ -58,7 +58,7 @@
         e.preventDefault();
         setZone('editor');
         // Focus the editor element
-        const editor = document.querySelector('.ProseMirror') as HTMLElement;
+        const editor = (document.querySelector('.bn-editor') ?? document.querySelector('.ProseMirror')) as HTMLElement;
         editor?.focus();
         return;
       }
@@ -69,7 +69,7 @@
       const target = e.target as HTMLElement;
       if (target.closest('.sidebar__body, .tree-node, .search-bar, .cal')) {
         setZone('filetree');
-      } else if (target.closest('.ProseMirror, .editor-container, .inline-title')) {
+      } else if (target.closest('.bn-editor, .blocknote-container, .editor-container, .inline-title')) {
         setZone('editor');
       }
     }

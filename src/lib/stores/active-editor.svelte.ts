@@ -1,29 +1,29 @@
-import type { Editor } from '@tiptap/core';
+import type { EditorHandle } from '$lib/editor/blocknote/types';
 
-let activeEditor = $state<Editor | null>(null);
+let activeHandle = $state<EditorHandle | null>(null);
 let charCount = $state(0);
 let cleanup: (() => void) | null = null;
 
-function updateCharCount(ed: Editor) {
-  const text = ed.state.doc.textContent;
-  charCount = text.replace(/\s/g, '').length;
+function updateCharCount(handle: EditorHandle) {
+  const stats = handle.getStats();
+  charCount = stats.charCount;
 }
 
 export function getActiveEditorState() {
   return {
-    get editor() { return activeEditor; },
+    get handle() { return activeHandle; },
+    /** @deprecated — use handle instead. Kept for transition. */
+    get editor() { return activeHandle; },
     get charCount() { return charCount; },
 
-    set(editor: Editor | null) {
+    set(handle: EditorHandle | null) {
       cleanup?.();
       cleanup = null;
-      activeEditor = editor;
+      activeHandle = handle;
 
-      if (editor) {
-        updateCharCount(editor);
-        const handler = () => updateCharCount(editor);
-        editor.on('update', handler);
-        cleanup = () => editor.off('update', handler);
+      if (handle) {
+        updateCharCount(handle);
+        cleanup = handle.onChange(() => updateCharCount(handle));
       } else {
         charCount = 0;
       }
