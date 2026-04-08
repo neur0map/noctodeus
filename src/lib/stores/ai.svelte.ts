@@ -69,6 +69,29 @@ function parseToolCalls(text: string): ParsedToolCall[] {
   return calls;
 }
 
+function buildSystemPrompt(userPrompt: string, tools: McpTool[]): string {
+  const parts: string[] = [];
+
+  // Identity
+  parts.push(
+    'You are the AI assistant built into Noctodeus, a local-first note-taking application. ' +
+    'You help users write, organize, research, and think through their notes. ' +
+    'You are running inside the app as a sidebar chat panel.'
+  );
+
+  // User's custom system prompt (from settings)
+  if (userPrompt.trim()) {
+    parts.push(userPrompt.trim());
+  }
+
+  // MCP tools
+  if (tools.length > 0) {
+    parts.push(buildToolSystemSuffix(tools));
+  }
+
+  return parts.join('\n\n');
+}
+
 function buildToolSystemSuffix(tools: McpTool[]): string {
   if (tools.length === 0) return '';
 
@@ -85,18 +108,20 @@ function buildToolSystemSuffix(tools: McpTool[]): string {
   }).join('\n\n');
 
   return [
+    'You have access to external tools via MCP (Model Context Protocol) servers running on the user\'s machine.',
+    'These tools are already connected and ready to use.',
     '',
-    '',
-    'You have access to the following tools:',
+    'Available tools:',
     '',
     toolLines,
     '',
-    'To use a tool, respond with:',
+    'To use a tool, include this in your response:',
     '<tool_call>',
     '{"name": "tool_name", "arguments": {...}}',
     '</tool_call>',
     '',
-    'You may make multiple tool calls in a single response. Wait for tool results before drawing conclusions.',
+    'You may use multiple tools in one response. Wait for results before drawing conclusions.',
+    'If the user asks about MCP or tools, explain which tools you currently have access to.',
   ].join('\n');
 }
 
@@ -146,11 +171,8 @@ export function getAiState() {
       const mcp = getMcpState();
       const availableTools = mcp.tools;
 
-      // Build enriched system prompt with tool descriptions
-      let fullSystemPrompt = systemPrompt ?? '';
-      if (availableTools.length > 0) {
-        fullSystemPrompt += buildToolSystemSuffix(availableTools);
-      }
+      // Build the full system prompt with identity, context, and tools
+      let fullSystemPrompt = buildSystemPrompt(systemPrompt ?? '', availableTools);
 
       await this._sendRound(fullSystemPrompt, availableTools, 0);
     },
