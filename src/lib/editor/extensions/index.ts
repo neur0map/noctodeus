@@ -1,4 +1,5 @@
 import { DragHandle } from '@tiptap/extension-drag-handle';
+import NodeRange from '@tiptap/extension-node-range';
 import StarterKit from '@tiptap/starter-kit';
 import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
 import TaskList from '@tiptap/extension-task-list';
@@ -100,6 +101,11 @@ export function createEditorExtensions(
     Focus.configure({
       className: 'has-focus',
       mode: 'deepest',
+    }),
+
+    // Node range selection (required by drag handle for drop to work)
+    NodeRange.configure({
+      key: null,
     }),
 
     // Drag handle (Notion-style 6-dot grip)

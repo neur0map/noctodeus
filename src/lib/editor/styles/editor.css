@@ -510,6 +510,31 @@
   background: color-mix(in srgb, var(--text-primary, var(--color-foreground)) 14%, transparent);
 }
 
+/* Node range selection highlight during drag */
+.ProseMirror-noderangeselection *::selection {
+  background: transparent;
+}
+
+.ProseMirror-noderangeselection * {
+  caret-color: transparent;
+}
+
+.ProseMirror-selectednode,
+.ProseMirror-selectednoderange {
+  position: relative;
+}
+
+.ProseMirror-selectednode::before,
+.ProseMirror-selectednoderange::before {
+  position: absolute;
+  pointer-events: none;
+  z-index: -1;
+  content: '';
+  inset: -4px;
+  background: color-mix(in srgb, var(--accent-blue, var(--color-accent)) 14%, transparent);
+  border-radius: 4px;
+}
+
 /* --------------------------------------------------------------------------
    Focus Node
    -------------------------------------------------------------------------- */
