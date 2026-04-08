@@ -9,9 +9,11 @@ pub async fn mcp_start_server(
     name: String,
     command: String,
     args: Vec<String>,
+    env: Option<Vec<(String, String)>>,
 ) -> CmdResult<Vec<McpTool>> {
+    let env_pairs: Vec<(String, String)> = env.unwrap_or_default();
     let mut reg = REGISTRY.lock().await;
-    reg.start_server(&name, &command, &args, &[]).await
+    reg.start_server(&name, &command, &args, &env_pairs).await
 }
 
 #[tauri::command]

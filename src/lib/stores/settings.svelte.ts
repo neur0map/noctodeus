@@ -29,7 +29,7 @@ export interface AppSettings {
   aiModel: string;
   aiSystemPrompt: string;
   // MCP
-  mcpServers: { name: string; command: string; args: string[] }[];
+  mcpServers: { name: string; command: string; args: string[]; env?: Record<string, string> }[];
 }
 
 const DEFAULTS: AppSettings = {

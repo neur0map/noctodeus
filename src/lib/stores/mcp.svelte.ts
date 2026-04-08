@@ -21,9 +21,9 @@ export function getMcpState() {
       }
     },
 
-    async startServer(name: string, command: string, args: string[]) {
+    async startServer(name: string, command: string, args: string[], env?: Record<string, string>) {
       try {
-        await mcpStartServer(name, command, args);
+        await mcpStartServer(name, command, args, env);
         await this.refresh();
       } catch (err: any) {
         error = err?.message || String(err);

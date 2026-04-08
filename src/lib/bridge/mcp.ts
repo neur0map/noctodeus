@@ -19,8 +19,12 @@ export interface McpServerInfo {
   running: boolean;
 }
 
-export async function mcpStartServer(name: string, command: string, args: string[]): Promise<McpTool[]> {
-  return invoke<McpTool[]>('mcp_start_server', { name, command, args });
+export async function mcpStartServer(name: string, command: string, args: string[], env?: Record<string, string>): Promise<McpTool[]> {
+  // Convert env record to array of [key, value] pairs for Rust, filter out empty values
+  const envPairs = env
+    ? Object.entries(env).filter(([, v]) => v.trim() !== '')
+    : [];
+  return invoke<McpTool[]>('mcp_start_server', { name, command, args, env: envPairs });
 }
 
 export async function mcpStopServer(name: string): Promise<void> {

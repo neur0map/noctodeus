@@ -69,6 +69,7 @@
       desc: 'Read, write, and search files on your machine',
       command: 'npx',
       args: ['-y', '@modelcontextprotocol/server-filesystem', '/'],
+      envKeys: [] as string[],
     },
     {
       name: 'brave-search',
@@ -76,6 +77,7 @@
       desc: 'Search the web via Brave Search API',
       command: 'npx',
       args: ['-y', '@modelcontextprotocol/server-brave-search'],
+      envKeys: ['BRAVE_API_KEY'],
     },
     {
       name: 'github',
@@ -83,6 +85,7 @@
       desc: 'Manage repos, issues, PRs via GitHub API',
       command: 'npx',
       args: ['-y', '@modelcontextprotocol/server-github'],
+      envKeys: ['GITHUB_PERSONAL_ACCESS_TOKEN'],
     },
     {
       name: 'memory',
@@ -90,6 +93,7 @@
       desc: 'Persistent key-value memory for the AI',
       command: 'npx',
       args: ['-y', '@modelcontextprotocol/server-memory'],
+      envKeys: [] as string[],
     },
     {
       name: 'fetch',
@@ -97,6 +101,7 @@
       desc: 'Fetch and extract content from URLs',
       command: 'npx',
       args: ['-y', '@modelcontextprotocol/server-fetch'],
+      envKeys: [] as string[],
     },
   ];
 
@@ -106,10 +111,15 @@
 
   function addPreset(preset: typeof presets[0]) {
     if (isPresetAdded(preset.name)) return;
+    const env: Record<string, string> = {};
+    for (const key of preset.envKeys) {
+      env[key] = '';
+    }
     settings.update('mcpServers', [...settings.mcpServers, {
       name: preset.name,
       command: preset.command,
       args: preset.args,
+      env: Object.keys(env).length > 0 ? env : undefined,
     }]);
   }
 
@@ -132,7 +142,7 @@
       ? newArgs.trim().split(/\s+/)
       : [];
 
-    settings.update('mcpServers', [...existing, { name, command, args: argsArr }]);
+    settings.update('mcpServers', [...existing, { name, command, args: argsArr, env: undefined }]);
     newName = '';
     newCommand = '';
     newArgs = '';
@@ -145,14 +155,14 @@
     mcp.stopServer(name).catch(() => {});
   }
 
-  async function toggleServer(name: string, command: string, args: string[]) {
-    const info = mcp.servers.find(s => s.name === name);
+  async function toggleServer(server: { name: string; command: string; args: string[]; env?: Record<string, string> }) {
+    const info = mcp.servers.find(s => s.name === server.name);
     if (info?.running) {
-      await mcp.stopServer(name);
+      await mcp.stopServer(server.name);
     } else {
-      starting = name;
+      starting = server.name;
       try {
-        await mcp.startServer(name, command, args);
+        await mcp.startServer(server.name, server.command, server.args, server.env);
       } catch {
         // error is set in mcp state
       }
@@ -292,7 +302,7 @@
           </span>
           <button
             class="settings__reset-all"
-            onclick={() => toggleServer(server.name, server.command, server.args)}
+            onclick={() => toggleServer(server)}
             disabled={starting === server.name}
           >
             {#if starting === server.name}
@@ -314,6 +324,31 @@
           </button>
         </div>
       </div>
+
+      {#if server.env && Object.keys(server.env).length > 0}
+        <div class="mcp-env">
+          {#each Object.entries(server.env) as [key, value]}
+            <div class="mcp-env__row">
+              <span class="mcp-env__key">{key}</span>
+              <input
+                class="settings__font-input mcp-env__input"
+                type="password"
+                placeholder="Enter API key..."
+                value={value}
+                onchange={(e) => {
+                  const updated = settings.mcpServers.map((s: any) => {
+                    if (s.name === server.name) {
+                      return { ...s, env: { ...s.env, [key]: e.currentTarget.value } };
+                    }
+                    return s;
+                  });
+                  settings.update('mcpServers', updated);
+                }}
+              />
+            </div>
+          {/each}
+        </div>
+      {/if}
 
       {#if isRunning(server.name) && serverTools(server.name).length > 0}
         <button
@@ -725,6 +760,33 @@
 
   .mcp-server-tools {
     padding: 4px 0;
+  }
+
+  .mcp-env {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    width: 100%;
+  }
+
+  .mcp-env__row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .mcp-env__key {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--color-placeholder);
+    min-width: 140px;
+    flex-shrink: 0;
+  }
+
+  .mcp-env__input {
+    flex: 1;
+    font-size: 11px !important;
+    padding: 5px 8px !important;
   }
 
   /* ── Presets ── */
