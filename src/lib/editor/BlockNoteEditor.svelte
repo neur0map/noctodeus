@@ -147,15 +147,17 @@
   }
 
   /* ── File/media placeholder blocks ── */
-  /* BlockNote hardcodes light colors — override to use theme tokens */
+  /* BlockNote hardcodes rgb(242,241,238) — override with theme */
   .blocknote-container :global([data-file-block] .bn-add-file-button) {
     background-color: var(--surface-1, var(--card)) !important;
     color: var(--muted-foreground) !important;
     border: 1px solid var(--border) !important;
+    border-radius: 8px !important;
   }
 
-  .blocknote-container :global([data-file-block] .bn-add-file-button:hover),
-  .blocknote-container :global([data-file-block] .bn-file-name-with-icon:hover) {
+  .blocknote-container :global(.bn-editor[contenteditable="true"] [data-file-block] .bn-add-file-button:hover),
+  .blocknote-container :global([data-file-block] .bn-file-name-with-icon:hover),
+  .blocknote-container :global(.ProseMirror-selectednode .bn-file-name-with-icon) {
     background-color: var(--surface-2, var(--accent)) !important;
   }
 
@@ -163,42 +165,59 @@
     background-color: var(--surface-1, var(--card)) !important;
     color: var(--foreground) !important;
     border: 1px solid var(--border) !important;
+    border-radius: 8px !important;
   }
 
-  /* File panel (upload/embed tabs) */
-  .blocknote-container :global(.bn-file-panel) {
+  /* ── File panel (upload/embed popup) ── */
+  .blocknote-container :global(.bn-panel) {
     background-color: var(--popover) !important;
     border: 1px solid var(--border) !important;
-    color: var(--popover-foreground) !important;
+    border-radius: 10px !important;
+    box-shadow: var(--shadow-float) !important;
   }
 
-  /* Tab buttons in file panel */
-  .blocknote-container :global(.bn-tab-button) {
+  /* Mantine tabs in file panel */
+  .blocknote-container :global(.bn-panel .mantine-Tabs-tab) {
     color: var(--muted-foreground) !important;
   }
 
-  .blocknote-container :global(.bn-tab-button[aria-selected="true"]) {
+  .blocknote-container :global(.bn-panel .mantine-Tabs-tab[data-active]),
+  .blocknote-container :global(.bn-panel .mantine-Tabs-tab[data-active]:hover) {
     color: var(--foreground) !important;
     border-color: var(--foreground) !important;
   }
 
-  /* Upload button */
-  .blocknote-container :global(.bn-upload-button),
-  .blocknote-container :global(.bn-file-input-button) {
+  .blocknote-container :global(.bn-panel .mantine-Tabs-list::before) {
+    border-color: var(--border) !important;
+  }
+
+  /* Upload / embed button inside panel */
+  .blocknote-container :global(.bn-panel .mantine-Button-root) {
     background-color: var(--surface-2, var(--card)) !important;
     color: var(--foreground) !important;
     border: 1px solid var(--border) !important;
+    border-radius: 6px !important;
   }
 
-  .blocknote-container :global(.bn-upload-button:hover),
-  .blocknote-container :global(.bn-file-input-button:hover) {
+  .blocknote-container :global(.bn-panel .mantine-Button-root:hover) {
     background-color: var(--accent) !important;
+    color: var(--accent-foreground) !important;
   }
 
   /* Embed URL input */
-  .blocknote-container :global(.bn-embed-input) {
+  .blocknote-container :global(.bn-panel .mantine-TextInput-input),
+  .blocknote-container :global(.bn-panel .mantine-FileInput-input) {
     background-color: var(--surface-1, var(--card)) !important;
     color: var(--foreground) !important;
     border: 1px solid var(--border) !important;
+    border-radius: 6px !important;
+  }
+
+  .blocknote-container :global(.bn-panel .mantine-FileInput-wrapper) {
+    border-color: var(--border) !important;
+  }
+
+  .blocknote-container :global(.bn-panel .mantine-InputPlaceholder-placeholder) {
+    color: var(--muted-foreground) !important;
   }
 </style>
