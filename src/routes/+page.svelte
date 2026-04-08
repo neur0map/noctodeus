@@ -579,6 +579,7 @@
       graphNodes={graphState.nodes}
       graphEdges={graphState.edges}
       onfileopen={openFile}
+      onexpandgraph={() => ui.toggleGraphPanel()}
     />
   </Worksurface>
 {/if}

@@ -16,6 +16,7 @@
     graphNodes = [],
     graphEdges = [],
     onfileopen,
+    onexpandgraph,
   }: {
     coreName?: string;
     recentFiles?: FileNode[];
@@ -26,6 +27,7 @@
     graphNodes?: GraphNode[];
     graphEdges?: GraphEdge[];
     onfileopen: (path: string) => void;
+    onexpandgraph?: () => void;
   } = $props();
 
   // Tick every 15s so relative times stay fresh
@@ -171,6 +173,7 @@
           nodes={miniNodes}
           edges={miniEdges}
           onselect={onfileopen}
+          onexpand={onexpandgraph}
         />
       </div>
       <div class="ds__stats">

@@ -10,11 +10,13 @@
     edges = [],
     activeFilePath = null,
     onselect,
+    onexpand,
   }: {
     nodes: GraphNode[];
     edges: GraphEdge[];
     activeFilePath?: string | null;
     onselect: (path: string) => void;
+    onexpand?: () => void;
   } = $props();
 
   let canvas: HTMLCanvasElement | undefined = $state();
@@ -419,7 +421,7 @@
   <div class="gv__ctrl">
     <button class="gv__btn" onclick={() => sc = Math.min(4, sc * 1.3)} title="Zoom in"><ZoomIn size={13} /></button>
     <button class="gv__btn" onclick={() => sc = Math.max(0.15, sc * 0.7)} title="Zoom out"><ZoomOut size={13} /></button>
-    <button class="gv__btn" onclick={() => { sc = 1; ox = 0; oy = 0; }} title="Reset"><Maximize size={13} /></button>
+    <button class="gv__btn" onclick={() => { if (onexpand) { onexpand(); } else { sc = 1; ox = 0; oy = 0; } }} title={onexpand ? "Expand graph" : "Reset view"}><Maximize size={13} /></button>
   </div>
 </div>
 
