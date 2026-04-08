@@ -1,22 +1,42 @@
 <script lang="ts">
   import { getSettings } from '../../../stores/settings.svelte';
-  import { aiProviders, aiChat } from '$lib/bridge/ai';
+  import { aiProviders, aiChat, aiModels } from '$lib/bridge/ai';
+  import type { ModelInfo } from '$lib/bridge/ai';
   import type { AiProvider } from '$lib/ai/types';
 
   type Settings = ReturnType<typeof getSettings>;
   let { settings }: { settings: Settings } = $props();
 
   let presets = $state<AiProvider[]>([]);
+  let models = $state<ModelInfo[]>([]);
+  let loadingModels = $state(false);
   let testStatus = $state<'idle' | 'testing' | 'success' | 'error'>('idle');
   let testMessage = $state('');
 
-  // Load provider presets on mount
   $effect(() => {
-    aiProviders().then((p) => { presets = p; }).catch(() => {
-      // Expected in browser dev mode
-      presets = [];
-    });
+    aiProviders().then((p) => { presets = p; }).catch(() => { presets = []; });
   });
+
+  // Fetch models when base URL and API key are both set
+  $effect(() => {
+    const url = settings.aiBaseUrl;
+    const key = settings.aiApiKey;
+    if (url && key) {
+      fetchModels(url, key);
+    } else {
+      models = [];
+    }
+  });
+
+  async function fetchModels(baseUrl: string, apiKey: string) {
+    loadingModels = true;
+    try {
+      models = await aiModels(baseUrl, apiKey);
+    } catch {
+      models = [];
+    }
+    loadingModels = false;
+  }
 
   function handlePresetChange(e: Event) {
     const id = (e.target as HTMLSelectElement).value;
@@ -30,6 +50,10 @@
         settings.update('aiApiKey', preset.apiKey);
       }
     }
+  }
+
+  function handleModelChange(e: Event) {
+    settings.update('aiModel', (e.target as HTMLSelectElement).value);
   }
 
   async function testConnection() {
@@ -65,7 +89,6 @@
 </script>
 
 <div class="settings__section">
-  <!-- Provider preset -->
   <div class="settings__row">
     <div class="settings__row-info">
       <span class="settings__row-label">Provider</span>
@@ -83,7 +106,6 @@
     </select>
   </div>
 
-  <!-- Base URL -->
   <div class="settings__row settings__row--vertical">
     <div class="settings__row-info">
       <span class="settings__row-label">Base URL</span>
@@ -98,11 +120,10 @@
     />
   </div>
 
-  <!-- API Key -->
   <div class="settings__row settings__row--vertical">
     <div class="settings__row-info">
       <span class="settings__row-label">API Key</span>
-      <span class="settings__row-desc">Your provider API key. Stored locally, never sent to Noctodeus servers.</span>
+      <span class="settings__row-desc">Stored locally, never sent to Noctodeus servers.</span>
     </div>
     <input
       class="settings__font-input"
@@ -113,22 +134,44 @@
     />
   </div>
 
-  <!-- Model -->
-  <div class="settings__row settings__row--vertical">
+  <div class="settings__row">
     <div class="settings__row-info">
       <span class="settings__row-label">Model</span>
-      <span class="settings__row-desc">Model identifier (e.g., gpt-4o, claude-sonnet-4-20250514).</span>
+      <span class="settings__row-desc">
+        {#if loadingModels}
+          Loading models...
+        {:else if models.length > 0}
+          {models.length} models available
+        {:else if settings.aiBaseUrl && settings.aiApiKey}
+          Enter API key to load models
+        {:else}
+          Configure provider first
+        {/if}
+      </span>
     </div>
-    <input
-      class="settings__font-input"
-      type="text"
-      placeholder="gpt-4o"
-      value={settings.aiModel}
-      onchange={(e) => settings.update('aiModel', e.currentTarget.value)}
-    />
+    {#if models.length > 0}
+      <select
+        class="settings__select"
+        value={settings.aiModel}
+        onchange={handleModelChange}
+      >
+        <option value="">Select model...</option>
+        {#each models as model}
+          <option value={model.id}>{model.id}</option>
+        {/each}
+      </select>
+    {:else}
+      <input
+        class="settings__font-input"
+        type="text"
+        placeholder="gpt-4o"
+        value={settings.aiModel}
+        onchange={(e) => settings.update('aiModel', e.currentTarget.value)}
+        style="max-width: 200px;"
+      />
+    {/if}
   </div>
 
-  <!-- System Prompt -->
   <div class="settings__row settings__row--css">
     <div class="settings__row-info">
       <span class="settings__row-label">System Prompt</span>
@@ -143,7 +186,6 @@
     ></textarea>
   </div>
 
-  <!-- Test connection -->
   <div class="settings__row">
     <div class="settings__row-info">
       <span class="settings__row-label">Test Connection</span>

@@ -116,6 +116,7 @@ pub fn run() {
             commands::ai_chat,
             commands::ai_chat_cancel,
             commands::ai_providers,
+            commands::ai_models,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

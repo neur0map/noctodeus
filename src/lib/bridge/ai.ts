@@ -12,3 +12,12 @@ export async function aiChatCancel(): Promise<void> {
 export async function aiProviders(): Promise<AiProvider[]> {
   return invoke<AiProvider[]>('ai_providers');
 }
+
+export interface ModelInfo {
+  id: string;
+  ownedBy: string | null;
+}
+
+export async function aiModels(baseUrl: string, apiKey: string): Promise<ModelInfo[]> {
+  return invoke<ModelInfo[]>('ai_models', { baseUrl, apiKey });
+}
