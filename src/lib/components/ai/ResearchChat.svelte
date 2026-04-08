@@ -298,7 +298,7 @@
     width: 280px;
     flex-shrink: 0;
     background: var(--surface-1, var(--color-card));
-    border-right: 1px solid rgba(255, 255, 255, 0.04);
+    border-right: 1px solid var(--color-border);
     animation: rc-slide-left 350ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
@@ -312,7 +312,7 @@
     align-items: center;
     gap: 8px;
     padding: 16px 16px 12px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    border-bottom: 1px solid var(--color-border);
     flex-shrink: 0;
   }
 
@@ -345,7 +345,7 @@
     overflow-y: auto;
     padding: 8px;
     scrollbar-width: thin;
-    scrollbar-color: rgba(255, 255, 255, 0.06) transparent;
+    scrollbar-color: var(--color-border) transparent;
   }
 
   .rc__sources-list::-webkit-scrollbar {
@@ -353,7 +353,7 @@
   }
 
   .rc__sources-list::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--color-hover);
     border-radius: 2px;
   }
 
@@ -364,7 +364,7 @@
     justify-content: center;
     gap: 10px;
     height: 100%;
-    color: rgba(255, 255, 255, 0.15);
+    color: var(--color-placeholder);
     text-align: center;
     padding: 24px;
     animation: rc-fade-up 400ms cubic-bezier(0.16, 1, 0.3, 1) 150ms both;
@@ -385,15 +385,15 @@
     gap: 8px;
     padding: 8px 10px;
     margin-bottom: 4px;
-    background: rgba(255, 255, 255, 0.02);
-    border: 1px solid rgba(255, 255, 255, 0.04);
+    background: var(--color-hover);
+    border: 1px solid var(--color-border);
     border-radius: 4px;
     transition: background 150ms, border-color 150ms, transform 150ms;
     animation: rc-card-in 300ms cubic-bezier(0.16, 1, 0.3, 1) both;
 
     &:hover {
-      background: rgba(255, 255, 255, 0.04);
-      border-color: rgba(255, 255, 255, 0.08);
+      background: var(--color-hover);
+      border-color: var(--color-border);
       transform: translateX(2px);
     }
 
@@ -464,7 +464,7 @@
   .rc__sources-footer {
     flex-shrink: 0;
     padding: 8px;
-    border-top: 1px solid rgba(255, 255, 255, 0.04);
+    border-top: 1px solid var(--color-border);
   }
 
   .rc__add-btn {
@@ -479,7 +479,7 @@
     font-weight: 500;
     color: var(--color-accent, #7AA2F7);
     background: rgba(122, 162, 247, 0.06);
-    border: 1px dashed rgba(122, 162, 247, 0.2);
+    border: 1px dashed var(--color-accent);
     border-radius: 4px;
     cursor: pointer;
     transition: background 150ms, border-color 150ms;
@@ -496,7 +496,7 @@
     flex-direction: column;
     max-height: 320px;
     background: var(--surface-2, var(--color-popover));
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--color-border);
     border-radius: 4px;
     overflow: hidden;
   }
@@ -506,7 +506,7 @@
     align-items: center;
     gap: 6px;
     padding: 8px 10px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    border-bottom: 1px solid var(--color-border);
     color: var(--color-placeholder);
   }
 
@@ -520,7 +520,7 @@
     color: var(--color-foreground);
 
     &::placeholder {
-      color: rgba(255, 255, 255, 0.18);
+      color: var(--color-placeholder);
     }
   }
 
@@ -538,7 +538,7 @@
 
     &:hover {
       color: var(--color-foreground);
-      background: rgba(255, 255, 255, 0.06);
+      background: var(--color-hover);
     }
   }
 
@@ -546,7 +546,7 @@
     flex: 1;
     overflow-y: auto;
     scrollbar-width: thin;
-    scrollbar-color: rgba(255, 255, 255, 0.06) transparent;
+    scrollbar-color: var(--color-border) transparent;
   }
 
   .rc__picker-list::-webkit-scrollbar {
@@ -554,7 +554,7 @@
   }
 
   .rc__picker-list::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--color-hover);
     border-radius: 2px;
   }
 
@@ -571,7 +571,7 @@
     transition: background 100ms;
 
     &:hover {
-      background: rgba(255, 255, 255, 0.04);
+      background: var(--color-hover);
     }
   }
 
@@ -627,7 +627,7 @@
     align-items: center;
     justify-content: space-between;
     padding: 14px 20px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    border-bottom: 1px solid var(--color-border);
     flex-shrink: 0;
     animation: rc-fade-up 300ms cubic-bezier(0.16, 1, 0.3, 1) 100ms both;
   }
@@ -710,7 +710,7 @@
 
     &:hover {
       color: var(--color-foreground);
-      background: rgba(255, 255, 255, 0.06);
+      background: var(--color-hover);
     }
   }
 
@@ -720,7 +720,7 @@
     overflow-y: auto;
     overflow-x: hidden;
     scrollbar-width: thin;
-    scrollbar-color: rgba(255, 255, 255, 0.06) transparent;
+    scrollbar-color: var(--color-border) transparent;
   }
 
   .rc__messages::-webkit-scrollbar {
@@ -728,7 +728,7 @@
   }
 
   .rc__messages::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--color-hover);
     border-radius: 2px;
   }
 
@@ -763,7 +763,7 @@
     width: 48px;
     height: 48px;
     border-radius: 6px;
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--color-hover);
     color: var(--color-placeholder);
     margin-bottom: 4px;
   }

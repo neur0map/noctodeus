@@ -129,7 +129,7 @@
     transition: background 150ms;
 
     &:hover {
-      background: rgba(255, 255, 255, 0.03);
+      background: var(--color-hover);
     }
   }
 
@@ -166,7 +166,7 @@
     text-transform: uppercase;
     letter-spacing: 0.06em;
     color: var(--color-placeholder);
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--color-hover);
     padding: 1px 5px;
     border-radius: 3px;
   }
@@ -219,8 +219,8 @@
     font-size: 11px;
     line-height: 1.5;
     color: var(--color-muted-foreground);
-    background: rgba(0, 0, 0, 0.25);
-    border: 1px solid rgba(255, 255, 255, 0.04);
+    background: var(--surface-1, var(--color-card));
+    border: 1px solid var(--color-border);
     border-radius: 6px;
     white-space: pre-wrap;
     word-break: break-word;
@@ -228,7 +228,7 @@
     max-height: 200px;
     overflow-y: auto;
     scrollbar-width: thin;
-    scrollbar-color: rgba(255, 255, 255, 0.06) transparent;
+    scrollbar-color: var(--color-border) transparent;
   }
 
   .tcb__code--result {

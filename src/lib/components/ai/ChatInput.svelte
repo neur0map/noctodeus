@@ -71,8 +71,8 @@
     align-items: flex-end;
     gap: 6px;
     padding: 10px 12px;
-    border-top: 1px solid rgba(255, 255, 255, 0.04);
-    background: rgba(0, 0, 0, 0.15);
+    border-top: 1px solid var(--color-border);
+    background: var(--color-hover);
   }
 
   .ci__textarea {
@@ -84,14 +84,14 @@
     font-size: 13px;
     line-height: 22px;
     color: var(--color-foreground);
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    background: var(--color-hover);
+    border: 1px solid var(--color-border);
     border-radius: 6px;
     outline: none;
     resize: none;
     overflow-y: auto;
     scrollbar-width: thin;
-    scrollbar-color: rgba(255, 255, 255, 0.08) transparent;
+    scrollbar-color: var(--color-border) transparent;
     transition: border-color 150ms;
 
     &:focus {
@@ -100,7 +100,7 @@
     }
 
     &::placeholder {
-      color: rgba(255, 255, 255, 0.18);
+      color: var(--color-placeholder);
     }
   }
 

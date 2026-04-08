@@ -119,7 +119,7 @@
 
   // ---- Assistant ----
   .cm--assistant {
-    background: rgba(255, 255, 255, 0.02);
+    background: var(--color-hover);
     border-radius: 6px;
     margin: 2px 0;
   }
@@ -133,8 +133,8 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.04);
+    background: var(--color-hover);
+    border: 1px solid var(--color-border);
     border-radius: 6px;
     padding: 6px 10px;
     cursor: pointer;
@@ -146,7 +146,7 @@
     transition: background 150ms;
 
     &:hover {
-      background: rgba(255, 255, 255, 0.05);
+      background: var(--color-hover);
     }
   }
 
@@ -155,7 +155,7 @@
     text-transform: uppercase;
     letter-spacing: 0.06em;
     color: var(--color-placeholder);
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--color-hover);
     padding: 1px 5px;
     border-radius: 3px;
   }
@@ -182,7 +182,7 @@
     line-height: 1.5;
     color: var(--color-muted-foreground);
     background: rgba(0, 0, 0, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--color-border);
     border-radius: 6px;
     white-space: pre-wrap;
     word-break: break-word;
@@ -234,7 +234,7 @@
   .cm__time {
     font-family: var(--font-mono);
     font-size: 10px;
-    color: rgba(255, 255, 255, 0.15);
+    color: var(--color-placeholder);
     letter-spacing: 0.01em;
   }
 
@@ -259,7 +259,7 @@
 
     &:hover {
       color: var(--color-foreground);
-      background: rgba(255, 255, 255, 0.06);
+      background: var(--color-hover);
     }
   }
 
