@@ -8,30 +8,32 @@ let provider = $state<AiProvider | null>(null);
 let error = $state<string | null>(null);
 
 // Listen for streaming tokens from the Rust backend
-let unlistenToken: (() => void) | null = null;
+let listenerReady = false;
 
 async function setupListener() {
-  if (unlistenToken) return;
+  if (listenerReady) return;
+  listenerReady = true;
   try {
-    unlistenToken = await listen<StreamToken>('ai:token', (event) => {
+    await listen<StreamToken>('ai:token', (event) => {
       const { delta, done } = event.payload;
       if (done) {
         streaming = false;
         // Mark last assistant message as not streaming
-        const last = messages[messages.length - 1];
-        if (last?.role === 'assistant') {
-          last.streaming = false;
+        const idx = messages.length - 1;
+        if (idx >= 0 && messages[idx].role === 'assistant') {
+          messages[idx] = { ...messages[idx], streaming: false };
         }
         return;
       }
       // Append delta to last assistant message
-      const last = messages[messages.length - 1];
-      if (last?.role === 'assistant' && last.streaming) {
-        last.content += delta;
+      const idx = messages.length - 1;
+      if (idx >= 0 && messages[idx].role === 'assistant' && messages[idx].streaming) {
+        messages[idx] = { ...messages[idx], content: messages[idx].content + delta };
       }
     });
   } catch {
     // Expected to fail in browser dev mode without Tauri
+    listenerReady = false;
   }
 }
 
@@ -53,26 +55,26 @@ export function getAiState() {
       error = null;
 
       // Add user message
-      messages.push({
+      messages = [...messages, {
         role: 'user',
         content,
         timestamp: Date.now(),
-      });
+      }];
 
       // Add empty assistant message for streaming
-      messages.push({
+      messages = [...messages, {
         role: 'assistant',
         content: '',
         timestamp: Date.now(),
         streaming: true,
-      });
+      }];
 
       streaming = true;
 
       try {
         // Build clean message list for the API (strip frontend-only fields)
         const apiMessages = messages
-          .filter(m => !(m.role === 'assistant' && m.streaming))
+          .filter(m => !(m.role === 'assistant' && m.streaming && !m.content))
           .map(m => ({ role: m.role, content: m.content }));
 
         await aiChat({
@@ -87,7 +89,7 @@ export function getAiState() {
         // Remove the empty assistant message on error
         const last = messages[messages.length - 1];
         if (last?.role === 'assistant' && !last.content) {
-          messages.pop();
+          messages = messages.slice(0, -1);
         }
       }
     },
