@@ -97,6 +97,8 @@
     width: 100%;
     min-height: 100%;
     flex: 1;
+    overflow: hidden;
+    position: relative;
   }
 
   /* Map BlockNote's CSS variables to Noctodeus theme tokens.
@@ -129,7 +131,18 @@
   .blocknote-container :global(.bn-editor) {
     max-width: 900px;
     margin: 0 auto;
-    padding: 36px 28px;
+    padding: 36px 28px 36px 48px;
     min-height: 300px;
+  }
+
+  /* Keep side menu (drag handle + add button) within the editor bounds */
+  .blocknote-container :global(.bn-side-menu) {
+    left: 4px !important;
+  }
+
+  /* Hide the colored left-edge indicator that bleeds outside */
+  .blocknote-container :global(.bn-block-group > [class*="before"]),
+  .blocknote-container :global(.ProseMirror > .bn-block-outer::before) {
+    display: none !important;
   }
 </style>
