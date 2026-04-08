@@ -24,6 +24,47 @@ pub fn is_cancelled() -> bool {
     CANCELLED.load(Ordering::Relaxed)
 }
 
+/// Check if a model is a reasoning/thinking model that requires special parameters.
+fn is_reasoning_model(model: &str) -> bool {
+    let m = model.to_lowercase();
+    // OpenAI reasoning models
+    m.starts_with("o1") || m.starts_with("o3") || m.starts_with("o4")
+    // Also match models that contain "reasoning" or "thinking" in their name
+    || m.contains("reasoning") || m.contains("thinking")
+}
+
+/// Build the JSON request body, adapting parameters to the model type.
+/// Reasoning models (o1, o3, o4-mini, etc.) don't support `temperature` or
+/// `max_tokens` — they use `max_completion_tokens` instead.
+fn build_request_body(
+    model: &str,
+    messages: &[serde_json::Value],
+    request: &ChatRequest,
+) -> serde_json::Value {
+    let mut body = json!({
+        "model": model,
+        "messages": messages,
+        "stream": true,
+    });
+
+    if is_reasoning_model(model) {
+        // Reasoning models: use max_completion_tokens, no temperature
+        if let Some(max) = request.max_tokens {
+            body["max_completion_tokens"] = json!(max);
+        } else {
+            body["max_completion_tokens"] = json!(16384);
+        }
+    } else {
+        // Standard models: use temperature + max_tokens
+        body["temperature"] = json!(request.temperature.unwrap_or(0.7));
+        if let Some(max) = request.max_tokens {
+            body["max_tokens"] = json!(max);
+        }
+    }
+
+    body
+}
+
 /// Stream a chat completion from an OpenAI-compatible API.
 /// Emits `ai:token` events with `StreamToken` payloads.
 /// Returns the full assembled response text.
@@ -58,13 +99,7 @@ pub async fn stream_chat(
         messages.push(m);
     }
 
-    let body = json!({
-        "model": request.provider.model,
-        "messages": messages,
-        "stream": true,
-        "temperature": request.temperature.unwrap_or(0.7),
-        "max_tokens": request.max_tokens.unwrap_or(4096),
-    });
+    let body = build_request_body(&request.provider.model, &messages, &request);
 
     let url = format!(
         "{}/chat/completions",
@@ -150,13 +185,31 @@ pub async fn stream_chat(
                 }
 
                 if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(data) {
-                    if let Some(delta) = parsed["choices"][0]["delta"]["content"].as_str() {
+                    let delta_obj = &parsed["choices"][0]["delta"];
+
+                    // Check for regular content
+                    if let Some(delta) = delta_obj["content"].as_str() {
                         if !delta.is_empty() {
                             full_response.push_str(delta);
                             let _ = app.emit(
                                 "ai:token",
                                 StreamToken {
                                     delta: delta.to_string(),
+                                    done: false,
+                                },
+                            );
+                        }
+                    }
+
+                    // Check for reasoning_content (thinking models like o1, o3)
+                    // Stream it as regular content so the user sees the thinking
+                    if let Some(reasoning) = delta_obj["reasoning_content"].as_str() {
+                        if !reasoning.is_empty() {
+                            full_response.push_str(reasoning);
+                            let _ = app.emit(
+                                "ai:token",
+                                StreamToken {
+                                    delta: reasoning.to_string(),
                                     done: false,
                                 },
                             );
