@@ -153,6 +153,12 @@
     color: var(--muted-foreground) !important;
     border: 1px solid var(--border) !important;
     border-radius: 8px !important;
+    width: fit-content !important;
+    padding: 8px 20px !important;
+  }
+
+  .blocknote-container :global([data-file-block] .bn-file-block-content-wrapper) {
+    width: fit-content !important;
   }
 
   .blocknote-container :global(.bn-editor[contenteditable="true"] [data-file-block] .bn-add-file-button:hover),
