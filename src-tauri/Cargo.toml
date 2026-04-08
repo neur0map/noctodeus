@@ -48,4 +48,8 @@ pbkdf2 = "0.12"
 hmac = "0.12"
 once_cell = "1"
 
+[[bin]]
+name = "noctodeus-mcp"
+path = "src/bin/noctodeus_mcp.rs"
+
 [dev-dependencies]
