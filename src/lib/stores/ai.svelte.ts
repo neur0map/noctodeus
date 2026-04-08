@@ -201,9 +201,16 @@ export function getAiState() {
 
       try {
         // Build clean message list for the API (strip frontend-only fields)
+        // Convert 'tool' role to 'user' since we use prompt-based tool calling,
+        // not OpenAI's native function calling format
         const apiMessages = messages
           .filter(m => !(m.role === 'assistant' && m.streaming && !m.content))
-          .map(m => ({ role: m.role, content: m.content }));
+          .map(m => ({
+            role: m.role === 'tool' ? 'user' : m.role,
+            content: m.role === 'tool'
+              ? `[Tool result for ${m.toolCallId ?? 'unknown'}]:\n${m.content}`
+              : m.content,
+          }));
 
         await aiChat({
           provider: provider!,
