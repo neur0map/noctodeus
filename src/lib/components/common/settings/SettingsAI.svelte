@@ -173,8 +173,8 @@
 
   <div class="settings__row settings__row--css">
     <div class="settings__row-info">
-      <span class="settings__row-label">System Prompt</span>
-      <span class="settings__row-desc">Instructions sent to the AI at the start of every conversation.</span>
+      <span class="settings__row-label">Custom Instructions</span>
+      <span class="settings__row-desc">Added to the AI's context alongside its built-in Noctodeus awareness. Use this to set tone, focus areas, or rules.</span>
     </div>
     <textarea
       class="settings__css-editor"
