@@ -69,7 +69,14 @@ function parseToolCalls(text: string): ParsedToolCall[] {
   return calls;
 }
 
-function buildSystemPrompt(userPrompt: string, tools: McpTool[]): string {
+export interface AiContext {
+  coreName?: string;
+  activeFilePath?: string;
+  activeFileContent?: string;
+  noteList?: string[]; // top-level note paths for awareness
+}
+
+function buildSystemPrompt(userPrompt: string, tools: McpTool[], ctx?: AiContext): string {
   const parts: string[] = [];
 
   // Identity + boundaries
@@ -83,6 +90,30 @@ function buildSystemPrompt(userPrompt: string, tools: McpTool[]): string {
       ? ' The only exception is the MCP tools listed below, which the user has explicitly connected.'
       : ' If the user wants you to have external capabilities, they can connect MCP tool servers in Settings > MCP.')
   );
+
+  // Core and note context
+  if (ctx) {
+    const ctxLines: string[] = [];
+    if (ctx.coreName) {
+      ctxLines.push(`The user's active vault (core) is named "${ctx.coreName}".`);
+    }
+    if (ctx.noteList && ctx.noteList.length > 0) {
+      const shown = ctx.noteList.slice(0, 30);
+      ctxLines.push(`Notes in this vault (${ctx.noteList.length} total): ${shown.join(', ')}${ctx.noteList.length > 30 ? ', ...' : ''}`);
+    }
+    if (ctx.activeFilePath) {
+      ctxLines.push(`The user currently has "${ctx.activeFilePath}" open in the editor.`);
+    }
+    if (ctx.activeFileContent) {
+      const preview = ctx.activeFileContent.length > 2000
+        ? ctx.activeFileContent.slice(0, 2000) + '\n... (truncated)'
+        : ctx.activeFileContent;
+      ctxLines.push(`Content of the open note:\n---\n${preview}\n---`);
+    }
+    if (ctxLines.length > 0) {
+      parts.push('Current context:\n' + ctxLines.join('\n'));
+    }
+  }
 
   // User's custom system prompt (from settings)
   if (userPrompt.trim()) {
@@ -157,7 +188,7 @@ export function getAiState() {
       provider = p;
     },
 
-    async send(content: string, systemPrompt?: string) {
+    async send(content: string, systemPrompt?: string, context?: AiContext) {
       if (streaming) return;
       if (!provider) {
         error = 'No AI provider configured. Open Settings > AI to set one up.';
@@ -177,7 +208,7 @@ export function getAiState() {
       const availableTools = mcp.tools;
 
       // Build the full system prompt with identity, context, and tools
-      let fullSystemPrompt = buildSystemPrompt(systemPrompt ?? '', availableTools);
+      let fullSystemPrompt = buildSystemPrompt(systemPrompt ?? '', availableTools, context);
 
       await this._sendRound(fullSystemPrompt, availableTools, 0);
     },

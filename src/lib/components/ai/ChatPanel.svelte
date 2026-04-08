@@ -24,12 +24,17 @@
   } = $props();
 
   import { getMcpState } from '$lib/stores/mcp.svelte';
+  import { getCoreState } from '$lib/stores/core.svelte';
+  import { getFilesState } from '$lib/stores/files.svelte';
+  import type { AiContext } from '$lib/stores/ai.svelte';
   import Wrench from '@lucide/svelte/icons/wrench';
 
   const ai = getAiState();
   const settings = getSettings();
   const ui = getUiState();
   const mcp = getMcpState();
+  const coreState = getCoreState();
+  const filesState = getFilesState();
 
   let scrollEl: HTMLDivElement | undefined = $state();
   let inputRef: ChatInput | undefined = $state();
@@ -112,11 +117,23 @@
         });
       }
     }
-    await ai.send(text, settings.aiSystemPrompt || undefined);
+    await ai.send(text, settings.aiSystemPrompt || undefined, buildContext());
   }
 
   function handleSuggestion(text: string) {
-    ai.send(text, settings.aiSystemPrompt || undefined);
+    ai.send(text, settings.aiSystemPrompt || undefined, buildContext());
+  }
+
+  function buildContext(): AiContext {
+    const noteList = Array.from(filesState.fileMap.values())
+      .filter(f => !f.is_directory && (f.extension === 'md' || f.extension === 'markdown'))
+      .map(f => f.title || f.name);
+
+    return {
+      coreName: coreState.activeCore?.name,
+      activeFilePath: filesState.activeFilePath ?? undefined,
+      noteList,
+    };
   }
 
   function openSettings() {
