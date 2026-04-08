@@ -15,7 +15,9 @@ use crate::mcp::protocol::{
 };
 
 /// Default timeout for waiting on a JSON-RPC response.
-const RESPONSE_TIMEOUT: Duration = Duration::from_secs(5);
+/// Set high because npx-based servers can take 30+ seconds on first launch
+/// while downloading the package.
+const RESPONSE_TIMEOUT: Duration = Duration::from_secs(60);
 
 pub struct McpServer {
     name: String,
@@ -40,8 +42,9 @@ impl McpServer {
             .stdout(Stdio::piped())
             .stderr(Stdio::piped());
 
-        for (key, value) in env {
-            cmd.env(key, value);
+        // Add env vars (these ADD to existing env, not replace)
+        if !env.is_empty() {
+            cmd.envs(env.iter().map(|(k, v)| (k.as_str(), v.as_str())));
         }
 
         let mut child = cmd.spawn().map_err(|e| NoctoError::AiFailed {
