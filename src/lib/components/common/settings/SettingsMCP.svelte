@@ -17,9 +17,59 @@
   let newArgs = $state('');
   let addError = $state<string | null>(null);
   let starting = $state<string | null>(null);
-
-  // Expand tool list per server
   let expandedServer = $state<string | null>(null);
+
+  // One-click presets for popular MCP servers
+  const presets = [
+    {
+      name: 'filesystem',
+      label: 'File System',
+      desc: 'Read, write, and search files on your machine',
+      command: 'npx',
+      args: ['-y', '@modelcontextprotocol/server-filesystem', '/'],
+    },
+    {
+      name: 'brave-search',
+      label: 'Brave Search',
+      desc: 'Search the web via Brave Search API',
+      command: 'npx',
+      args: ['-y', '@modelcontextprotocol/server-brave-search'],
+    },
+    {
+      name: 'github',
+      label: 'GitHub',
+      desc: 'Manage repos, issues, PRs via GitHub API',
+      command: 'npx',
+      args: ['-y', '@modelcontextprotocol/server-github'],
+    },
+    {
+      name: 'memory',
+      label: 'Memory',
+      desc: 'Persistent key-value memory for the AI',
+      command: 'npx',
+      args: ['-y', '@modelcontextprotocol/server-memory'],
+    },
+    {
+      name: 'fetch',
+      label: 'Fetch',
+      desc: 'Fetch and extract content from URLs',
+      command: 'npx',
+      args: ['-y', '@modelcontextprotocol/server-fetch'],
+    },
+  ];
+
+  function isPresetAdded(name: string): boolean {
+    return settings.mcpServers.some((s: { name: string }) => s.name === name);
+  }
+
+  function addPreset(preset: typeof presets[0]) {
+    if (isPresetAdded(preset.name)) return;
+    settings.update('mcpServers', [...settings.mcpServers, {
+      name: preset.name,
+      command: preset.command,
+      args: preset.args,
+    }]);
+  }
 
   function addServer() {
     addError = null;
@@ -86,6 +136,44 @@
 </script>
 
 <div class="settings__section">
+  <!-- Explanation -->
+  <div class="settings__row">
+    <div class="settings__row-info">
+      <span class="settings__row-label">What is MCP?</span>
+      <span class="settings__row-desc">
+        MCP (Model Context Protocol) lets the AI use external tools — search the web, read files, query APIs, and more.
+        Add a server below and the AI chat will automatically see its tools.
+        Requires <a href="https://nodejs.org" target="_blank" rel="noopener" class="mcp-link">Node.js</a> installed for npx-based servers.
+      </span>
+    </div>
+  </div>
+
+  <!-- One-click presets -->
+  <div class="settings__row settings__row--vertical">
+    <div class="settings__row-info">
+      <span class="settings__row-label">Quick Add</span>
+      <span class="settings__row-desc">Popular MCP servers. Click to add, then start.</span>
+    </div>
+    <div class="mcp-presets">
+      {#each presets as preset}
+        <button
+          class="mcp-preset"
+          class:mcp-preset--added={isPresetAdded(preset.name)}
+          onclick={() => addPreset(preset)}
+          disabled={isPresetAdded(preset.name)}
+        >
+          <div class="mcp-preset__info">
+            <span class="mcp-preset__name">{preset.label}</span>
+            <span class="mcp-preset__desc">{preset.desc}</span>
+          </div>
+          <span class="mcp-preset__badge">
+            {isPresetAdded(preset.name) ? 'Added' : 'Add'}
+          </span>
+        </button>
+      {/each}
+    </div>
+  </div>
+
   <!-- Configured servers -->
   {#each settings.mcpServers as server (server.name)}
     <div class="settings__row settings__row--vertical mcp-server">
@@ -441,5 +529,82 @@
   .mcp-error {
     color: #f7768e;
     word-break: break-word;
+  }
+
+  .mcp-link {
+    color: var(--color-accent, #7AA2F7);
+    text-decoration: none;
+  }
+  .mcp-link:hover { text-decoration: underline; }
+
+  /* ── Presets ── */
+  .mcp-presets {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    width: 100%;
+  }
+
+  .mcp-preset {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    border-radius: 8px;
+    cursor: pointer;
+    text-align: left;
+    transition: background 150ms, border-color 150ms;
+  }
+
+  .mcp-preset:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+
+  .mcp-preset--added {
+    opacity: 0.5;
+    cursor: default;
+  }
+
+  .mcp-preset__info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+  }
+
+  .mcp-preset__name {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--color-foreground);
+  }
+
+  .mcp-preset__desc {
+    font-family: var(--font-sans);
+    font-size: 10px;
+    color: var(--color-placeholder);
+    line-height: 1.3;
+  }
+
+  .mcp-preset__badge {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--color-accent, #7AA2F7);
+    background: rgba(122, 162, 247, 0.08);
+    padding: 2px 8px;
+    border-radius: 4px;
+    flex-shrink: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .mcp-preset--added .mcp-preset__badge {
+    color: var(--color-placeholder);
+    background: rgba(255, 255, 255, 0.04);
   }
 </style>
