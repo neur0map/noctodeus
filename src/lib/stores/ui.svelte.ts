@@ -7,6 +7,7 @@ let sidebarCollapsed = $state(false);
 let settingsVisible = $state(false);
 let tasksVisible = $state(false);
 let panelModalVisible = $state(false);
+let aiChatVisible = $state(false);
 
 export function getUiState() {
   return {
@@ -36,6 +37,9 @@ export function getUiState() {
     },
     get panelModalVisible() {
       return panelModalVisible;
+    },
+    get aiChatVisible() {
+      return aiChatVisible;
     },
 
     toggleSidebar() {
@@ -88,6 +92,17 @@ export function getUiState() {
     hidePanelModal() {
       panelModalVisible = false;
     },
+    toggleAiChat() {
+      aiChatVisible = !aiChatVisible;
+    },
+    showAiChat() {
+      aiChatVisible = true;
+      quickOpenVisible = false;
+      commandPaletteVisible = false;
+    },
+    hideAiChat() {
+      aiChatVisible = false;
+    },
     closeAllOverlays() {
       quickOpenVisible = false;
       commandPaletteVisible = false;
@@ -95,6 +110,7 @@ export function getUiState() {
       tasksVisible = false;
       panelModalVisible = false;
       graphPanelVisible = false;
+      // Note: aiChatVisible is NOT closed here — it's a persistent side panel, not a modal overlay
     },
 
     reset() {
@@ -107,6 +123,7 @@ export function getUiState() {
       settingsVisible = false;
       tasksVisible = false;
       panelModalVisible = false;
+      aiChatVisible = false;
     },
   };
 }

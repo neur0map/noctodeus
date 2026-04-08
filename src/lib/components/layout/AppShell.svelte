@@ -4,13 +4,17 @@
   let {
     sidebar,
     content,
+    rightPanel,
     sidebarVisible = true,
     sidebarCollapsed = false,
+    rightPanelVisible = false,
   }: {
     sidebar: Snippet;
     content: Snippet;
+    rightPanel?: Snippet;
     sidebarVisible?: boolean;
     sidebarCollapsed?: boolean;
+    rightPanelVisible?: boolean;
   } = $props();
 </script>
 
@@ -18,6 +22,7 @@
   class="app-shell"
   class:app-shell--sidebar-hidden={!sidebarVisible}
   class:app-shell--sidebar-collapsed={sidebarCollapsed}
+  class:app-shell--right-panel={rightPanelVisible}
 >
   {#if sidebarVisible}
     <aside class="app-shell__sidebar">
@@ -28,6 +33,12 @@
   <main class="app-shell__content">
     {@render content()}
   </main>
+
+  {#if rightPanelVisible && rightPanel}
+    <aside class="app-shell__right-panel">
+      {@render rightPanel()}
+    </aside>
+  {/if}
 </div>
 
 <style lang="scss">
@@ -47,8 +58,20 @@
     grid-template-columns: 0 1fr;
   }
 
+  .app-shell--sidebar-hidden.app-shell--right-panel {
+    grid-template-columns: 0 1fr 360px;
+  }
+
   .app-shell--sidebar-collapsed {
     grid-template-columns: 48px 1fr;
+  }
+
+  .app-shell--sidebar-collapsed.app-shell--right-panel {
+    grid-template-columns: 48px 1fr 360px;
+  }
+
+  .app-shell--right-panel {
+    grid-template-columns: 276px 1fr 360px;
   }
 
   .app-shell__sidebar {
@@ -63,6 +86,15 @@
     display: flex;
     flex-direction: column;
     min-width: 0;
+    overflow: hidden;
+    border-radius: 0 16px 16px 0;
+  }
+
+  .app-shell--right-panel .app-shell__content {
+    border-radius: 0;
+  }
+
+  .app-shell__right-panel {
     overflow: hidden;
     border-radius: 0 16px 16px 0;
   }

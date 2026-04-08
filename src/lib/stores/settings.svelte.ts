@@ -22,6 +22,12 @@ export interface AppSettings {
   cryptgeonServer: string;
   // Hotkeys
   keybinds: Record<string, string>;
+  // AI
+  aiProviderId: string;
+  aiBaseUrl: string;
+  aiApiKey: string;
+  aiModel: string;
+  aiSystemPrompt: string;
 }
 
 const DEFAULTS: AppSettings = {
@@ -40,6 +46,11 @@ const DEFAULTS: AppSettings = {
   wikiStyleLinks: true,
   cryptgeonServer: 'https://cryptgeon.org',
   keybinds: {},
+  aiProviderId: '',
+  aiBaseUrl: '',
+  aiApiKey: '',
+  aiModel: '',
+  aiSystemPrompt: 'You are a helpful writing assistant. You help with notes, research, and creative thinking.',
 };
 
 function loadFromStorage(): AppSettings {
@@ -94,6 +105,11 @@ export function getSettings() {
     get wikiStyleLinks() { return settings.wikiStyleLinks; },
     get cryptgeonServer() { return settings.cryptgeonServer; },
     get keybinds() { return settings.keybinds; },
+    get aiProviderId() { return settings.aiProviderId; },
+    get aiBaseUrl() { return settings.aiBaseUrl; },
+    get aiApiKey() { return settings.aiApiKey; },
+    get aiModel() { return settings.aiModel; },
+    get aiSystemPrompt() { return settings.aiSystemPrompt; },
 
     update<K extends keyof AppSettings>(key: K, value: AppSettings[K]) {
       // Mutate the property directly on the $state proxy for granular reactivity

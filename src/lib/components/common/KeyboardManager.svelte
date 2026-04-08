@@ -10,6 +10,7 @@
     oncollapsesidebar,
     ontogglerightpanel,
     ondeletefile,
+    ontoggleaichat,
     oncloseoverlay,
     keymap,
     overlayOpen = false,
@@ -22,6 +23,7 @@
     oncollapsesidebar: () => void;
     ontogglerightpanel: () => void;
     ondeletefile: () => void;
+    ontoggleaichat: () => void;
     oncloseoverlay: () => void;
     keymap: AppShortcuts;
     overlayOpen?: boolean;
@@ -98,6 +100,12 @@
     if (matchesShortcut(e, keymap.toggle_right_panel)) {
       e.preventDefault();
       ontogglerightpanel();
+      return;
+    }
+
+    if (matchesShortcut(e, keymap.toggle_ai_chat)) {
+      e.preventDefault();
+      ontoggleaichat();
       return;
     }
 

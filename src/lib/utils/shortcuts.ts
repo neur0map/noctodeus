@@ -7,6 +7,7 @@ export interface AppShortcuts {
   toggle_right_panel: string;
   collapse_sidebar: string;
   delete_file: string;
+  toggle_ai_chat: string;
 }
 
 const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad|iPod/.test(navigator.platform ?? '');
@@ -23,6 +24,7 @@ export const APP_SHORTCUTS: AppShortcuts = {
   toggle_right_panel: `${MOD}+\\`,
   collapse_sidebar: `${MOD}+Shift+B`,
   delete_file: `${MOD}+Backspace`,
+  toggle_ai_chat: `${MOD}+Shift+I`,
 };
 
 export const DEFAULT_SHORTCUTS: AppShortcuts = { ...APP_SHORTCUTS };
@@ -36,6 +38,7 @@ export const SHORTCUT_LABELS: Record<keyof AppShortcuts, { label: string; desc: 
   toggle_right_panel: { label: 'Toggle Panel', desc: 'Show or hide the detail panel.' },
   collapse_sidebar: { label: 'Collapse Sidebar', desc: 'Collapse sidebar to icon-only.' },
   delete_file: { label: 'Delete File', desc: 'Move the active file to trash.' },
+  toggle_ai_chat: { label: 'AI Chat', desc: 'Open or close the AI chat panel.' },
 };
 
 export function getResolvedShortcuts(overrides: Record<string, string>): AppShortcuts {

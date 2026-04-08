@@ -7,6 +7,7 @@
   import { getUiState } from '$lib/stores/ui.svelte';
   import { nerdIcon } from '$lib/utils/nerd-icons';
   import Share2 from '@lucide/svelte/icons/share-2';
+  import Sparkles from '@lucide/svelte/icons/sparkles';
 
   let {
     isMarkdownActive = false,
@@ -53,6 +54,14 @@
       <Share2 size={13} />
     </button>
   {/if}
+  <button
+    class="ai-trigger"
+    class:ai-trigger--active={ui.aiChatVisible}
+    onclick={() => ui.toggleAiChat()}
+    title="AI Chat ({navigator.platform?.includes('Mac') ? '\u2318' : 'Ctrl'}+\u21e7+I)"
+  >
+    <Sparkles size={13} />
+  </button>
 </div>
 
 <style>
@@ -126,5 +135,31 @@
   .share-trigger:hover {
     color: var(--color-foreground);
     background: var(--color-hover);
+  }
+
+  .ai-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    margin-right: 8px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-muted, var(--color-placeholder));
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: color 150ms ease-out, background 150ms ease-out;
+  }
+
+  .ai-trigger:hover {
+    color: var(--color-accent, #7AA2F7);
+    background: rgba(122, 162, 247, 0.08);
+  }
+
+  .ai-trigger--active {
+    color: var(--color-accent, #7AA2F7);
+    background: rgba(122, 162, 247, 0.1);
   }
 </style>

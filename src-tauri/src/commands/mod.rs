@@ -1,3 +1,4 @@
+pub mod ai;
 pub mod core;
 pub mod files;
 pub mod graph;
@@ -6,6 +7,7 @@ pub mod search;
 pub mod share;
 pub mod sync;
 
+pub use self::ai::*;
 pub use self::core::*;
 pub use self::files::*;
 pub use self::graph::*;

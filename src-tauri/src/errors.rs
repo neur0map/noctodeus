@@ -51,6 +51,10 @@ pub enum NoctoError {
     // Share
     #[error("Share failed: {detail}")]
     ShareFailed { detail: String },
+
+    // AI
+    #[error("AI request failed: {detail}")]
+    AiFailed { detail: String },
 }
 
 impl NoctoError {
@@ -74,6 +78,7 @@ impl NoctoError {
             NoctoError::GitNotFound => "git_not_found",
             NoctoError::SyncConflict { .. } => "sync_conflict",
             NoctoError::ShareFailed { .. } => "share_failed",
+            NoctoError::AiFailed { .. } => "ai_failed",
         }
     }
 }

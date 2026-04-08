@@ -6,6 +6,7 @@ pub mod events;
 pub mod indexer;
 pub mod logging;
 pub mod share;
+pub mod ai;
 pub mod sync;
 pub mod watcher;
 
@@ -111,6 +112,10 @@ pub fn run() {
             // Share commands
             commands::share_note,
             commands::share_status,
+            // AI commands
+            commands::ai_chat,
+            commands::ai_chat_cancel,
+            commands::ai_providers,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

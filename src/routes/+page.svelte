@@ -242,6 +242,15 @@
         window.dispatchEvent(new CustomEvent('noctodeus-share', { detail: { content: currentContent } }));
       },
     },
+    {
+      id: "ai-chat",
+      label: "AI: Open Chat",
+      shortcut: formatShortcutLabel(APP_SHORTCUTS.toggle_ai_chat),
+      action: () => {
+        ui.hideCommandPalette();
+        ui.toggleAiChat();
+      },
+    },
   ]);
 
   // --- Helpers ---

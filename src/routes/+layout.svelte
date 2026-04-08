@@ -42,6 +42,7 @@
 
   import FocusManager from "../lib/components/common/FocusManager.svelte";
   import ShareModal from "../lib/components/common/ShareModal.svelte";
+  import ChatPanel from "../lib/components/ai/ChatPanel.svelte";
 
   let { children }: { children: Snippet } = $props();
 
@@ -621,12 +622,14 @@
   ontogglerightpanel={() => ui.panelModalVisible ? ui.hidePanelModal() : ui.showPanelModal()}
   oncollapsesidebar={() => ui.toggleSidebarCollapse()}
   ondeletefile={handleDeleteFile}
+  ontoggleaichat={() => ui.toggleAiChat()}
   oncloseoverlay={() => ui.closeAllOverlays()}
 />
 
 <AppShell
   sidebarVisible={ui.sidebarVisible}
   sidebarCollapsed={ui.sidebarCollapsed}
+  rightPanelVisible={ui.aiChatVisible}
 >
   {#snippet sidebar()}
     <SidebarContent
@@ -654,6 +657,13 @@
 
       {@render children()}
     </ContentArea>
+  {/snippet}
+
+  {#snippet rightPanel()}
+    <ChatPanel
+      visible={ui.aiChatVisible}
+      onclose={() => ui.hideAiChat()}
+    />
   {/snippet}
 
 </AppShell>
