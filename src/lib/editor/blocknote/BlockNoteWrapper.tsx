@@ -8,6 +8,30 @@ import '@blocknote/mantine/style.css';
 import type { BlockNoteEditorProps, EditorHandle } from './types';
 import { preprocessMarkdown } from './markdown';
 
+/**
+ * Upload handler for BlockNote media blocks.
+ * In Tauri, we use the native file dialog via the global bridge,
+ * then convert the local file path to a Tauri asset:// URL.
+ */
+async function uploadFile(file: File): Promise<string> {
+  // BlockNote passes a File object from drag-drop or the browser file picker.
+  // In Tauri, we convert the file's path to an asset:// protocol URL.
+  // For files from the browser picker, the path isn't available directly,
+  // so we use the Tauri convertFileSrc bridge.
+  const { convertFileSrc } = await import('@tauri-apps/api/core');
+
+  // If the file has a webkitRelativePath or name, try to resolve it
+  // For drag-dropped files in Tauri, the path may be available via a custom property
+  const filePath = (file as any).path ?? file.name;
+
+  if (filePath && !filePath.startsWith('http') && !filePath.startsWith('blob:')) {
+    return convertFileSrc(filePath);
+  }
+
+  // Fallback: create a blob URL (works for in-memory files)
+  return URL.createObjectURL(file);
+}
+
 export default function BlockNoteWrapper(props: BlockNoteEditorProps) {
   const {
     initialContent,
@@ -24,7 +48,9 @@ export default function BlockNoteWrapper(props: BlockNoteEditorProps) {
     return undefined; // Will load in useEffect since we need the editor instance
   }, [initialContent]);
 
-  const editor = useCreateBlockNote({});
+  const editor = useCreateBlockNote({
+    uploadFile,
+  });
 
   // Load initial content on first mount
   useEffect(() => {
