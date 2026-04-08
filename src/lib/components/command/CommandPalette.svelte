@@ -119,7 +119,7 @@
     align-items: flex-start;
     justify-content: center;
     padding-top: 20vh;
-    background: rgba(0, 0, 0, 0.5);
+    background: color-mix(in srgb, var(--color-background) 50%, transparent);
     backdrop-filter: blur(8px);
     z-index: 100;
     animation: cmd-backdrop-in 300ms ease both;

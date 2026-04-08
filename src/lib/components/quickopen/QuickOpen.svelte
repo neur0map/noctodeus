@@ -240,7 +240,7 @@
     align-items: flex-start;
     justify-content: center;
     padding-top: 15vh;
-    background: rgba(5, 8, 17, 0.7);
+    background: color-mix(in srgb, var(--color-background) 70%, transparent);
     backdrop-filter: blur(12px) saturate(0.8);
     z-index: 100;
     opacity: 0; /* anime.js handles entrance */
@@ -249,18 +249,10 @@
   .quick-open {
     width: min(620px, 90vw);
     max-height: 520px;
-    background: linear-gradient(
-      180deg,
-      rgba(26, 30, 46, 0.98) 0%,
-      rgba(19, 22, 31, 0.99) 100%
-    );
+    background: var(--surface-2, var(--color-popover));
     border-radius: 10px;
-    border: 1px solid rgba(122, 162, 247, 0.06);
-    box-shadow:
-      0 0 0 1px rgba(0, 0, 0, 0.3),
-      0 8px 24px rgba(0, 0, 0, 0.4),
-      0 24px 64px rgba(0, 0, 0, 0.3),
-      inset 0 1px 0 rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--color-border);
+    box-shadow: var(--shadow-modal, 0 8px 32px rgba(0, 0, 0, 0.2));
     overflow: hidden;
     display: flex;
     flex-direction: column;
@@ -270,7 +262,7 @@
   .quick-open__searching {
     font-family: var(--font-mono);
     font-size: 11px;
-    color: var(--text-muted, #6B7394);
+    color: var(--color-muted-foreground);
     padding: 4px 20px 2px;
     letter-spacing: 0.02em;
   }
