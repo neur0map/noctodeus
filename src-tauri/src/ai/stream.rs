@@ -43,9 +43,11 @@ fn build_request_body(
         "stream": true,
     });
 
-    // Only set temperature for non-reasoning models
-    if !is_reasoning {
-        body["temperature"] = json!(request.temperature.unwrap_or(0.7));
+    // Only set temperature if explicitly provided by the user
+    if let Some(temp) = request.temperature {
+        if !is_reasoning {
+            body["temperature"] = json!(temp);
+        }
     }
 
     // Always use max_completion_tokens (works on both old and new OpenAI models)
