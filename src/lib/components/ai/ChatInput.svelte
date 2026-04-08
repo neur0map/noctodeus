@@ -13,12 +13,20 @@
   } = $props();
 
   let text = $state('');
+  let textareaEl: HTMLTextAreaElement | undefined = $state();
+
+  function autoResize() {
+    if (!textareaEl) return;
+    textareaEl.style.height = '0';
+    textareaEl.style.height = `${Math.min(textareaEl.scrollHeight, 22 * 8)}px`;
+  }
 
   function send() {
     const trimmed = text.trim();
     if (!trimmed || streaming) return;
     onsend(trimmed);
     text = '';
+    if (textareaEl) textareaEl.style.height = '';
   }
 
   function onkeydown(e: KeyboardEvent) {
@@ -33,7 +41,9 @@
 <div class="ci">
   <textarea
     class="ci__textarea"
+    bind:this={textareaEl}
     bind:value={text}
+    oninput={autoResize}
     {onkeydown}
     placeholder="Ask anything..."
     rows="1"
