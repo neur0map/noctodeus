@@ -48,6 +48,7 @@ futures-util = "0.3"
 pbkdf2 = "0.12"
 hmac = "0.12"
 once_cell = "1"
+memvid-core = { version = "2.0", default-features = false, features = ["lex", "vec"] }
 
 [[bin]]
 name = "noctodeus-mcp"

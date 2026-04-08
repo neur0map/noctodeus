@@ -127,6 +127,8 @@ pub fn run() {
             // RAG commands
             commands::rag_search,
             commands::rag_context,
+            commands::rag_index,
+            commands::rag_status,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

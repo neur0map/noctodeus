@@ -1,4 +1,5 @@
 pub mod bm25;
+pub mod memory;
 pub mod providers;
 pub mod rag;
 pub mod stream;
