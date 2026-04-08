@@ -5,6 +5,7 @@ pub mod errors;
 pub mod events;
 pub mod indexer;
 pub mod logging;
+pub mod mcp;
 pub mod share;
 pub mod ai;
 pub mod sync;
@@ -117,6 +118,12 @@ pub fn run() {
             commands::ai_chat_cancel,
             commands::ai_providers,
             commands::ai_models,
+            // MCP commands
+            commands::mcp_start_server,
+            commands::mcp_stop_server,
+            commands::mcp_list_servers,
+            commands::mcp_list_tools,
+            commands::mcp_call_tool,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

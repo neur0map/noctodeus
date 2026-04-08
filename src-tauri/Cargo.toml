@@ -46,5 +46,6 @@ reqwest = { version = "0.12", features = ["json", "rustls-tls", "stream"], defau
 futures-util = "0.3"
 pbkdf2 = "0.12"
 hmac = "0.12"
+once_cell = "1"
 
 [dev-dependencies]

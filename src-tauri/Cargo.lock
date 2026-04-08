@@ -2576,6 +2576,7 @@ dependencies = [
  "hex",
  "hmac",
  "notify",
+ "once_cell",
  "pbkdf2",
  "r2d2",
  "r2d2_sqlite",

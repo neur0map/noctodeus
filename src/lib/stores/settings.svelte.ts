@@ -28,6 +28,8 @@ export interface AppSettings {
   aiApiKey: string;
   aiModel: string;
   aiSystemPrompt: string;
+  // MCP
+  mcpServers: { name: string; command: string; args: string[] }[];
 }
 
 const DEFAULTS: AppSettings = {
@@ -51,6 +53,7 @@ const DEFAULTS: AppSettings = {
   aiApiKey: '',
   aiModel: '',
   aiSystemPrompt: 'You are a helpful writing assistant. You help with notes, research, and creative thinking.',
+  mcpServers: [],
 };
 
 function loadFromStorage(): AppSettings {
@@ -110,6 +113,7 @@ export function getSettings() {
     get aiApiKey() { return settings.aiApiKey; },
     get aiModel() { return settings.aiModel; },
     get aiSystemPrompt() { return settings.aiSystemPrompt; },
+    get mcpServers() { return settings.mcpServers; },
 
     update<K extends keyof AppSettings>(key: K, value: AppSettings[K]) {
       // Mutate the property directly on the $state proxy for granular reactivity

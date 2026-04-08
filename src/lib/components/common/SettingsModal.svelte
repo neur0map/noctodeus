@@ -7,6 +7,7 @@
   import Keyboard from "@lucide/svelte/icons/keyboard";
   import RefreshCw from "@lucide/svelte/icons/refresh-cw";
   import Brain from "@lucide/svelte/icons/brain";
+  import Terminal from "@lucide/svelte/icons/terminal";
   import X from "@lucide/svelte/icons/x";
 
   import SettingsGeneral from './settings/SettingsGeneral.svelte';
@@ -16,6 +17,7 @@
   import SettingsHotkeys from './settings/SettingsHotkeys.svelte';
   import SettingsSync from './settings/SettingsSync.svelte';
   import SettingsAI from './settings/SettingsAI.svelte';
+  import SettingsMCP from './settings/SettingsMCP.svelte';
 
   let {
     visible = false,
@@ -27,7 +29,7 @@
 
   const settings = getSettings();
 
-  type Section = 'general' | 'editor' | 'appearance' | 'files' | 'hotkeys' | 'sync' | 'ai';
+  type Section = 'general' | 'editor' | 'appearance' | 'files' | 'hotkeys' | 'sync' | 'ai' | 'mcp';
 
   let activeSection = $state<Section>('general');
 
@@ -39,6 +41,7 @@
     { id: 'hotkeys', label: 'Hotkeys' },
     { id: 'sync', label: 'Sync' },
     { id: 'ai', label: 'AI' },
+    { id: 'mcp', label: 'MCP' },
   ];
 
   function handleKeydown(e: KeyboardEvent) {
@@ -76,6 +79,7 @@
                 {:else if section.id === 'hotkeys'}<Keyboard size={14} />
                 {:else if section.id === 'sync'}<RefreshCw size={14} />
                 {:else if section.id === 'ai'}<Brain size={14} />
+                {:else if section.id === 'mcp'}<Terminal size={14} />
                 {/if}
               </span>
               <span>{section.label}</span>
@@ -108,6 +112,8 @@
             <SettingsSync {settings} />
           {:else if activeSection === 'ai'}
             <SettingsAI {settings} />
+          {:else if activeSection === 'mcp'}
+            <SettingsMCP {settings} />
           {/if}
         </div>
       </div>

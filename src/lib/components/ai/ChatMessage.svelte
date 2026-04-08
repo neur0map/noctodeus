@@ -2,6 +2,7 @@
   import type { AiMessage } from '$lib/ai/types';
   import ClipboardCopy from '@lucide/svelte/icons/clipboard-copy';
   import FileInput from '@lucide/svelte/icons/file-input';
+  import ToolCallBlock from './ToolCallBlock.svelte';
 
   let {
     message,
@@ -44,7 +45,16 @@
   onmouseenter={() => hovered = true}
   onmouseleave={() => hovered = false}
 >
-  {#if isTool}
+  {#if isTool && message.toolCalls}
+    {@const tc = message.toolCalls as { name: string; arguments: any; loading?: boolean; error?: string | null; result?: string | null }}
+    <ToolCallBlock
+      toolName={tc.name}
+      arguments={tc.arguments}
+      result={tc.result ?? (tc.loading || tc.error ? null : message.content || null)}
+      loading={tc.loading ?? false}
+      error={tc.error ?? null}
+    />
+  {:else if isTool}
     <button class="cm__tool-header" onclick={() => toolExpanded = !toolExpanded}>
       <span class="cm__tool-label">tool</span>
       <span class="cm__tool-name">{message.toolCallId ?? 'call'}</span>
