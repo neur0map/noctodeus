@@ -180,6 +180,8 @@
     border: 1px solid var(--border) !important;
     border-radius: 10px !important;
     box-shadow: var(--shadow-float) !important;
+    max-width: 320px !important;
+    width: 320px !important;
   }
 
   /* Mantine tabs in file panel */
