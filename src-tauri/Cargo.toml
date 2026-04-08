@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "A creative IDE for thought"
 authors = ["neur0map"]
 edition = "2021"
+default-run = "noctodeus"
 
 [lib]
 name = "noctodeus_lib"
