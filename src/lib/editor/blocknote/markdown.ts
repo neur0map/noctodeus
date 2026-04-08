@@ -27,3 +27,16 @@ export function joinFrontmatter(frontmatter: string, body: string): string {
   if (!frontmatter) return body;
   return `${frontmatter}\n\n${body}`;
 }
+
+/**
+ * Preprocess markdown before feeding to BlockNote.
+ * Handles syntax that BlockNote doesn't understand natively.
+ */
+export function preprocessMarkdown(markdown: string): string {
+  // Convert TipTap resizable image syntax: ![alt](url =WIDTHx) → ![alt](url)
+  // Also handles =WIDTHxHEIGHT variant
+  return markdown.replace(
+    /!\[([^\]]*)\]\(([^)]*?)\s+=\d+x\d*\)/g,
+    '![$1]($2)',
+  );
+}

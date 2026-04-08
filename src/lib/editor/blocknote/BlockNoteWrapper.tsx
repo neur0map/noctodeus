@@ -6,6 +6,7 @@ import '@mantine/core/styles.css';
 import '@blocknote/mantine/style.css';
 
 import type { BlockNoteEditorProps, EditorHandle } from './types';
+import { preprocessMarkdown } from './markdown';
 
 export default function BlockNoteWrapper(props: BlockNoteEditorProps) {
   const {
@@ -29,7 +30,8 @@ export default function BlockNoteWrapper(props: BlockNoteEditorProps) {
   useEffect(() => {
     if (!initialContent?.trim()) return;
     try {
-      const blocks = editor.tryParseMarkdownToBlocks(initialContent);
+      const cleaned = preprocessMarkdown(initialContent);
+      const blocks = editor.tryParseMarkdownToBlocks(cleaned);
       editor.replaceBlocks(editor.document, blocks);
     } catch (err) {
       console.error('[BlockNote] Failed to parse markdown:', err);
@@ -76,7 +78,7 @@ export default function BlockNoteWrapper(props: BlockNoteEditorProps) {
       },
 
       async setContent(markdown: string) {
-        const blocks = editor.tryParseMarkdownToBlocks(markdown);
+        const blocks = editor.tryParseMarkdownToBlocks(preprocessMarkdown(markdown));
         editor.replaceBlocks(editor.document, blocks);
       },
 
