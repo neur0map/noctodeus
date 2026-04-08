@@ -145,4 +145,60 @@
   .blocknote-container :global(.ProseMirror > .bn-block-outer::before) {
     display: none !important;
   }
+
+  /* ── File/media placeholder blocks ── */
+  /* BlockNote hardcodes light colors — override to use theme tokens */
+  .blocknote-container :global([data-file-block] .bn-add-file-button) {
+    background-color: var(--surface-1, var(--card)) !important;
+    color: var(--muted-foreground) !important;
+    border: 1px solid var(--border) !important;
+  }
+
+  .blocknote-container :global([data-file-block] .bn-add-file-button:hover),
+  .blocknote-container :global([data-file-block] .bn-file-name-with-icon:hover) {
+    background-color: var(--surface-2, var(--accent)) !important;
+  }
+
+  .blocknote-container :global([data-file-block] .bn-file-name-with-icon) {
+    background-color: var(--surface-1, var(--card)) !important;
+    color: var(--foreground) !important;
+    border: 1px solid var(--border) !important;
+  }
+
+  /* File panel (upload/embed tabs) */
+  .blocknote-container :global(.bn-file-panel) {
+    background-color: var(--popover) !important;
+    border: 1px solid var(--border) !important;
+    color: var(--popover-foreground) !important;
+  }
+
+  /* Tab buttons in file panel */
+  .blocknote-container :global(.bn-tab-button) {
+    color: var(--muted-foreground) !important;
+  }
+
+  .blocknote-container :global(.bn-tab-button[aria-selected="true"]) {
+    color: var(--foreground) !important;
+    border-color: var(--foreground) !important;
+  }
+
+  /* Upload button */
+  .blocknote-container :global(.bn-upload-button),
+  .blocknote-container :global(.bn-file-input-button) {
+    background-color: var(--surface-2, var(--card)) !important;
+    color: var(--foreground) !important;
+    border: 1px solid var(--border) !important;
+  }
+
+  .blocknote-container :global(.bn-upload-button:hover),
+  .blocknote-container :global(.bn-file-input-button:hover) {
+    background-color: var(--accent) !important;
+  }
+
+  /* Embed URL input */
+  .blocknote-container :global(.bn-embed-input) {
+    background-color: var(--surface-1, var(--card)) !important;
+    color: var(--foreground) !important;
+    border: 1px solid var(--border) !important;
+  }
 </style>
