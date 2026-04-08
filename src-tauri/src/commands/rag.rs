@@ -37,7 +37,8 @@ pub async fn rag_search(
     if mv_path.exists() {
         let result = tokio::task::spawn_blocking(move || {
             let mut mv = memory::open_memory(&cp)?;
-            memory::search_memory(&mut mv, &query, k)
+            let embedder = memory::create_embedder().ok();
+            memory::search_memory(&mut mv, &query, k, embedder.as_ref())
         })
         .await
         .map_err(|e| NoctoError::Unexpected {
@@ -102,7 +103,8 @@ pub async fn rag_context(
     if mv_path.exists() {
         let result = tokio::task::spawn_blocking(move || {
             let mut mv = memory::open_memory(&cp)?;
-            let results = memory::search_memory(&mut mv, &query, k)?;
+            let embedder = memory::create_embedder().ok();
+            let results = memory::search_memory(&mut mv, &query, k, embedder.as_ref())?;
             Ok::<String, NoctoError>(memory::build_context(&results, tokens))
         })
         .await
@@ -151,7 +153,7 @@ pub async fn rag_index(
 
     let count = tokio::task::spawn_blocking(move || {
         let mut mv = memory::open_memory(&cp)?;
-        memory::index_all_notes(&mut mv, &cp, &db)
+        memory::index_all_notes(&mut mv, &cp, &db, true)
     })
     .await
     .map_err(|e| NoctoError::Unexpected {

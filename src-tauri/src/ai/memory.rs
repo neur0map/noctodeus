@@ -6,13 +6,33 @@
 
 use std::path::{Path, PathBuf};
 
-use memvid_core::{Memvid, PutOptions};
+use memvid_core::{Memvid, PutOptions, LocalTextEmbedder, TextEmbedConfig, EmbeddingProvider};
 use serde::Serialize;
 use tracing::{debug, info, warn};
 
 use crate::db::pool::DbPool;
 use crate::db::queries;
 use crate::errors::NoctoError;
+
+// ---------------------------------------------------------------------------
+// Embedding model
+// ---------------------------------------------------------------------------
+
+/// Create a text embedder using bge-small-en-v1.5 (384 dims).
+/// On first call, downloads the model from HuggingFace (~133MB) and caches it.
+pub fn create_embedder() -> Result<LocalTextEmbedder, NoctoError> {
+    let config = TextEmbedConfig {
+        model_name: "bge-small-en-v1.5".to_string(),
+        offline: false, // allow download on first use
+        enable_cache: true,
+        cache_capacity: 2000,
+        ..Default::default()
+    };
+
+    LocalTextEmbedder::new(config).map_err(|e| NoctoError::Unexpected {
+        detail: format!("Failed to create text embedder: {e}"),
+    })
+}
 
 // ---------------------------------------------------------------------------
 // Types
@@ -67,7 +87,7 @@ pub fn open_memory(core_path: &Path) -> Result<Memvid, NoctoError> {
     ensure_noctodeus_dir(core_path)?;
     let path = memory_path(core_path);
 
-    let mv = if path.exists() {
+    let mut mv = if path.exists() {
         Memvid::open(&path).map_err(|e| NoctoError::Unexpected {
             detail: format!("Failed to open memory: {e}"),
         })?
@@ -77,6 +97,11 @@ pub fn open_memory(core_path: &Path) -> Result<Memvid, NoctoError> {
             detail: format!("Failed to create memory: {e}"),
         })?
     };
+
+    // Enable vector index if not already
+    if let Err(e) = mv.enable_vec() {
+        debug!("enable_vec: {e} (may already be enabled)");
+    }
 
     Ok(mv)
 }
@@ -96,6 +121,7 @@ pub fn index_note(
     path: &str,
     title: Option<&str>,
     content: &str,
+    embedder: Option<&LocalTextEmbedder>,
 ) -> Result<(), NoctoError> {
     if content.trim().is_empty() {
         return Ok(());
@@ -104,9 +130,33 @@ pub fn index_note(
     let mut opts = PutOptions::default();
     opts.uri = Some(path.to_string());
     opts.title = title.map(ToString::to_string);
-    // Store the text as search_text so the lexical index picks it up.
     opts.search_text = Some(content.to_string());
 
+    // Generate embedding if embedder is available
+    if let Some(emb) = embedder {
+        // Truncate content for embedding (model has 512 token limit)
+        let embed_text = if content.len() > 2000 {
+            &content[..2000]
+        } else {
+            content
+        };
+
+        match emb.embed_text(embed_text) {
+            Ok(vector) => {
+                // Use put_with_embedding for vector-indexed storage
+                mv.put_with_embedding(content.as_bytes(), vector)
+                    .map_err(|e| NoctoError::Unexpected {
+                        detail: format!("Failed to index note {path} with embedding: {e}"),
+                    })?;
+                return Ok(());
+            }
+            Err(e) => {
+                warn!(path, error = %e, "embedding failed, falling back to lexical-only");
+            }
+        }
+    }
+
+    // Fallback: lexical-only indexing
     mv.put_bytes_with_options(content.as_bytes(), opts)
         .map_err(|e| NoctoError::Unexpected {
             detail: format!("Failed to index note {path}: {e}"),
@@ -126,6 +176,7 @@ pub fn index_all_notes(
     mv: &mut Memvid,
     core_path: &Path,
     pool: &DbPool,
+    use_embeddings: bool,
 ) -> Result<u32, NoctoError> {
     let conn = pool.get().map_err(|e| NoctoError::Unexpected {
         detail: format!("Failed to get DB connection: {e}"),
@@ -143,6 +194,22 @@ pub fn index_all_notes(
         })
         .collect();
 
+    // Create embedder if requested
+    let embedder = if use_embeddings {
+        match create_embedder() {
+            Ok(emb) => {
+                info!("text embedder loaded, indexing with vectors");
+                Some(emb)
+            }
+            Err(e) => {
+                warn!(error = %e, "failed to load text embedder, indexing lexical-only");
+                None
+            }
+        }
+    } else {
+        None
+    };
+
     let mut count: u32 = 0;
 
     for file in &md_files {
@@ -159,7 +226,7 @@ pub fn index_all_notes(
             continue;
         }
 
-        if let Err(e) = index_note(mv, &file.path, file.title.as_deref(), &content) {
+        if let Err(e) = index_note(mv, &file.path, file.title.as_deref(), &content, embedder.as_ref()) {
             warn!(path = %file.path, error = %e, "failed to index note");
             continue;
         }
@@ -188,9 +255,27 @@ pub fn search_memory(
     mv: &mut Memvid,
     query: &str,
     top_k: usize,
+    embedder: Option<&LocalTextEmbedder>,
 ) -> Result<Vec<MemoryResult>, NoctoError> {
     if query.trim().is_empty() {
         return Ok(Vec::new());
+    }
+
+    // Try vector search if embedder available
+    let mut vec_results: Vec<MemoryResult> = Vec::new();
+    if let Some(emb) = embedder {
+        if let Ok(query_vec) = emb.embed_text(query) {
+            if let Ok(hits) = mv.search_vec(&query_vec, top_k) {
+                for hit in hits {
+                    vec_results.push(MemoryResult {
+                        path: format!("frame:{}", hit.frame_id),
+                        title: None,
+                        chunk: format!("[Vector match, frame {}]", hit.frame_id),
+                        score: 1.0 / (1.0 + hit.distance as f64), // convert distance to similarity
+                    });
+                }
+            }
+        }
     }
 
     // Try the full Tantivy search first (provides richer results).
@@ -236,7 +321,7 @@ pub fn search_memory(
             detail: format!("Lexical search failed: {e}"),
         })?;
 
-    let results = hits
+    let mut results: Vec<MemoryResult> = hits
         .into_iter()
         .map(|hit| MemoryResult {
             path: String::new(),
@@ -249,6 +334,17 @@ pub fn search_memory(
             score: hit.score as f64,
         })
         .collect();
+
+    // Merge vector results with lexical results (dedup by content prefix)
+    if !vec_results.is_empty() && results.len() < top_k {
+        for vr in vec_results {
+            if results.len() >= top_k { break; }
+            let prefix = &vr.chunk[..vr.chunk.len().min(50)];
+            if !results.iter().any(|r| r.chunk.starts_with(prefix)) {
+                results.push(vr);
+            }
+        }
+    }
 
     Ok(results)
 }
