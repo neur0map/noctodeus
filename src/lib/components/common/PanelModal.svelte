@@ -240,17 +240,10 @@
     left: 16px;
     width: 320px;
     height: min(520px, calc(100vh - 80px));
-    background: linear-gradient(
-      180deg,
-      rgba(19, 22, 31, 0.99) 0%,
-      rgba(13, 16, 24, 1) 100%
-    );
+    background: var(--surface-2, var(--color-popover));
     border-radius: 6px;
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    box-shadow:
-      0 0 0 1px rgba(0, 0, 0, 0.4),
-      0 -4px 16px rgba(0, 0, 0, 0.3),
-      0 -12px 48px rgba(0, 0, 0, 0.25);
+    border: 1px solid var(--color-border);
+    box-shadow: var(--shadow-modal, 0 8px 32px rgba(0, 0, 0, 0.2));
     z-index: 51;
     display: flex;
     flex-direction: column;
@@ -264,7 +257,7 @@
     align-items: center;
     gap: 2px;
     padding: 14px 18px 6px;
-    background: rgba(255, 255, 255, 0.015);
+    background: var(--color-hover);
     border-radius: 6px;
     margin: 12px 14px 0;
   }
@@ -277,20 +270,20 @@
     padding: 7px 0;
     border: none;
     background: transparent;
-    color: var(--text-muted, #6B7394);
+    color: var(--color-muted-foreground);
     cursor: pointer;
     border-radius: 7px;
     transition: background 150ms ease-out, color 150ms ease-out;
   }
 
   .sp__tab:hover {
-    color: var(--text-secondary, #A9B1D6);
-    background: rgba(255, 255, 255, 0.03);
+    color: var(--color-muted-foreground);
+    background: var(--color-hover);
   }
 
   .sp__tab--active {
-    background: rgba(255, 255, 255, 0.07);
-    color: var(--text-primary, #C0CAF5);
+    background: var(--color-accent);
+    color: var(--color-foreground);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
   }
 
@@ -305,7 +298,7 @@
     font-family: var(--font-mono);
     font-size: 12px;
     font-weight: 500;
-    color: var(--text-secondary, #A9B1D6);
+    color: var(--color-muted-foreground);
     text-align: center;
     padding: 10px 0 12px;
     letter-spacing: 0.03em;
@@ -319,7 +312,7 @@
   }
 
   .sp__card {
-    background: rgba(255, 255, 255, 0.035);
+    background: var(--color-hover);
     border-radius: 6px;
     padding: 13px 13px 10px;
     display: flex;
@@ -346,7 +339,7 @@
     font-family: var(--font-mono);
     font-size: 21px;
     font-weight: 600;
-    color: var(--text-primary, #C0CAF5);
+    color: var(--color-foreground);
     letter-spacing: -0.03em;
     line-height: 1.15;
   }
@@ -356,7 +349,7 @@
   }
 
   .sp__card :global(.sp__card-icon) {
-    color: var(--text-faint, #3B4261);
+    color: var(--color-placeholder);
     margin-top: 1px;
     opacity: 0.7;
   }
@@ -364,7 +357,7 @@
   .sp__card-label {
     font-family: var(--font-mono);
     font-size: 11px;
-    color: var(--text-muted, #6B7394);
+    color: var(--color-muted-foreground);
     letter-spacing: 0.01em;
   }
 
@@ -377,7 +370,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background: rgba(255, 255, 255, 0.035);
+    background: var(--color-hover);
     border-radius: 6px;
     padding: 11px 13px;
   }
@@ -392,18 +385,18 @@
     font-family: var(--font-mono);
     font-size: 12.5px;
     font-weight: 500;
-    color: var(--text-primary, #C0CAF5);
+    color: var(--color-foreground);
     letter-spacing: -0.01em;
   }
 
   .sp__date-label {
     font-family: var(--font-mono);
     font-size: 10.5px;
-    color: var(--text-muted, #6B7394);
+    color: var(--color-muted-foreground);
   }
 
   .sp__date-row :global(.sp__date-icon) {
-    color: var(--text-faint, #3B4261);
+    color: var(--color-placeholder);
     opacity: 0.6;
   }
 
