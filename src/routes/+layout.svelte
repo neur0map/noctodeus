@@ -453,6 +453,17 @@
     window.addEventListener('noctodeus-share-file', handleShareFileEvent);
     unlisteners.push(() => window.removeEventListener('noctodeus-share-file', handleShareFileEvent));
 
+    // Auto-start configured MCP servers
+    if (appSettings.mcpServers && appSettings.mcpServers.length > 0) {
+      const { getMcpState } = await import('../lib/stores/mcp.svelte');
+      const mcp = getMcpState();
+      for (const server of appSettings.mcpServers) {
+        mcp.startServer(server.name, server.command, server.args, server.env).catch((err: any) => {
+          logger.warn(`Auto-start MCP server '${server.name}' failed: ${err?.message || err}`);
+        });
+      }
+    }
+
   });
 
   onDestroy(() => {
