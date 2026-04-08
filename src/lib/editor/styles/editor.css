@@ -481,6 +481,52 @@
 }
 
 /* --------------------------------------------------------------------------
+   Drag Handle (Notion-style 6-dot grip)
+   -------------------------------------------------------------------------- */
+.drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 26px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-muted, var(--color-placeholder));
+  cursor: grab;
+  opacity: 0;
+  transition: opacity 120ms ease, background 80ms ease, color 80ms ease;
+  pointer-events: auto;
+  position: fixed;
+  z-index: 50;
+}
+
+.drag-handle:hover {
+  background: color-mix(in srgb, var(--text-primary, var(--color-foreground)) 10%, transparent);
+  color: var(--text-secondary, var(--color-foreground));
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+  background: color-mix(in srgb, var(--text-primary, var(--color-foreground)) 14%, transparent);
+}
+
+/* Show on editor hover */
+.ProseMirror:hover ~ .drag-handle,
+.drag-handle:hover,
+.drag-handle.show {
+  opacity: 1;
+}
+
+/* Global show: the extension positions it via floating-ui, so it becomes
+   visible whenever the mouse is near a block. The extension handles
+   show/hide via inline styles — we just make sure opacity transitions. */
+.drag-handle[style*="opacity"] {
+  transition: opacity 120ms ease, top 80ms ease, left 80ms ease;
+}
+
+/* --------------------------------------------------------------------------
    Focus Node
    -------------------------------------------------------------------------- */
 .ProseMirror .has-focus {

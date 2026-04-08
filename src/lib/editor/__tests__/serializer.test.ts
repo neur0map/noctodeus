@@ -220,4 +220,31 @@ describe('serializeMarkdown', () => {
     const md = serializeMarkdown(doc);
     expect(md).toBe('\n');
   });
+
+  it('treats transient aiPrompt nodes as empty paragraphs', () => {
+    const doc: JSONContent = {
+      type: 'doc',
+      content: [
+        {
+          type: 'paragraph',
+          content: [{ type: 'text', text: 'Before' }],
+        },
+        {
+          type: 'aiPrompt',
+          attrs: {
+            prompt: 'Draft something here',
+            state: 'loading',
+          },
+        },
+        {
+          type: 'paragraph',
+          content: [{ type: 'text', text: 'After' }],
+        },
+      ],
+    };
+
+    const md = serializeMarkdown(doc);
+
+    expect(md).toContain('Before\n\n\n\nAfter');
+  });
 });

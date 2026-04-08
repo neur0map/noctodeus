@@ -169,6 +169,9 @@ function serializeNode(node: JSONContent): string {
     case 'hardBreak':
       return '  \n';
 
+    case 'aiPrompt':
+      return '\n\n';
+
     default:
       return serializeChildren(node.content);
   }

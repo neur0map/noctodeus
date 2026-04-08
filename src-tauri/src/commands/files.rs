@@ -1,6 +1,9 @@
-use std::path::Path;
+use std::collections::HashMap;
+use std::path::{Path, PathBuf};
+use std::sync::Mutex as StdMutex;
 
 use serde::{Deserialize, Serialize};
+use tokio::task::AbortHandle;
 
 use crate::normalize_path;
 
@@ -9,6 +12,53 @@ use crate::db::mutations;
 use crate::db::pool::DbPool;
 use crate::db::queries::FileInfo;
 use crate::errors::NoctoError;
+
+/// Debounce map for RAG indexing — cancels previous pending index when the
+/// same file is saved again within the debounce window.
+static RAG_PENDING: StdMutex<Option<HashMap<String, AbortHandle>>> = StdMutex::new(None);
+
+/// Schedule a debounced RAG index for a file.  If a previous index is already
+/// pending for this path, cancel it first so only the latest content is indexed.
+fn schedule_rag_index(path: String, content: String, core_path: PathBuf) {
+    let mut pending = RAG_PENDING.lock().unwrap();
+    let map = pending.get_or_insert_with(HashMap::new);
+
+    // Cancel previous pending index for this file
+    if let Some(prev) = map.remove(&path) {
+        prev.abort();
+    }
+
+    let cleanup_key = path.clone();
+    let index_path = path.clone();
+    let handle = tokio::spawn(async move {
+        // Wait 5 s — if another save arrives for the same file, this task
+        // gets aborted and replaced with a fresh one.
+        tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+
+        let _ = tokio::task::spawn_blocking(move || {
+            if let Ok(mut mv) = crate::ai::memory::open_memory(&core_path) {
+                let _ = crate::ai::memory::index_note(
+                    &mut mv,
+                    &index_path,
+                    None,
+                    &content,
+                    None,
+                );
+                let _ = mv.commit();
+            }
+        })
+        .await;
+
+        // Remove ourselves from the pending map
+        if let Ok(mut pending) = RAG_PENDING.lock() {
+            if let Some(map) = pending.as_mut() {
+                map.remove(&cleanup_key);
+            }
+        }
+    });
+
+    map.insert(path, handle.abort_handle());
+}
 
 /// File content returned when reading a file.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -231,18 +281,9 @@ pub async fn file_write(
             &content,
         );
 
-        // Background memvid index (lexical-only, non-blocking)
-        let cp = active.core_path.clone();
-        let path_clone = path.clone();
-        let content_clone = content.clone();
-        tokio::spawn(async move {
-            let _ = tokio::task::spawn_blocking(move || {
-                if let Ok(mut mv) = crate::ai::memory::open_memory(&cp) {
-                    let _ = crate::ai::memory::index_note(&mut mv, &path_clone, None, &content_clone, None);
-                    let _ = mv.commit();
-                }
-            }).await;
-        });
+        // Debounced RAG index (5 s) — coalesces rapid saves so tantivy only
+        // commits once the user pauses typing.
+        schedule_rag_index(path.clone(), content.clone(), active.core_path.clone());
     }
 
     Ok(info)

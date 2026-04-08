@@ -1,3 +1,4 @@
+import { DragHandle } from '@tiptap/extension-drag-handle';
 import StarterKit from '@tiptap/starter-kit';
 import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
 import TaskList from '@tiptap/extension-task-list';
@@ -25,6 +26,7 @@ import { AudioBlock } from './audio-block.js';
 import { EmbedBlock } from './embed-block.js';
 import { createMediaDrop, type MediaUploader } from './media-drop.js';
 import { SearchReplace } from './search-replace.js';
+import { AiPrompt, type AiPromptOptions } from './ai-prompt.js';
 import type { Extensions } from '@tiptap/core';
 
 const lowlight = createLowlight(common);
@@ -35,12 +37,20 @@ export interface EditorExtensionOptions {
   wikiPopup?: () => any;
   wikiItems?: () => WikiSuggestItem[];
   mediaUploader?: MediaUploader;
+  inlineAi?: Partial<AiPromptOptions>;
 }
 
 export function createEditorExtensions(
   options: EditorExtensionOptions = {},
 ): Extensions {
-  const { placeholder = 'Start writing...', slashPopup, wikiPopup, wikiItems, mediaUploader } = options;
+  const {
+    placeholder = 'Start writing...',
+    slashPopup,
+    wikiPopup,
+    wikiItems,
+    mediaUploader,
+    inlineAi,
+  } = options;
 
   const extensions: Extensions = [
     StarterKit.configure({
@@ -59,7 +69,11 @@ export function createEditorExtensions(
     }),
 
     // Tables (TableKit bundles Table, TableRow, TableCell, TableHeader)
-    TableKit,
+    TableKit.configure({
+      table: {
+        allowTableNodeSelection: true,
+      },
+    }),
 
     // Text formatting
     Highlight.configure({
@@ -88,6 +102,29 @@ export function createEditorExtensions(
       mode: 'deepest',
     }),
 
+    // Drag handle (Notion-style 6-dot grip)
+    DragHandle.configure({
+      nested: true,
+      render() {
+        const el = document.createElement('button');
+        el.type = 'button';
+        el.className = 'drag-handle';
+        el.setAttribute('aria-label', 'Drag to move');
+        el.setAttribute('draggable', 'true');
+        el.setAttribute('data-drag-handle', '');
+        // 6-dot grid icon (2 cols × 3 rows)
+        el.innerHTML = `<svg width="14" height="20" viewBox="0 0 14 20" fill="currentColor">
+          <circle cx="4" cy="4" r="1.5"/>
+          <circle cx="10" cy="4" r="1.5"/>
+          <circle cx="4" cy="10" r="1.5"/>
+          <circle cx="10" cy="10" r="1.5"/>
+          <circle cx="4" cy="16" r="1.5"/>
+          <circle cx="10" cy="16" r="1.5"/>
+        </svg>`;
+        return el;
+      },
+    }),
+
     // Custom extensions
     ResizableImage,
     Placeholder.configure({
@@ -98,6 +135,7 @@ export function createEditorExtensions(
     AudioBlock,
     EmbedBlock,
     SearchReplace,
+    AiPrompt.configure(inlineAi ?? {}),
   ];
 
   if (slashPopup) {

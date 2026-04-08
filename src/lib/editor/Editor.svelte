@@ -135,10 +135,25 @@
   let bubbleVisible = $state(false);
   let bubblePosition = $state({ top: 0, left: 0 });
 
+  function hasInlineAiPrompt(): boolean {
+    if (!editor) return false;
+
+    let found = false;
+    editor.state.doc.descendants((node) => {
+      if (node.type.name === 'aiPrompt') {
+        found = true;
+        return false;
+      }
+      return true;
+    });
+
+    return found;
+  }
+
   function updateBubbleToolbar() {
     if (!editor) { bubbleVisible = false; return; }
     const { from, to, empty } = editor.state.selection;
-    if (empty || slashVisible || mediaPanelVisible) {
+    if (empty || slashVisible || mediaPanelVisible || hasInlineAiPrompt()) {
       bubbleVisible = false;
       return;
     }
@@ -395,12 +410,33 @@
 
     editor = new Editor({
       element: editorElement,
-      extensions: createEditorExtensions({ slashPopup: createSlashPopup, wikiPopup: createWikiPopup, wikiItems: getWikiSuggestItems }),
+      extensions: createEditorExtensions({
+        slashPopup: createSlashPopup,
+        wikiPopup: createWikiPopup,
+        wikiItems: getWikiSuggestItems,
+        inlineAi: {
+          isConfigured: () => !!(appSettings.aiApiKey && appSettings.aiBaseUrl && appSettings.aiModel),
+          getRequestContext: () => ({
+            provider: appSettings.aiApiKey && appSettings.aiBaseUrl && appSettings.aiModel
+              ? {
+                id: appSettings.aiProviderId || 'custom',
+                name: appSettings.aiProviderId || 'Custom',
+                baseUrl: appSettings.aiBaseUrl,
+                apiKey: appSettings.aiApiKey,
+                model: appSettings.aiModel,
+              }
+              : null,
+            corePath: coreState.activeCore?.path,
+            activeFilePath: path,
+          }),
+        },
+      }),
       content: html,
       onUpdate: () => {
         if (!mounted) return;
         editorState.markDirty();
         scheduleAutoSave();
+        updateBubbleToolbar();
       },
       onSelectionUpdate: () => {
         updateBubbleToolbar();
