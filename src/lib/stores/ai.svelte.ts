@@ -72,11 +72,16 @@ function parseToolCalls(text: string): ParsedToolCall[] {
 function buildSystemPrompt(userPrompt: string, tools: McpTool[]): string {
   const parts: string[] = [];
 
-  // Identity
+  // Identity + boundaries
   parts.push(
     'You are the AI assistant built into Noctodeus, a local-first note-taking application. ' +
     'You help users write, organize, research, and think through their notes. ' +
-    'You are running inside the app as a sidebar chat panel.'
+    'You are running inside the app as a sidebar chat panel.\n\n' +
+    'Boundaries: You cannot execute code, run shell commands, access the filesystem, ' +
+    'or take any actions on the user\'s machine. You can only read and write text in this conversation.' +
+    (tools.length > 0
+      ? ' The only exception is the MCP tools listed below, which the user has explicitly connected.'
+      : ' If the user wants you to have external capabilities, they can connect MCP tool servers in Settings > MCP.')
   );
 
   // User's custom system prompt (from settings)
