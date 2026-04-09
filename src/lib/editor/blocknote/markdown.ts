@@ -33,10 +33,19 @@ export function joinFrontmatter(frontmatter: string, body: string): string {
  * Handles syntax that BlockNote doesn't understand natively.
  */
 export function preprocessMarkdown(markdown: string): string {
+  let result = markdown;
+
   // Convert TipTap resizable image syntax: ![alt](url =WIDTHx) → ![alt](url)
-  // Also handles =WIDTHxHEIGHT variant
-  return markdown.replace(
+  result = result.replace(
     /!\[([^\]]*)\]\(([^)]*?)\s+=\d+x\d*\)/g,
     '![$1]($2)',
   );
+
+  // Convert ==highlight== to <mark>highlight</mark> (BlockNote supports HTML marks)
+  result = result.replace(
+    /==(.*?)==/g,
+    '<mark>$1</mark>',
+  );
+
+  return result;
 }
