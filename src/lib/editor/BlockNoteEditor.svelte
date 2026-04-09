@@ -228,4 +228,17 @@
   .blocknote-container :global(.bn-panel .mantine-InputPlaceholder-placeholder) {
     color: var(--muted-foreground) !important;
   }
+
+  /* ── Wiki links (wikilink:// protocol) ── */
+  .blocknote-container :global(a[href^="wikilink://"]) {
+    color: var(--accent-blue, var(--color-accent, #7aa2f7)) !important;
+    text-decoration: none !important;
+    border-bottom: 1px dashed color-mix(in srgb, var(--accent-blue, #7aa2f7) 40%, transparent);
+    cursor: pointer;
+  }
+
+  .blocknote-container :global(a[href^="wikilink://"]:hover) {
+    border-bottom-style: solid;
+    opacity: 0.85;
+  }
 </style>

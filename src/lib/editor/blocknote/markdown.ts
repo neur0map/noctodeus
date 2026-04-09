@@ -47,11 +47,15 @@ export function preprocessMarkdown(markdown: string): string {
     '<mark>$1</mark>',
   );
 
-  // Convert [[wiki-links]] to inline HTML spans that BlockNote's parser picks up
-  // These get parsed back into wikiLink inline content via the schema
+  // Convert [[wiki-links]] to markdown links with a wikilink: protocol
+  // that BlockNote's parser understands as standard links.
+  // e.g. [[feature-showcase]] → [feature-showcase](wikilink://feature-showcase)
   result = result.replace(
     /\[\[([^\]]+)\]\]/g,
-    '<span data-inline-content-type="wikiLink" data-target="$1">$1</span>',
+    (_match, target: string) => {
+      const display = target.replace(/\.(md|markdown)$/i, '').split('/').pop() ?? target;
+      return `[${display}](wikilink://${encodeURIComponent(target)})`;
+    },
   );
 
   return result;
@@ -59,20 +63,16 @@ export function preprocessMarkdown(markdown: string): string {
 
 /**
  * Postprocess markdown output from BlockNote.
- * Converts custom inline content back to markdown syntax.
+ * Converts wikilink:// protocol links back to [[target]] syntax.
  */
 export function postprocessMarkdown(markdown: string): string {
   let result = markdown;
 
-  // Convert wikiLink HTML back to [[target]] syntax
+  // Convert [display](wikilink://target) back to [[target]]
   result = result.replace(
-    /<span[^>]*data-inline-content-type="wikiLink"[^>]*data-target="([^"]*)"[^>]*>[^<]*<\/span>/g,
-    '[[$1]]',
+    /\[([^\]]*)\]\(wikilink:\/\/([^)]+)\)/g,
+    (_match, _display: string, target: string) => `[[${decodeURIComponent(target)}]]`,
   );
-
-  // Also handle any plain-text wikiLink remnants from lossy conversion
-  // BlockNote may output the display text without the span wrapper
-  // (this is a safety net — the primary conversion is above)
 
   return result;
 }

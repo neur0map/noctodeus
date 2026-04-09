@@ -7,7 +7,6 @@ import '@blocknote/mantine/style.css';
 
 import type { BlockNoteEditorProps, EditorHandle } from './types';
 import { preprocessMarkdown, postprocessMarkdown } from './markdown';
-import { noctodeusSchema } from './schema';
 
 async function uploadFile(file: File): Promise<string> {
   return URL.createObjectURL(file);
@@ -27,7 +26,6 @@ export default function BlockNoteWrapper(props: BlockNoteEditorProps) {
   onNavigateRef.current = onNavigate;
 
   const editor = useCreateBlockNote({
-    schema: noctodeusSchema,
     uploadFile,
   });
 
@@ -43,17 +41,23 @@ export default function BlockNoteWrapper(props: BlockNoteEditorProps) {
     }
   }, [editor]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Listen for wiki-link clicks (bubbled from the WikiLink inline content)
+  // Intercept clicks on wikilink:// protocol links
   useEffect(() => {
-    function handleWikiClick(e: Event) {
-      const detail = (e as CustomEvent).detail;
-      if (detail?.target && onNavigateRef.current) {
-        onNavigateRef.current(detail.target);
+    function handleClick(e: MouseEvent) {
+      const target = (e.target as HTMLElement).closest('a');
+      if (!target) return;
+
+      const href = target.getAttribute('href') ?? '';
+      if (href.startsWith('wikilink://')) {
+        e.preventDefault();
+        e.stopPropagation();
+        const wikiTarget = decodeURIComponent(href.replace('wikilink://', ''));
+        onNavigateRef.current?.(wikiTarget);
       }
     }
 
-    document.addEventListener('wiki-link-click', handleWikiClick);
-    return () => document.removeEventListener('wiki-link-click', handleWikiClick);
+    document.addEventListener('click', handleClick, true);
+    return () => document.removeEventListener('click', handleClick, true);
   }, []);
 
   // Build and expose EditorHandle
