@@ -150,12 +150,11 @@ export default function BlockNoteWrapper(props: BlockNoteEditorProps) {
       title: item.name.replace(/\.(md|markdown)$/i, ''),
       onItemClick: () => {
         const target = item.path.replace(/\.(md|markdown)$/i, '');
-        // Insert [[target]] as plain text — the wiki-link decorator will
-        // style and make it clickable via the HTML pipeline on next load.
-        // Using raw text avoids issues with SuggestionMenuController not
-        // properly cleaning up the trigger character for custom content.
+        // The SuggestionMenuController keeps the trigger "[" in the text
+        // and removes the query. So we insert [target]] to form [[target]]
+        // (the first [ is the trigger character that stays).
         editor.insertInlineContent([
-          { type: 'text' as const, text: `[[${target}]]`, styles: {} },
+          { type: 'text' as const, text: `[${target}]]`, styles: {} },
           ' ',
         ]);
       },
