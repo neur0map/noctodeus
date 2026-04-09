@@ -358,6 +358,22 @@
     filter: brightness(1.1);
   }
 
+  .blocknote-container :global(.ai-prompt__preview) {
+    margin-top: 8px;
+    padding: 12px 14px;
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--foreground) 5%, transparent);
+    color: var(--muted-foreground);
+    font-family: var(--font-content);
+    font-size: 0.85rem;
+    line-height: 1.6;
+    max-height: 200px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    scrollbar-width: thin;
+  }
+
   .blocknote-container :global(.ai-prompt__error) {
     margin: 4px 0 0 12px;
     color: var(--accent-red, #f7768e);

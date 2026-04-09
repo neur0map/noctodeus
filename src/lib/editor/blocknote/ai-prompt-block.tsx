@@ -2,10 +2,6 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import type { BlockNoteEditor } from '@blocknote/core';
 import { INLINE_AI_SYSTEM_PROMPT } from './ai-prompt-system';
 
-/**
- * Inline AI prompt overlay — renders on top of the editor at the
- * current cursor position when triggered by Space on an empty line.
- */
 interface AiPromptOverlayProps {
   editor: BlockNoteEditor<any, any, any>;
   blockId: string;
@@ -15,12 +11,22 @@ interface AiPromptOverlayProps {
 export function AiPromptOverlay({ editor, blockId, onClose }: AiPromptOverlayProps) {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [streaming, setStreaming] = useState('');
   const [error, setError] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
+  const streamRef = useRef('');
+  const previewRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     requestAnimationFrame(() => inputRef.current?.focus());
   }, []);
+
+  // Auto-scroll preview as tokens arrive
+  useEffect(() => {
+    if (previewRef.current) {
+      previewRef.current.scrollTop = previewRef.current.scrollHeight;
+    }
+  }, [streaming]);
 
   const dismiss = useCallback(() => {
     onClose();
@@ -33,7 +39,9 @@ export function AiPromptOverlay({ editor, blockId, onClose }: AiPromptOverlayPro
     if (!prompt || loading) return;
 
     setLoading(true);
+    setStreaming('');
     setError('');
+    streamRef.current = '';
 
     try {
       // Gather note context
@@ -49,6 +57,7 @@ export function AiPromptOverlay({ editor, blockId, onClose }: AiPromptOverlayPro
       });
 
       const { aiChat } = await import('$lib/bridge/ai');
+      const { listen } = await import('@tauri-apps/api/event');
       const { getSettings } = await import('$lib/stores/settings.svelte');
       const settings = getSettings();
 
@@ -73,6 +82,15 @@ export function AiPromptOverlay({ editor, blockId, onClose }: AiPromptOverlayPro
         );
       }
 
+      // Listen to streaming tokens
+      const unlisten = await listen<{ delta: string; done: boolean }>('ai:token', (event) => {
+        if (event.payload.delta) {
+          streamRef.current += event.payload.delta;
+          setStreaming(streamRef.current);
+        }
+      });
+
+      // Fire the AI request (returns full response when done)
       const response = await aiChat({
         provider,
         messages: [{ role: 'user', content: prompt }],
@@ -80,7 +98,9 @@ export function AiPromptOverlay({ editor, blockId, onClose }: AiPromptOverlayPro
         maxTokens: 2000,
       });
 
-      const markdown = response.trim();
+      unlisten();
+
+      const markdown = (response || streamRef.current).trim();
       if (!markdown) {
         setError('AI returned empty response. Try again.');
         setLoading(false);
@@ -150,6 +170,13 @@ export function AiPromptOverlay({ editor, blockId, onClose }: AiPromptOverlayPro
           </svg>
         </button>
       </div>
+
+      {/* Streaming preview */}
+      {streaming && (
+        <div className="ai-prompt__preview" ref={previewRef}>
+          {streaming}
+        </div>
+      )}
 
       {error && <p className="ai-prompt__error">{error}</p>}
     </div>
