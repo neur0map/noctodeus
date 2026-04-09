@@ -143,26 +143,25 @@ export default function BlockNoteWrapper(props: BlockNoteEditorProps) {
     return editor.onChange(onContentChange);
   }, [editor, onContentChange]);
 
-  // Build wiki-link suggestion items from the file list
-  const getWikiSuggestions = (query: string) => {
+  // Build wiki-link items for the slash menu
+  const getWikiSlashItems = () => {
     const items = wikiItems?.() ?? [];
-    const suggestions = items.map((item) => ({
-      title: item.name.replace(/\.(md|markdown)$/i, ''),
-      onItemClick: () => {
-        const target = item.path.replace(/\.(md|markdown)$/i, '');
-        // The SuggestionMenuController keeps the trigger "[" in the text
-        // and removes the query. So we insert [target]] to form [[target]]
-        // (the first [ is the trigger character that stays).
-        editor.insertInlineContent([
-          { type: 'text' as const, text: `[${target}]]`, styles: {} },
-          ' ',
-        ]);
-      },
-      aliases: [item.title ?? ''].filter(Boolean),
-      group: 'Wiki Links',
-      subtext: item.path,
-    }));
-    return filterSuggestionItems(suggestions, query);
+    return items.map((item) => {
+      const target = item.path.replace(/\.(md|markdown)$/i, '');
+      const display = item.name.replace(/\.(md|markdown)$/i, '');
+      return {
+        title: `Link: ${display}`,
+        onItemClick: () => {
+          editor.insertInlineContent([
+            { type: 'text' as const, text: `[[${target}]]`, styles: {} },
+            ' ',
+          ]);
+        },
+        aliases: [target, display, item.title ?? ''].filter(Boolean),
+        group: 'Wiki Links',
+        subtext: item.path,
+      };
+    });
   };
 
   return (
@@ -173,17 +172,17 @@ export default function BlockNoteWrapper(props: BlockNoteEditorProps) {
       formattingToolbar={true}
       slashMenu={false}
     >
-      {/* Default slash menu */}
       <SuggestionMenuController
         triggerCharacter="/"
         getItems={async (query) =>
-          filterSuggestionItems(getDefaultReactSlashMenuItems(editor), query)
+          filterSuggestionItems(
+            [
+              ...getDefaultReactSlashMenuItems(editor),
+              ...getWikiSlashItems(),
+            ],
+            query,
+          )
         }
-      />
-      {/* Wiki-link suggestion menu triggered by [[ */}
-      <SuggestionMenuController
-        triggerCharacter="["
-        getItems={async (query) => getWikiSuggestions(query)}
       />
     </BlockNoteView>
   );
