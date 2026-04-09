@@ -100,7 +100,7 @@
     width: 100%;
     min-height: 100%;
     flex: 1;
-    overflow: hidden;
+    overflow: visible;
     position: relative;
   }
 
@@ -141,6 +141,14 @@
   /* Keep side menu (drag handle + add button) within the editor bounds */
   .blocknote-container :global(.bn-side-menu) {
     left: 4px !important;
+    max-width: 48px;
+  }
+
+  /* Slash menu and suggestion menus need high z-index to stay above everything */
+  .blocknote-container :global(.bn-suggestion-menu),
+  .blocknote-container :global(.bn-mantine .mantine-Menu-dropdown),
+  .blocknote-container :global(.bn-panel) {
+    z-index: 100 !important;
   }
 
   /* Hide the colored left-edge indicator that bleeds outside */
