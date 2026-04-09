@@ -75,11 +75,20 @@ export function AiPromptOverlay({ editor, blockId, onClose }: AiPromptOverlayPro
         model: settings.aiModel,
       };
 
+      // Detect if this is an edit request (modify existing content) vs new content
+      const editKeywords = /\b(add|title|organize|restructure|edit|modify|change|move|rewrite|reformat|rename|fix|update|sort|reorder|put|make it|convert|transform|at the top|at the bottom|above|below)\b/i;
+      const isEditRequest = editKeywords.test(prompt) && noteContext.trim().length > 0;
+
       const systemParts = [INLINE_AI_SYSTEM_PROMPT];
       if (noteContext.trim()) {
         systemParts.push(
-          `\nCurrent note content (for context):\n${noteContext.slice(0, 2000)}`,
+          `\nCurrent note content:\n${noteContext.slice(0, 4000)}`,
         );
+        if (isEditRequest) {
+          systemParts.push(
+            `\nThe user wants to MODIFY the existing content. Output the FULL modified document.`,
+          );
+        }
       }
 
       // Listen to streaming tokens
@@ -107,9 +116,17 @@ export function AiPromptOverlay({ editor, blockId, onClose }: AiPromptOverlayPro
         return;
       }
 
-      // Parse and insert after the current block
+      // Parse response as blocks
       const blocks = editor.tryParseMarkdownToBlocks(markdown);
-      editor.insertBlocks(blocks, blockId, 'after');
+
+      if (isEditRequest) {
+        // Replace the entire document with the AI output
+        editor.replaceBlocks(editor.document, blocks);
+      } else {
+        // Insert new content after the current block
+        editor.insertBlocks(blocks, blockId, 'after');
+      }
+
       onClose();
       editor.focus();
     } catch (err) {
