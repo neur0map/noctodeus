@@ -1,7 +1,8 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useCreateBlockNote, SuggestionMenuController, getDefaultReactSlashMenuItems } from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/mantine';
 import { filterSuggestionItems } from '@blocknote/core';
+import { AiPromptOverlay } from './ai-prompt-block';
 
 import '@mantine/core/styles.css';
 import '@blocknote/mantine/style.css';
@@ -32,45 +33,39 @@ export default function BlockNoteWrapper(props: BlockNoteEditorProps) {
   const onNavigateRef = useRef(onNavigate);
   onNavigateRef.current = onNavigate;
 
+  // AI prompt overlay state
+  const [aiPromptBlockId, setAiPromptBlockId] = useState<string | null>(null);
+
   const editor = useCreateBlockNote({
     schema: noctodeusSchema,
     uploadFile,
   });
 
-  // Space on empty paragraph → insert AI prompt block
+  // Space on empty paragraph → show AI prompt overlay
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key !== ' ' || e.shiftKey || e.metaKey || e.ctrlKey || e.altKey) return;
+      if (aiPromptBlockId) return; // already open
 
       const cursor = editor.getTextCursorPosition();
       const block = cursor.block;
 
-      // Only trigger on empty paragraphs
       if (block.type !== 'paragraph') return;
       if (block.content && Array.isArray(block.content) && block.content.length > 0) {
-        // Check if content is actually empty (might have empty text nodes)
         const text = block.content
           .map((ic: any) => (typeof ic === 'string' ? ic : ic.text ?? ''))
           .join('');
         if (text.length > 0) return;
       }
 
-      // Check there isn't already an aiPrompt block in the document
-      let hasAiPrompt = false;
-      editor.forEachBlock((b) => {
-        if (b.type === 'aiPrompt') { hasAiPrompt = true; return false; }
-        return true;
-      });
-      if (hasAiPrompt) return;
-
       e.preventDefault();
-      editor.updateBlock(block.id, { type: 'aiPrompt' as any, props: {} });
+      setAiPromptBlockId(block.id);
     }
 
     const editorEl = document.querySelector('.bn-editor');
     editorEl?.addEventListener('keydown', handleKeyDown as EventListener);
     return () => editorEl?.removeEventListener('keydown', handleKeyDown as EventListener);
-  }, [editor]);
+  }, [editor, aiPromptBlockId]);
 
   // Load initial content using the wiki-link-aware HTML pipeline
   useEffect(() => {
@@ -204,28 +199,36 @@ export default function BlockNoteWrapper(props: BlockNoteEditorProps) {
   };
 
   return (
-    <BlockNoteView
-      editor={editor}
-      theme={darkMode ? 'dark' : 'light'}
-      sideMenu={true}
-      formattingToolbar={true}
-      slashMenu={false}
-    >
-      {/* Slash menu for block insertion */}
-      <SuggestionMenuController
-        triggerCharacter="/"
-        getItems={async (query) =>
-          filterSuggestionItems(getDefaultReactSlashMenuItems(editor), query)
-        }
-      />
-      {/* Wiki-link menu triggered by [[ */}
-      <SuggestionMenuController
-        triggerCharacter="[["
-        getItems={async (query) =>
-          filterSuggestionItems(getWikiMenuItems(), query)
-        }
-      />
-    </BlockNoteView>
+    <div style={{ position: 'relative' }}>
+      <BlockNoteView
+        editor={editor}
+        theme={darkMode ? 'dark' : 'light'}
+        sideMenu={true}
+        formattingToolbar={true}
+        slashMenu={false}
+      >
+        <SuggestionMenuController
+          triggerCharacter="/"
+          getItems={async (query) =>
+            filterSuggestionItems(getDefaultReactSlashMenuItems(editor), query)
+          }
+        />
+        <SuggestionMenuController
+          triggerCharacter="[["
+          getItems={async (query) =>
+            filterSuggestionItems(getWikiMenuItems(), query)
+          }
+        />
+      </BlockNoteView>
+
+      {aiPromptBlockId && (
+        <AiPromptOverlay
+          editor={editor}
+          blockId={aiPromptBlockId}
+          onClose={() => setAiPromptBlockId(null)}
+        />
+      )}
+    </div>
   );
 }
 

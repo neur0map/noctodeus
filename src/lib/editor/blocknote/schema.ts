@@ -1,15 +1,11 @@
-import { BlockNoteSchema, defaultBlockSpecs, defaultInlineContentSpecs } from '@blocknote/core';
+import { BlockNoteSchema, defaultInlineContentSpecs } from '@blocknote/core';
 import { WikiLink } from './wiki-link';
-import { AiPromptBlock } from './ai-prompt-block';
 
 /**
- * Extended BlockNote schema with custom block and inline content types.
+ * Extended BlockNote schema with custom inline content types.
+ * Note: aiPrompt is NOT a block type — it's rendered as a React overlay.
  */
 export const noctodeusSchema = BlockNoteSchema.create({
-  blockSpecs: {
-    ...defaultBlockSpecs,
-    aiPrompt: AiPromptBlock as any,
-  },
   inlineContentSpecs: {
     ...defaultInlineContentSpecs,
     wikiLink: WikiLink,

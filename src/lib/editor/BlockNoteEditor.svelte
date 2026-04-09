@@ -258,6 +258,10 @@
   /* ── Inline AI Prompt ── */
   .blocknote-container :global(.ai-prompt) {
     margin: 4px 0 8px;
+    max-width: 900px;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 0 48px 0 48px;
   }
 
   .blocknote-container :global(.ai-prompt__bar) {

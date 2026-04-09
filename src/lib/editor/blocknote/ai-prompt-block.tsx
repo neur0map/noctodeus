@@ -1,54 +1,32 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { createReactBlockSpec } from '@blocknote/react';
 import type { BlockNoteEditor } from '@blocknote/core';
 import { INLINE_AI_SYSTEM_PROMPT } from './ai-prompt-system';
 
 /**
- * AI Prompt block — appears inline when user presses Space on an empty line.
- * Renders a slim input bar. On submit, calls AI and replaces this block
- * with the generated content.
+ * Inline AI prompt overlay — renders on top of the editor at the
+ * current cursor position when triggered by Space on an empty line.
  */
-export const AiPromptBlock = createReactBlockSpec(
-  {
-    type: 'aiPrompt' as const,
-    content: 'none',
-    propSchema: {},
-  },
-  {
-    render: ({ block, editor }) => {
-      return (
-        <AiPromptBar
-          blockId={block.id}
-          editor={editor as BlockNoteEditor<any, any, any>}
-        />
-      );
-    },
-  },
-);
-
-// ── React component ──
-
-interface AiPromptBarProps {
-  blockId: string;
+interface AiPromptOverlayProps {
   editor: BlockNoteEditor<any, any, any>;
+  blockId: string;
+  onClose: () => void;
 }
 
-function AiPromptBar({ blockId, editor }: AiPromptBarProps) {
+export function AiPromptOverlay({ editor, blockId, onClose }: AiPromptOverlayProps) {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Focus input on mount
   useEffect(() => {
     requestAnimationFrame(() => inputRef.current?.focus());
   }, []);
 
   const dismiss = useCallback(() => {
-    // Replace AI block with an empty paragraph
-    editor.updateBlock(blockId, { type: 'paragraph', content: '' });
+    onClose();
     editor.setTextCursorPosition(blockId, 'start');
-  }, [editor, blockId]);
+    editor.focus();
+  }, [editor, blockId, onClose]);
 
   const submit = useCallback(async () => {
     const prompt = input.trim();
@@ -61,7 +39,6 @@ function AiPromptBar({ blockId, editor }: AiPromptBarProps) {
       // Gather note context
       let noteContext = '';
       editor.forEachBlock((b) => {
-        if (b.id === blockId) return true; // skip the AI block itself
         if (b.content && Array.isArray(b.content)) {
           const text = b.content
             .map((ic: any) => (typeof ic === 'string' ? ic : ic.text ?? ''))
@@ -71,7 +48,6 @@ function AiPromptBar({ blockId, editor }: AiPromptBarProps) {
         return true;
       });
 
-      // Get AI provider from the global bridge
       const { aiChat } = await import('$lib/bridge/ai');
       const { getSettings } = await import('$lib/stores/settings.svelte');
       const settings = getSettings();
@@ -90,7 +66,6 @@ function AiPromptBar({ blockId, editor }: AiPromptBarProps) {
         model: settings.aiModel,
       };
 
-      // Build system prompt with note context
       const systemParts = [INLINE_AI_SYSTEM_PROMPT];
       if (noteContext.trim()) {
         systemParts.push(
@@ -107,19 +82,21 @@ function AiPromptBar({ blockId, editor }: AiPromptBarProps) {
 
       const markdown = response.trim();
       if (!markdown) {
-        setError('AI returned empty response. Try a more specific request.');
+        setError('AI returned empty response. Try again.');
         setLoading(false);
         return;
       }
 
-      // Parse response and replace this block with the result
+      // Parse and insert after the current block
       const blocks = editor.tryParseMarkdownToBlocks(markdown);
-      editor.replaceBlocks([blockId], blocks);
+      editor.insertBlocks(blocks, blockId, 'after');
+      onClose();
+      editor.focus();
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
       setLoading(false);
     }
-  }, [input, loading, editor, blockId]);
+  }, [input, loading, editor, blockId, onClose]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -136,7 +113,7 @@ function AiPromptBar({ blockId, editor }: AiPromptBarProps) {
   );
 
   return (
-    <div className="ai-prompt" contentEditable={false}>
+    <div className="ai-prompt" onMouseDown={(e) => e.stopPropagation()}>
       <div className="ai-prompt__bar">
         {loading ? (
           <div className="ai-prompt__spinner" aria-hidden="true">
