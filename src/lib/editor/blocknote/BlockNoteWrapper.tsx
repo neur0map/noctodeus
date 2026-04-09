@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useCallback, useRef } from 'react';
 import { useCreateBlockNote } from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/mantine';
 
@@ -6,12 +6,9 @@ import '@mantine/core/styles.css';
 import '@blocknote/mantine/style.css';
 
 import type { BlockNoteEditorProps, EditorHandle } from './types';
-import { preprocessMarkdown } from './markdown';
+import { preprocessMarkdown, postprocessMarkdown } from './markdown';
+import { noctodeusSchema } from './schema';
 
-/**
- * Upload handler for BlockNote media blocks.
- * Creates a blob URL from the File object so media renders immediately.
- */
 async function uploadFile(file: File): Promise<string> {
   return URL.createObjectURL(file);
 }
@@ -20,23 +17,21 @@ export default function BlockNoteWrapper(props: BlockNoteEditorProps) {
   const {
     initialContent,
     onContentChange,
+    onNavigate,
     onEditorReady,
     onEditorDestroy,
     darkMode = false,
   } = props;
 
-  // Parse initial content BEFORE creating the editor to avoid empty flash (#10)
-  const parsedInitial = useMemo(() => {
-    if (!initialContent?.trim()) return undefined;
-    // tryParseMarkdownToBlocks is synchronous in BlockNote 0.47.x
-    return undefined; // Will load in useEffect since we need the editor instance
-  }, [initialContent]);
+  const onNavigateRef = useRef(onNavigate);
+  onNavigateRef.current = onNavigate;
 
   const editor = useCreateBlockNote({
+    schema: noctodeusSchema,
     uploadFile,
   });
 
-  // Load initial content on first mount
+  // Load initial content
   useEffect(() => {
     if (!initialContent?.trim()) return;
     try {
@@ -47,6 +42,19 @@ export default function BlockNoteWrapper(props: BlockNoteEditorProps) {
       console.error('[BlockNote] Failed to parse markdown:', err);
     }
   }, [editor]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Listen for wiki-link clicks (bubbled from the WikiLink inline content)
+  useEffect(() => {
+    function handleWikiClick(e: Event) {
+      const detail = (e as CustomEvent).detail;
+      if (detail?.target && onNavigateRef.current) {
+        onNavigateRef.current(detail.target);
+      }
+    }
+
+    document.addEventListener('wiki-link-click', handleWikiClick);
+    return () => document.removeEventListener('wiki-link-click', handleWikiClick);
+  }, []);
 
   // Build and expose EditorHandle
   useEffect(() => {
@@ -84,7 +92,8 @@ export default function BlockNoteWrapper(props: BlockNoteEditorProps) {
       },
 
       async getMarkdown() {
-        return editor.blocksToMarkdownLossy(editor.document);
+        const raw = await editor.blocksToMarkdownLossy(editor.document);
+        return postprocessMarkdown(raw);
       },
 
       async setContent(markdown: string) {
@@ -99,7 +108,6 @@ export default function BlockNoteWrapper(props: BlockNoteEditorProps) {
       scrollToBlock(id: string) {
         try {
           editor.setTextCursorPosition(id, 'start');
-          // Scroll the block into view
           const element = document.querySelector(`[data-id="${id}"]`);
           element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
         } catch {
@@ -133,7 +141,6 @@ export default function BlockNoteWrapper(props: BlockNoteEditorProps) {
   );
 }
 
-/** Recursively extract plain text from a BlockNote block. */
 function extractBlockText(block: { content?: unknown; children?: unknown[] }): string {
   let text = '';
   if (Array.isArray(block.content)) {
@@ -142,6 +149,12 @@ function extractBlockText(block: { content?: unknown; children?: unknown[] }): s
         text += inline;
       } else if (inline && typeof inline === 'object' && 'text' in inline) {
         text += (inline as { text: string }).text;
+      } else if (inline && typeof inline === 'object' && 'type' in inline) {
+        // Custom inline content (e.g., wikiLink) — extract props
+        const ic = inline as { type: string; props?: Record<string, string> };
+        if (ic.type === 'wikiLink' && ic.props?.target) {
+          text += ic.props.target;
+        }
       }
     }
   }
