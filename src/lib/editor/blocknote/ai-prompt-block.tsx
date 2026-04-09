@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import type { BlockNoteEditor } from '@blocknote/core';
-import { INLINE_AI_SYSTEM_PROMPT } from './ai-prompt-system';
+import { INLINE_AI_SYSTEM_PROMPT, buildAiPrompt } from './ai-prompt-system';
 
 interface AiPromptOverlayProps {
   editor: BlockNoteEditor<any, any, any>;
@@ -21,7 +21,6 @@ export function AiPromptOverlay({ editor, blockId, onClose }: AiPromptOverlayPro
     requestAnimationFrame(() => inputRef.current?.focus());
   }, []);
 
-  // Auto-scroll preview as tokens arrive
   useEffect(() => {
     if (previewRef.current) {
       previewRef.current.scrollTop = previewRef.current.scrollHeight;
@@ -35,8 +34,8 @@ export function AiPromptOverlay({ editor, blockId, onClose }: AiPromptOverlayPro
   }, [editor, blockId, onClose]);
 
   const submit = useCallback(async () => {
-    const prompt = input.trim();
-    if (!prompt || loading) return;
+    const instruction = input.trim();
+    if (!instruction || loading) return;
 
     setLoading(true);
     setStreaming('');
@@ -44,17 +43,8 @@ export function AiPromptOverlay({ editor, blockId, onClose }: AiPromptOverlayPro
     streamRef.current = '';
 
     try {
-      // Gather note context
-      let noteContext = '';
-      editor.forEachBlock((b) => {
-        if (b.content && Array.isArray(b.content)) {
-          const text = b.content
-            .map((ic: any) => (typeof ic === 'string' ? ic : ic.text ?? ''))
-            .join('');
-          if (text) noteContext += text + '\n';
-        }
-        return true;
-      });
+      // Get the full note as markdown — this is what the AI sees and edits
+      const noteMarkdown = await editor.blocksToMarkdownLossy(editor.document);
 
       const { aiChat } = await import('$lib/bridge/ai');
       const { listen } = await import('@tauri-apps/api/event');
@@ -75,21 +65,8 @@ export function AiPromptOverlay({ editor, blockId, onClose }: AiPromptOverlayPro
         model: settings.aiModel,
       };
 
-      // Detect if this is an edit request (modify existing content) vs new content
-      const editKeywords = /\b(add|title|organize|restructure|edit|modify|change|move|rewrite|reformat|rename|fix|update|sort|reorder|put|make it|convert|transform|at the top|at the bottom|above|below)\b/i;
-      const isEditRequest = editKeywords.test(prompt) && noteContext.trim().length > 0;
-
-      const systemParts = [INLINE_AI_SYSTEM_PROMPT];
-      if (noteContext.trim()) {
-        systemParts.push(
-          `\nCurrent note content:\n${noteContext.slice(0, 4000)}`,
-        );
-        if (isEditRequest) {
-          systemParts.push(
-            `\nThe user wants to MODIFY the existing content. Output the FULL modified document.`,
-          );
-        }
-      }
+      // Build the user message with the full note + instruction
+      const userMessage = buildAiPrompt(instruction, noteMarkdown);
 
       // Listen to streaming tokens
       const unlisten = await listen<{ delta: string; done: boolean }>('ai:token', (event) => {
@@ -99,12 +76,11 @@ export function AiPromptOverlay({ editor, blockId, onClose }: AiPromptOverlayPro
         }
       });
 
-      // Fire the AI request (returns full response when done)
       const response = await aiChat({
         provider,
-        messages: [{ role: 'user', content: prompt }],
-        systemPrompt: systemParts.join('\n'),
-        maxTokens: 2000,
+        messages: [{ role: 'user', content: userMessage }],
+        systemPrompt: INLINE_AI_SYSTEM_PROMPT,
+        maxTokens: 4000,
       });
 
       unlisten();
@@ -116,16 +92,9 @@ export function AiPromptOverlay({ editor, blockId, onClose }: AiPromptOverlayPro
         return;
       }
 
-      // Parse response as blocks
+      // Replace the ENTIRE document with the AI's output
       const blocks = editor.tryParseMarkdownToBlocks(markdown);
-
-      if (isEditRequest) {
-        // Replace the entire document with the AI output
-        editor.replaceBlocks(editor.document, blocks);
-      } else {
-        // Insert new content after the current block
-        editor.insertBlocks(blocks, blockId, 'after');
-      }
+      editor.replaceBlocks(editor.document, blocks);
 
       onClose();
       editor.focus();
@@ -169,7 +138,7 @@ export function AiPromptOverlay({ editor, blockId, onClose }: AiPromptOverlayPro
         <input
           ref={inputRef}
           className="ai-prompt__input"
-          placeholder={loading ? 'Thinking...' : 'Ask AI to write, organize, or transform...'}
+          placeholder={loading ? 'Editing note...' : 'Tell AI what to do with this note...'}
           value={input}
           onChange={(e) => { setInput(e.target.value); setError(''); }}
           onKeyDown={handleKeyDown}
@@ -188,7 +157,6 @@ export function AiPromptOverlay({ editor, blockId, onClose }: AiPromptOverlayPro
         </button>
       </div>
 
-      {/* Streaming preview */}
       {streaming && (
         <div className="ai-prompt__preview" ref={previewRef}>
           {streaming}
