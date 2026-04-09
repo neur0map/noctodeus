@@ -392,11 +392,14 @@
 
   // --- Wiki-link navigation ---
   function handleWikiLinkNavigate(target: string) {
+    const normalized = target.replace(/\.(md|markdown)$/i, "");
     const match = Array.from(files.fileMap.values()).find((f) => {
       if (f.is_directory) return false;
       const nameWithoutExt = f.name.replace(/\.(md|markdown)$/i, "");
-      if (nameWithoutExt === target) return true;
-      if (f.aliases?.some(a => a === target)) return true;
+      const pathWithoutExt = f.path.replace(/\.(md|markdown)$/i, "");
+      if (nameWithoutExt === normalized) return true;
+      if (pathWithoutExt === normalized) return true;
+      if (f.aliases?.some(a => a === normalized)) return true;
       return false;
     });
     if (match) {

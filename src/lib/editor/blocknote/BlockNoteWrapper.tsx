@@ -150,17 +150,18 @@ export default function BlockNoteWrapper(props: BlockNoteEditorProps) {
       title: item.name.replace(/\.(md|markdown)$/i, ''),
       onItemClick: () => {
         const target = item.path.replace(/\.(md|markdown)$/i, '');
-        // Insert a proper wikiLink inline content node, not raw text
+        // Insert [[target]] as plain text — the wiki-link decorator will
+        // style and make it clickable via the HTML pipeline on next load.
+        // Using raw text avoids issues with SuggestionMenuController not
+        // properly cleaning up the trigger character for custom content.
         editor.insertInlineContent([
-          {
-            type: 'wikiLink' as const,
-            props: { target },
-          },
-          ' ', // trailing space after the link
+          { type: 'text' as const, text: `[[${target}]]`, styles: {} },
+          ' ',
         ]);
       },
       aliases: [item.title ?? ''].filter(Boolean),
       group: 'Wiki Links',
+      subtext: item.path,
     }));
     return filterSuggestionItems(suggestions, query);
   };
