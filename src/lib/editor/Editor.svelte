@@ -2,7 +2,7 @@
   import { onMount } from "svelte";
   import BlockNoteEditor from "./BlockNoteEditor.svelte";
   import { splitFrontmatter, joinFrontmatter } from "./blocknote/markdown";
-  import type { EditorHandle } from "./blocknote/types";
+  import type { EditorHandle, WikiItem } from "./blocknote/types";
   import { getEditorState } from "../stores/editor.svelte";
   import { getFilesState } from "../stores/files.svelte";
   import { getCoreState } from "../stores/core.svelte";
@@ -102,6 +102,12 @@
     scheduleAutoSave();
   }
 
+  function getWikiItems(): WikiItem[] {
+    return Array.from(filesState.fileMap.values())
+      .filter(f => !f.is_directory && !f.name.startsWith('.'))
+      .map(f => ({ path: f.path, name: f.name, title: f.title ?? null }));
+  }
+
   onMount(() => {
     return () => {
       // Flush any pending autosave before unmounting
@@ -126,6 +132,7 @@
     oneditorready={handleEditorReady}
     oneditordestroy={handleEditorDestroy}
     oncontentchange={handleContentChange}
+    wikiitems={getWikiItems}
   />
   <EditorMinimap editor={editorHandle ?? null} />
 </div>

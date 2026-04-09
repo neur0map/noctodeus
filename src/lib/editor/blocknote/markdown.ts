@@ -47,32 +47,13 @@ export function preprocessMarkdown(markdown: string): string {
     '<mark>$1</mark>',
   );
 
-  // Convert [[wiki-links]] to markdown links with a wikilink: protocol
-  // that BlockNote's parser understands as standard links.
-  // e.g. [[feature-showcase]] → [feature-showcase](wikilink://feature-showcase)
-  result = result.replace(
-    /\[\[([^\]]+)\]\]/g,
-    (_match, target: string) => {
-      const display = target.replace(/\.(md|markdown)$/i, '').split('/').pop() ?? target;
-      return `[${display}](wikilink://${encodeURIComponent(target)})`;
-    },
-  );
-
   return result;
 }
 
 /**
  * Postprocess markdown output from BlockNote.
- * Converts wikilink:// protocol links back to [[target]] syntax.
+ * No-op for now — wiki links stay as [[target]] plain text.
  */
 export function postprocessMarkdown(markdown: string): string {
-  let result = markdown;
-
-  // Convert [display](wikilink://target) back to [[target]]
-  result = result.replace(
-    /\[([^\]]*)\]\(wikilink:\/\/([^)]+)\)/g,
-    (_match, _display: string, target: string) => `[[${decodeURIComponent(target)}]]`,
-  );
-
-  return result;
+  return markdown;
 }

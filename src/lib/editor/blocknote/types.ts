@@ -28,6 +28,12 @@ export interface EditorHandle {
 /**
  * Props passed from Svelte into the React editor.
  */
+export interface WikiItem {
+  path: string;
+  name: string;
+  title: string | null;
+}
+
 export interface BlockNoteEditorProps {
   initialContent: string;
   onContentChange?: () => void;
@@ -35,4 +41,6 @@ export interface BlockNoteEditorProps {
   onEditorReady?: (handle: EditorHandle) => void;
   onEditorDestroy?: () => void;
   darkMode?: boolean;
+  /** File list for wiki-link suggestions */
+  wikiItems?: () => WikiItem[];
 }

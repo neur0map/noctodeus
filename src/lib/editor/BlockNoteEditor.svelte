@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import type { EditorHandle } from './blocknote/types';
+  import type { EditorHandle, WikiItem } from './blocknote/types';
 
   let {
     path,
@@ -9,6 +9,7 @@
     oneditorready,
     oneditordestroy,
     oncontentchange,
+    wikiitems,
   }: {
     path: string;
     initialContent: string;
@@ -16,6 +17,7 @@
     oneditorready?: (handle: EditorHandle) => void;
     oneditordestroy?: () => void;
     oncontentchange?: () => void;
+    wikiitems?: () => WikiItem[];
   } = $props();
 
   let containerEl: HTMLDivElement | undefined = $state(undefined);
@@ -44,6 +46,7 @@
               oncontentchange?.();
             },
             onNavigate: onnavigate,
+            wikiItems: wikiitems,
             onEditorReady: (handle: EditorHandle) => {
               editorHandle = handle;
               oneditorready?.(handle);
@@ -229,16 +232,4 @@
     color: var(--muted-foreground) !important;
   }
 
-  /* ── Wiki links (wikilink:// protocol) ── */
-  .blocknote-container :global(a[href^="wikilink://"]) {
-    color: var(--accent-blue, var(--color-accent, #7aa2f7)) !important;
-    text-decoration: none !important;
-    border-bottom: 1px dashed color-mix(in srgb, var(--accent-blue, #7aa2f7) 40%, transparent);
-    cursor: pointer;
-  }
-
-  .blocknote-container :global(a[href^="wikilink://"]:hover) {
-    border-bottom-style: solid;
-    opacity: 0.85;
-  }
 </style>

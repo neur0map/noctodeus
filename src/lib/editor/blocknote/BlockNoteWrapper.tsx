@@ -1,6 +1,7 @@
-import React, { useEffect, useCallback, useRef } from 'react';
-import { useCreateBlockNote } from '@blocknote/react';
+import React, { useEffect, useRef } from 'react';
+import { useCreateBlockNote, SuggestionMenuController, getDefaultReactSlashMenuItems } from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/mantine';
+import { filterSuggestionItems } from '@blocknote/core';
 
 import '@mantine/core/styles.css';
 import '@blocknote/mantine/style.css';
@@ -20,6 +21,7 @@ export default function BlockNoteWrapper(props: BlockNoteEditorProps) {
     onEditorReady,
     onEditorDestroy,
     darkMode = false,
+    wikiItems,
   } = props;
 
   const onNavigateRef = useRef(onNavigate);
@@ -41,18 +43,31 @@ export default function BlockNoteWrapper(props: BlockNoteEditorProps) {
     }
   }, [editor]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Intercept clicks on wikilink:// protocol links
+  // Detect clicks on [[wiki-link]] text patterns in the editor
   useEffect(() => {
     function handleClick(e: MouseEvent) {
-      const target = (e.target as HTMLElement).closest('a');
-      if (!target) return;
+      const el = e.target as HTMLElement;
+      // Check if click is inside the editor
+      if (!el.closest('.bn-editor')) return;
 
-      const href = target.getAttribute('href') ?? '';
-      if (href.startsWith('wikilink://')) {
-        e.preventDefault();
-        e.stopPropagation();
-        const wikiTarget = decodeURIComponent(href.replace('wikilink://', ''));
-        onNavigateRef.current?.(wikiTarget);
+      // Get the text node at click position
+      const selection = window.getSelection();
+      if (!selection || !selection.anchorNode) return;
+
+      const textContent = selection.anchorNode.textContent ?? '';
+      const offset = selection.anchorOffset;
+
+      // Find [[target]] pattern around the click position
+      const wikiLinkRegex = /\[\[([^\]]+)\]\]/g;
+      let match: RegExpExecArray | null;
+      while ((match = wikiLinkRegex.exec(textContent)) !== null) {
+        const start = match.index;
+        const end = start + match[0].length;
+        if (offset >= start && offset <= end) {
+          e.preventDefault();
+          onNavigateRef.current?.(match[1]);
+          return;
+        }
       }
     }
 
@@ -134,14 +149,44 @@ export default function BlockNoteWrapper(props: BlockNoteEditorProps) {
     return editor.onChange(onContentChange);
   }, [editor, onContentChange]);
 
+  // Build wiki-link suggestion items from the file list
+  const getWikiSuggestions = (query: string) => {
+    const items = wikiItems?.() ?? [];
+    const suggestions = items.map((item) => ({
+      title: item.name.replace(/\.(md|markdown)$/i, ''),
+      onItemClick: () => {
+        const target = item.path.replace(/\.(md|markdown)$/i, '');
+        editor.insertInlineContent([
+          { type: 'text' as const, text: `[[${target}]]`, styles: {} },
+        ]);
+      },
+      aliases: [item.title ?? ''].filter(Boolean),
+      group: 'Wiki Links',
+    }));
+    return filterSuggestionItems(suggestions, query);
+  };
+
   return (
     <BlockNoteView
       editor={editor}
       theme={darkMode ? 'dark' : 'light'}
       sideMenu={true}
-      slashMenu={true}
       formattingToolbar={true}
-    />
+      slashMenu={false}
+    >
+      {/* Default slash menu */}
+      <SuggestionMenuController
+        triggerCharacter="/"
+        getItems={async (query) =>
+          filterSuggestionItems(getDefaultReactSlashMenuItems(editor), query)
+        }
+      />
+      {/* Wiki-link suggestion menu triggered by [[ */}
+      <SuggestionMenuController
+        triggerCharacter="["
+        getItems={async (query) => getWikiSuggestions(query)}
+      />
+    </BlockNoteView>
   );
 }
 
