@@ -1,3 +1,5 @@
+import { markdownToHTML } from '@blocknote/core';
+
 /**
  * Splits frontmatter (YAML between --- delimiters) from markdown body.
  * Returns [frontmatter, body]. Frontmatter includes the --- delimiters.
@@ -52,8 +54,66 @@ export function preprocessMarkdown(markdown: string): string {
 
 /**
  * Postprocess markdown output from BlockNote.
- * No-op for now — wiki links stay as [[target]] plain text.
+ * No-op for now — wiki links are serialized by the WikiLink toExternalHTML spec.
  */
 export function postprocessMarkdown(markdown: string): string {
   return markdown;
+}
+
+// ── Wiki-link HTML injection ─────────────────────────────────────────
+//
+// BlockNote's markdown import pipeline is:
+//   markdown → remark-parse → remark-rehype → rehype-stringify → HTML string
+//   HTML string → ProseMirror DOMParser → blocks
+//
+// Because remark-rehype (without allowDangerousHtml) strips raw HTML,
+// we cannot inject <span> tags into the markdown before the remark pipeline.
+//
+// Instead, we:
+//   1. Let BlockNote's markdownToHTML convert markdown to HTML normally
+//      ([[target]] becomes literal text "[[target]]" in the HTML)
+//   2. Post-process the HTML string to replace [[target]] text with
+//      <span data-wiki-target="target">target</span>
+//   3. Feed the modified HTML to editor.tryParseHTMLToBlocks()
+//
+// The ProseMirror DOMParser then matches the <span data-wiki-target="...">
+// element using the WikiLink spec's parse rule and creates wikiLink nodes.
+// ──────────────────────────────────────────────────────────────────────
+
+/**
+ * Regex to match [[target]] in text, including inside HTML tags' text content.
+ * Captures the target (everything between [[ and ]]).
+ * Handles targets with spaces, slashes, dots, etc.
+ */
+const WIKI_LINK_RE = /\[\[([^\]]+)\]\]/g;
+
+/**
+ * Convert markdown to HTML with wiki-link elements injected.
+ *
+ * Uses BlockNote's markdownToHTML to get standard HTML, then replaces
+ * [[target]] text occurrences with <span data-wiki-target="target">
+ * elements that the WikiLink ProseMirror parse rule can recognize.
+ */
+export function markdownToHTMLWithWikiLinks(markdown: string): string {
+  const html = markdownToHTML(markdown);
+
+  // Replace [[target]] in the HTML text with wiki-link spans.
+  // We need to be careful not to replace inside HTML attribute values.
+  // Since [[...]] only appears as text content (not in attributes),
+  // a simple global replace is safe here.
+  return html.replace(WIKI_LINK_RE, (_match, target: string) => {
+    const escaped = escapeHtml(target);
+    return `<span data-wiki-target="${escaped}">${escaped}</span>`;
+  });
+}
+
+/**
+ * Minimal HTML attribute escaping for the target value.
+ */
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
 }
