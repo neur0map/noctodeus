@@ -143,22 +143,26 @@ export default function BlockNoteWrapper(props: BlockNoteEditorProps) {
     return editor.onChange(onContentChange);
   }, [editor, onContentChange]);
 
-  // Build wiki-link items for the slash menu
-  const getWikiSlashItems = () => {
+  // Wiki-link suggestion items for the [[ trigger
+  const getWikiMenuItems = () => {
     const items = wikiItems?.() ?? [];
     return items.map((item) => {
       const target = item.path.replace(/\.(md|markdown)$/i, '');
       const display = item.name.replace(/\.(md|markdown)$/i, '');
       return {
-        title: `Link: ${display}`,
+        title: display,
         onItemClick: () => {
+          // clearQuery already removed [[ + query text before this runs.
+          // Insert an actual wikiLink inline content node.
           editor.insertInlineContent([
-            { type: 'text' as const, text: `[[${target}]]`, styles: {} },
+            {
+              type: 'wikiLink' as const,
+              props: { target },
+            },
             ' ',
           ]);
         },
-        aliases: [target, display, item.title ?? ''].filter(Boolean),
-        group: 'Wiki Links',
+        aliases: [target, item.title ?? ''].filter(Boolean),
         subtext: item.path,
       };
     });
@@ -172,16 +176,18 @@ export default function BlockNoteWrapper(props: BlockNoteEditorProps) {
       formattingToolbar={true}
       slashMenu={false}
     >
+      {/* Slash menu for block insertion */}
       <SuggestionMenuController
         triggerCharacter="/"
         getItems={async (query) =>
-          filterSuggestionItems(
-            [
-              ...getDefaultReactSlashMenuItems(editor),
-              ...getWikiSlashItems(),
-            ],
-            query,
-          )
+          filterSuggestionItems(getDefaultReactSlashMenuItems(editor), query)
+        }
+      />
+      {/* Wiki-link menu triggered by [[ */}
+      <SuggestionMenuController
+        triggerCharacter="[["
+        getItems={async (query) =>
+          filterSuggestionItems(getWikiMenuItems(), query)
         }
       />
     </BlockNoteView>
