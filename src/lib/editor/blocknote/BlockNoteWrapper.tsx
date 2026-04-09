@@ -37,6 +37,41 @@ export default function BlockNoteWrapper(props: BlockNoteEditorProps) {
     uploadFile,
   });
 
+  // Space on empty paragraph → insert AI prompt block
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key !== ' ' || e.shiftKey || e.metaKey || e.ctrlKey || e.altKey) return;
+
+      const cursor = editor.getTextCursorPosition();
+      const block = cursor.block;
+
+      // Only trigger on empty paragraphs
+      if (block.type !== 'paragraph') return;
+      if (block.content && Array.isArray(block.content) && block.content.length > 0) {
+        // Check if content is actually empty (might have empty text nodes)
+        const text = block.content
+          .map((ic: any) => (typeof ic === 'string' ? ic : ic.text ?? ''))
+          .join('');
+        if (text.length > 0) return;
+      }
+
+      // Check there isn't already an aiPrompt block in the document
+      let hasAiPrompt = false;
+      editor.forEachBlock((b) => {
+        if (b.type === 'aiPrompt') { hasAiPrompt = true; return false; }
+        return true;
+      });
+      if (hasAiPrompt) return;
+
+      e.preventDefault();
+      editor.updateBlock(block.id, { type: 'aiPrompt' as any, props: {} });
+    }
+
+    const editorEl = document.querySelector('.bn-editor');
+    editorEl?.addEventListener('keydown', handleKeyDown as EventListener);
+    return () => editorEl?.removeEventListener('keydown', handleKeyDown as EventListener);
+  }, [editor]);
+
   // Load initial content using the wiki-link-aware HTML pipeline
   useEffect(() => {
     if (!initialContent?.trim()) return;

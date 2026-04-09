@@ -255,4 +255,113 @@
     border-bottom-style: solid;
   }
 
+  /* ── Inline AI Prompt ── */
+  .blocknote-container :global(.ai-prompt) {
+    margin: 4px 0 8px;
+  }
+
+  .blocknote-container :global(.ai-prompt__bar) {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    height: 48px;
+    padding: 0 8px;
+    border-radius: 12px;
+    background: var(--surface-1, var(--card));
+    border: 1px solid color-mix(in srgb, var(--border) 50%, transparent);
+    transition: border-color 140ms ease;
+  }
+
+  .blocknote-container :global(.ai-prompt__bar:focus-within) {
+    border-color: color-mix(in srgb, var(--accent-blue, var(--color-accent)) 40%, var(--border));
+  }
+
+  .blocknote-container :global(.ai-prompt__chip) {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--foreground) 10%, transparent);
+    color: var(--muted-foreground);
+  }
+
+  .blocknote-container :global(.ai-prompt__spinner) {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--foreground) 10%, transparent);
+    color: color-mix(in srgb, var(--accent-blue, var(--color-accent)) 60%, var(--muted-foreground));
+    animation: ai-spin 1s linear infinite;
+  }
+
+  .blocknote-container :global(.ai-prompt__input) {
+    flex: 1;
+    min-width: 0;
+    border: none !important;
+    border-width: 0 !important;
+    outline: none !important;
+    box-shadow: none !important;
+    background: transparent;
+    padding: 0;
+    font-family: var(--font-content);
+    font-size: 0.9rem;
+    color: var(--foreground);
+    caret-color: var(--accent-blue, var(--color-accent));
+  }
+
+  .blocknote-container :global(.ai-prompt__input::placeholder) {
+    color: var(--muted-foreground);
+  }
+
+  .blocknote-container :global(.ai-prompt__input:disabled) {
+    color: var(--muted-foreground);
+  }
+
+  .blocknote-container :global(.ai-prompt__send) {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    background: color-mix(in srgb, var(--foreground) 10%, transparent);
+    color: var(--muted-foreground);
+    transition: background 140ms ease, color 140ms ease;
+  }
+
+  .blocknote-container :global(.ai-prompt__send:disabled) {
+    cursor: default;
+    opacity: 0.4;
+  }
+
+  .blocknote-container :global(.ai-prompt__send--ready) {
+    background: var(--accent-blue, var(--color-accent));
+    color: var(--primary-foreground, #fff);
+    opacity: 1;
+  }
+
+  .blocknote-container :global(.ai-prompt__send--ready:hover) {
+    filter: brightness(1.1);
+  }
+
+  .blocknote-container :global(.ai-prompt__error) {
+    margin: 4px 0 0 12px;
+    color: var(--accent-red, #f7768e);
+    font-size: 12px;
+  }
+
+  @keyframes -global-ai-spin {
+    to { transform: rotate(360deg); }
+  }
+
 </style>
