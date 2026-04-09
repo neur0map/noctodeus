@@ -232,4 +232,19 @@
     color: var(--muted-foreground) !important;
   }
 
+  /* ── Wiki links ── */
+  .blocknote-container :global(.wiki-link) {
+    color: var(--accent-blue, var(--color-accent, #7aa2f7));
+    cursor: pointer;
+    border-bottom: 1px dashed color-mix(in srgb, var(--accent-blue, #7aa2f7) 40%, transparent);
+    border-radius: 2px;
+    padding: 0 1px;
+    transition: opacity 100ms ease;
+  }
+
+  .blocknote-container :global(.wiki-link:hover) {
+    opacity: 0.8;
+    border-bottom-style: solid;
+  }
+
 </style>

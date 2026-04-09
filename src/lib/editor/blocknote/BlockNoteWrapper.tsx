@@ -43,37 +43,93 @@ export default function BlockNoteWrapper(props: BlockNoteEditorProps) {
     }
   }, [editor]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Detect clicks on [[wiki-link]] text patterns in the editor
+  // Wrap [[wiki-link]] text in styled <span> elements and handle clicks.
+  // Runs after content changes to find and decorate wiki-link patterns.
   useEffect(() => {
-    function handleClick(e: MouseEvent) {
-      const el = e.target as HTMLElement;
-      // Check if click is inside the editor
-      if (!el.closest('.bn-editor')) return;
+    function decorateWikiLinks() {
+      const editorEl = document.querySelector('.bn-editor');
+      if (!editorEl) return;
 
-      // Get the text node at click position
-      const selection = window.getSelection();
-      if (!selection || !selection.anchorNode) return;
+      // Walk all text nodes looking for [[...]] patterns
+      const walker = document.createTreeWalker(editorEl, NodeFilter.SHOW_TEXT);
+      const nodesToProcess: { node: Text; matches: RegExpExecArray[] }[] = [];
 
-      const textContent = selection.anchorNode.textContent ?? '';
-      const offset = selection.anchorOffset;
+      let textNode: Text | null;
+      while ((textNode = walker.nextNode() as Text | null)) {
+        // Skip if already inside a wiki-link span
+        if (textNode.parentElement?.classList.contains('wiki-link')) continue;
 
-      // Find [[target]] pattern around the click position
-      const wikiLinkRegex = /\[\[([^\]]+)\]\]/g;
-      let match: RegExpExecArray | null;
-      while ((match = wikiLinkRegex.exec(textContent)) !== null) {
-        const start = match.index;
-        const end = start + match[0].length;
-        if (offset >= start && offset <= end) {
-          e.preventDefault();
-          onNavigateRef.current?.(match[1]);
-          return;
+        const matches: RegExpExecArray[] = [];
+        const regex = /\[\[([^\]]+)\]\]/g;
+        let match: RegExpExecArray | null;
+        while ((match = regex.exec(textNode.textContent ?? '')) !== null) {
+          matches.push({ ...match, index: match.index } as RegExpExecArray);
         }
+        if (matches.length > 0) {
+          nodesToProcess.push({ node: textNode, matches });
+        }
+      }
+
+      // Process in reverse to not invalidate indices
+      for (const { node, matches } of nodesToProcess.reverse()) {
+        const parent = node.parentNode;
+        if (!parent) continue;
+
+        let lastIndex = 0;
+        const frag = document.createDocumentFragment();
+
+        for (const m of matches) {
+          // Text before the match
+          if (m.index > lastIndex) {
+            frag.appendChild(document.createTextNode(node.textContent!.slice(lastIndex, m.index)));
+          }
+          // The wiki-link span
+          const span = document.createElement('span');
+          span.className = 'wiki-link';
+          span.dataset.target = m[1];
+          span.textContent = m[0];
+          span.setAttribute('contenteditable', 'false');
+          frag.appendChild(span);
+          lastIndex = m.index + m[0].length;
+        }
+
+        // Remaining text after last match
+        if (lastIndex < (node.textContent?.length ?? 0)) {
+          frag.appendChild(document.createTextNode(node.textContent!.slice(lastIndex)));
+        }
+
+        parent.replaceChild(frag, node);
       }
     }
 
+    // Run decoration after content loads and on changes
+    const timer = setTimeout(decorateWikiLinks, 100);
+    const unsub = editor.onChange(() => {
+      // Debounce decoration to avoid running on every keystroke
+      clearTimeout(decorateTimer);
+      decorateTimer = setTimeout(decorateWikiLinks, 300);
+    });
+    let decorateTimer: ReturnType<typeof setTimeout>;
+
+    // Handle clicks on wiki-link spans
+    function handleClick(e: MouseEvent) {
+      const span = (e.target as HTMLElement).closest('.wiki-link') as HTMLElement | null;
+      if (!span) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const target = span.dataset.target;
+      if (target) onNavigateRef.current?.(target);
+    }
+
     document.addEventListener('click', handleClick, true);
-    return () => document.removeEventListener('click', handleClick, true);
-  }, []);
+
+    return () => {
+      clearTimeout(timer);
+      clearTimeout(decorateTimer);
+      unsub();
+      document.removeEventListener('click', handleClick, true);
+    };
+  }, [editor]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Build and expose EditorHandle
   useEffect(() => {
