@@ -12,12 +12,15 @@ import { filterSuggestionItems } from '@blocknote/core';
 import { en as blockNoteEn } from '@blocknote/core/locales';
 import {
   AIExtension,
+  AIMenu,
   AIMenuController,
   AIToolbarButton,
   getAISlashMenuItems,
+  getDefaultAIMenuItems,
 } from '@blocknote/xl-ai';
 import { en as aiEn } from '@blocknote/xl-ai/locales';
 import '@blocknote/xl-ai/style.css';
+import { getFabricAICommands } from './ai-commands';
 
 import '@mantine/core/styles.css';
 import '@blocknote/mantine/style.css';
@@ -229,7 +232,17 @@ export default function BlockNoteWrapper(props: BlockNoteEditorProps) {
         formattingToolbar={false}
         slashMenu={false}
       >
-        <AIMenuController />
+        <AIMenuController
+          aiMenu={(props) => (
+            <AIMenu
+              {...props}
+              items={(ed, aiResponseStatus) => [
+                ...getDefaultAIMenuItems(ed, aiResponseStatus),
+                ...(aiResponseStatus === 'user-input' ? getFabricAICommands(ed) : []),
+              ]}
+            />
+          )}
+        />
 
         <FormattingToolbarController
           formattingToolbar={() => (
