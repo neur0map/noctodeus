@@ -17,6 +17,43 @@ interface AiPromptOverlayProps {
 const ABOVE_COUNT = 10;
 const BELOW_COUNT = 5;
 
+// ── Eye icon variants ──
+// Change EYE_VARIANT to 1, 2, or 3 to try each design.
+const EYE_VARIANT: 1 | 2 | 3 = 1;
+
+function EyeIcon() {
+  if (EYE_VARIANT === 1) {
+    // Variant 1: Almond Eye — minimalist line, refined
+    return (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
+        <circle cx="12" cy="12" r="2.5" fill="currentColor" stroke="none" />
+      </svg>
+    );
+  }
+
+  if (EYE_VARIANT === 2) {
+    // Variant 2: Geometric Eye — diamond/lens frame with concentric circles
+    return (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 4 L22 12 L12 20 L2 12 Z" />
+        <circle cx="12" cy="12" r="4" />
+        <circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none" />
+      </svg>
+    );
+  }
+
+  // Variant 3: Soft Eye — organic curves with eyelid detail
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M2 12c2.5-4.5 6-7 10-7s7.5 2.5 10 7" />
+      <path d="M2 12c2.5 4.5 6 7 10 7s7.5-2.5 10-7" />
+      <circle cx="12" cy="12" r="3" />
+      <circle cx="12" cy="12" r="1" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
 export function AiPromptOverlay({ editor, blockId, onClose }: AiPromptOverlayProps) {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -179,9 +216,7 @@ export function AiPromptOverlay({ editor, blockId, onClose }: AiPromptOverlayPro
           </div>
         ) : (
           <div className="ai-prompt__chip" aria-hidden="true">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z" />
-            </svg>
+            <EyeIcon />
           </div>
         )}
 
