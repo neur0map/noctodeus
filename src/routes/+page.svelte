@@ -418,6 +418,20 @@
     };
     window.addEventListener('wiki-link-click', handleWindowWikiLink);
 
+    // Listen for out-of-band content reloads (e.g. Create Tags AI command
+    // writes directly to the file and wants the reactive state + editor
+    // to catch up without a disk round-trip).
+    const handleContentReload = (e: Event) => {
+      const detail = (e as CustomEvent<{ path: string; content: string }>).detail;
+      if (!detail || detail.path !== currentFilePath) return;
+      // Drop the pending-dirty state to prevent the editor's pending save
+      // from clobbering the new content we just wrote.
+      editorState.reset();
+      currentContent = detail.content;
+      viewKey++;
+    };
+    window.addEventListener('noctodeus-content-reloaded', handleContentReload);
+
     // Auto-open last Core
     (async () => {
       try {
@@ -455,6 +469,7 @@
       window.removeEventListener("noctodeus-open-core", handleOpenCoreEvent);
       window.removeEventListener("noctodeus-switch-core", handleSwitchCoreEvent);
       window.removeEventListener("wiki-link-click", handleWindowWikiLink);
+      window.removeEventListener("noctodeus-content-reloaded", handleContentReload);
     };
   });
 

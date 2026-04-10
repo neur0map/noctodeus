@@ -151,14 +151,13 @@ export function getFabricAICommands(
 // because we want metadata, not document content.
 
 async function runCreateTags(editor: BlockNoteEditor<any, any, any>): Promise<void> {
-  const [{ getFilesState }, { readFile, writeFile }, { generateText }, { getAIModel, getMaxTokens }, { toast }, { getActiveEditorState }] =
+  const [{ getFilesState }, { readFile, writeFile }, { generateText }, { getAIModel, getMaxTokens }, { toast }] =
     await Promise.all([
       import('$lib/stores/files.svelte'),
       import('$lib/bridge/commands'),
       import('ai'),
       import('$lib/ai/client'),
       import('$lib/stores/toast.svelte'),
-      import('$lib/stores/active-editor.svelte'),
     ]);
 
   const files = getFilesState();
@@ -200,14 +199,20 @@ async function runCreateTags(editor: BlockNoteEditor<any, any, any>): Promise<vo
   const newFm = upsertTagsInFrontmatter(existingFm, tags);
   const newContent = newFm + '\n\n' + body.trimStart();
 
-  // 5. Write the file back
+  // 5. Write the file back to disk
   await writeFile(path, newContent);
 
-  // 6. Reload the editor content so the PropertiesPanel picks it up
-  const activeEditor = getActiveEditorState();
-  if (activeEditor.handle) {
-    await activeEditor.handle.setContent(newContent);
-  }
+  // 6. Tell the host Svelte page to reload its `currentContent` state
+  //    from the new file. `+page.svelte` holds the reactive content that
+  //    feeds PropertiesPanel — we can't update its $state from React
+  //    directly, so we dispatch a CustomEvent that the page listens for.
+  //    The page is responsible for updating currentContent AND reloading
+  //    the editor blocks without triggering a save loop.
+  window.dispatchEvent(
+    new CustomEvent('noctodeus-content-reloaded', {
+      detail: { path, content: newContent },
+    }),
+  );
 
   toast.success(`Added ${tags.length} tag${tags.length === 1 ? '' : 's'}: ${tags.join(', ')}`);
 }
