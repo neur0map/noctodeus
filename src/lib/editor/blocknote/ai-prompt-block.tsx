@@ -19,7 +19,7 @@ const BELOW_COUNT = 5;
 
 // ── Eye icon variants ──
 // Change EYE_VARIANT to 1, 2, or 3 to try each design.
-const EYE_VARIANT: 1 | 2 | 3 = 1;
+const EYE_VARIANT: 1 | 2 | 3 = 3;
 
 function EyeIcon() {
   if (EYE_VARIANT === 1) {

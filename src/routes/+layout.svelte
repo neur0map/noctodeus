@@ -42,7 +42,7 @@
 
   import FocusManager from "../lib/components/common/FocusManager.svelte";
   import ShareModal from "../lib/components/common/ShareModal.svelte";
-  import ChatPanel from "../lib/components/ai/ChatPanel.svelte";
+  import FloatingChatBubble from "../lib/components/ai/FloatingChatBubble.svelte";
 
   let { children }: { children: Snippet } = $props();
 
@@ -692,14 +692,9 @@
     </ContentArea>
   {/snippet}
 
-  {#snippet rightPanel()}
-    <ChatPanel
-      visible={ui.aiChatVisible}
-      onclose={() => ui.hideAiChat()}
-    />
-  {/snippet}
-
 </AppShell>
+
+<FloatingChatBubble />
 
 <ContextMenu
   visible={ctxVisible}
