@@ -1,3 +1,5 @@
+import type { BlockNoteEditor } from '@blocknote/core';
+
 /**
  * Framework-agnostic editor interface.
  * Svelte components use this instead of TipTap's Editor type directly.
@@ -23,6 +25,9 @@ export interface EditorHandle {
 
   /** Subscribe to content changes. Returns unsubscribe function. */
   onChange(callback: () => void): () => void;
+
+  /** The underlying BlockNote editor instance (used by exporters) */
+  blockNoteEditor: BlockNoteEditor<any, any, any>;
 }
 
 /**

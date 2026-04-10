@@ -1,16 +1,30 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { useCreateBlockNote, SuggestionMenuController, getDefaultReactSlashMenuItems } from '@blocknote/react';
+import React, { useEffect, useRef } from 'react';
+import {
+  useCreateBlockNote,
+  SuggestionMenuController,
+  getDefaultReactSlashMenuItems,
+  FormattingToolbar,
+  FormattingToolbarController,
+  getFormattingToolbarItems,
+} from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/mantine';
 import { filterSuggestionItems } from '@blocknote/core';
-import { AiPromptOverlay } from './ai-prompt-block';
-import { PatternExecutor } from './PatternExecutor';
-import { createAiSlashItems, type PendingPattern } from './ai-slash-items';
+import { en as blockNoteEn } from '@blocknote/core/locales';
+import {
+  AIExtension,
+  AIMenuController,
+  AIToolbarButton,
+  getAISlashMenuItems,
+} from '@blocknote/xl-ai';
+import { en as aiEn } from '@blocknote/xl-ai/locales';
+import '@blocknote/xl-ai/style.css';
 
 import '@mantine/core/styles.css';
 import '@blocknote/mantine/style.css';
 
 import type { BlockNoteEditorProps, EditorHandle } from './types';
 import { noctodeusSchema } from './schema';
+import { noctodeusAITransport } from './ai-transport';
 import {
   preprocessMarkdown,
   postprocessMarkdown,
@@ -35,21 +49,23 @@ export default function BlockNoteWrapper(props: BlockNoteEditorProps) {
   const onNavigateRef = useRef(onNavigate);
   onNavigateRef.current = onNavigate;
 
-  // AI prompt overlay state
-  const [aiPromptBlockId, setAiPromptBlockId] = useState<string | null>(null);
-  // Fabric pattern execution overlay state
-  const [pendingPattern, setPendingPattern] = useState<PendingPattern | null>(null);
-
   const editor = useCreateBlockNote({
     schema: noctodeusSchema,
     uploadFile,
+    dictionary: { ...blockNoteEn, ai: aiEn },
+    extensions: [
+      AIExtension({
+        transport: noctodeusAITransport(),
+      }),
+    ],
   });
 
-  // Space on empty paragraph → show AI prompt overlay
+  // Space on empty paragraph → open xl-ai's AIMenu at that block. This
+  // preserves the Notion-style "Space to summon AI" UX while delegating
+  // all the menu rendering to BlockNote's native components.
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key !== ' ' || e.shiftKey || e.metaKey || e.ctrlKey || e.altKey) return;
-      if (aiPromptBlockId) return; // already open
 
       const cursor = editor.getTextCursorPosition();
       const block = cursor.block;
@@ -63,13 +79,13 @@ export default function BlockNoteWrapper(props: BlockNoteEditorProps) {
       }
 
       e.preventDefault();
-      setAiPromptBlockId(block.id);
+      editor.getExtension(AIExtension)?.openAIMenuAtBlock(block.id);
     }
 
     const editorEl = document.querySelector('.bn-editor');
     editorEl?.addEventListener('keydown', handleKeyDown as EventListener);
     return () => editorEl?.removeEventListener('keydown', handleKeyDown as EventListener);
-  }, [editor, aiPromptBlockId]);
+  }, [editor]);
 
   // Load initial content using the wiki-link-aware HTML pipeline
   useEffect(() => {
@@ -165,6 +181,8 @@ export default function BlockNoteWrapper(props: BlockNoteEditorProps) {
       onChange(callback: () => void) {
         return editor.onChange(callback);
       },
+
+      blockNoteEditor: editor,
     };
 
     onEditorReady?.(handle);
@@ -208,21 +226,33 @@ export default function BlockNoteWrapper(props: BlockNoteEditorProps) {
         editor={editor}
         theme={darkMode ? 'dark' : 'light'}
         sideMenu={true}
-        formattingToolbar={true}
+        formattingToolbar={false}
         slashMenu={false}
       >
+        <AIMenuController />
+
+        <FormattingToolbarController
+          formattingToolbar={() => (
+            <FormattingToolbar>
+              {...getFormattingToolbarItems()}
+              <AIToolbarButton />
+            </FormattingToolbar>
+          )}
+        />
+
         <SuggestionMenuController
           triggerCharacter="/"
           getItems={async (query) =>
             filterSuggestionItems(
               [
                 ...getDefaultReactSlashMenuItems(editor),
-                ...createAiSlashItems(editor, (pending) => setPendingPattern(pending)),
+                ...getAISlashMenuItems(editor),
               ],
               query,
             )
           }
         />
+
         <SuggestionMenuController
           triggerCharacter="[["
           getItems={async (query) =>
@@ -230,24 +260,6 @@ export default function BlockNoteWrapper(props: BlockNoteEditorProps) {
           }
         />
       </BlockNoteView>
-
-      {aiPromptBlockId && (
-        <AiPromptOverlay
-          editor={editor}
-          blockId={aiPromptBlockId}
-          onClose={() => setAiPromptBlockId(null)}
-        />
-      )}
-
-      {pendingPattern && (
-        <PatternExecutor
-          editor={editor}
-          pattern={pendingPattern.pattern}
-          anchorBlockId={pendingPattern.anchorBlockId}
-          selectionText={pendingPattern.selectionText}
-          onClose={() => setPendingPattern(null)}
-        />
-      )}
     </div>
   );
 }
