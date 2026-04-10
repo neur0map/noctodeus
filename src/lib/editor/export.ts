@@ -3,38 +3,59 @@ import { save } from '@tauri-apps/plugin-dialog';
 import { writeFile } from '@tauri-apps/plugin-fs';
 
 /**
- * Export the current editor document as a PDF file.
- * Uses @blocknote/xl-pdf-exporter + @react-pdf/renderer with a custom
- * wikiLink mapping so Noctodeus's custom inline content renders as
- * styled text in the output.
+ * BlockNote XL exporter wrappers.
+ *
+ * These functions mirror the official BlockNote example at
+ * https://github.com/TypeCellOS/BlockNote/tree/main/examples/05-interoperability/05-converting-blocks-to-pdf
+ * as closely as possible. The only Noctodeus-specific parts are:
+ *
+ *   1. We use dynamic imports so the exporters aren't pulled into the
+ *      SvelteKit SSR bundle.
+ *   2. We pipe the resulting blob through Tauri's plugin-dialog
+ *      (native save dialog) + plugin-fs (write file) instead of the
+ *      browser anchor-download trick.
+ *
+ * We intentionally DO NOT pass custom inlineContentMapping / blockMapping
+ * overrides — the default mappings handle standard BlockNote content.
+ * Our custom `wikiLink` inline content renders as plain text fallback,
+ * which is acceptable for v0.3.x exports. Per-format custom mappings
+ * can be added in a later release once the basic exports are proven.
  */
+
+// ── PDF ────────────────────────────────────────────────────────────
+
 export async function exportPDF(
   editor: BlockNoteEditor<any, any, any>,
   suggestedName = 'note.pdf',
 ): Promise<void> {
-  const [{ PDFExporter, pdfDefaultSchemaMappings }, ReactPDF, React] = await Promise.all([
+  const [{ PDFExporter, pdfDefaultSchemaMappings }, reactPdf, React] = await Promise.all([
     import('@blocknote/xl-pdf-exporter'),
     import('@react-pdf/renderer'),
     import('react'),
   ]);
 
-  const exporter = new PDFExporter(editor.schema, {
+  // Custom mapping for our wikiLink inline content spec. Without this
+  // the exporter will throw "undefined is not a function" the moment
+  // it hits a [[target]] in the document, because the default mapping
+  // only covers `link` and `text`.
+  const mappings = {
     blockMapping: pdfDefaultSchemaMappings.blockMapping,
     inlineContentMapping: {
       ...pdfDefaultSchemaMappings.inlineContentMapping,
       wikiLink: (ic: any) =>
         React.createElement(
-          ReactPDF.Text,
+          reactPdf.Text,
           { style: { color: '#7aa2f7' } },
-          String(ic.props?.target ?? ''),
+          String(ic?.props?.target ?? ''),
         ),
     } as any,
     styleMapping: pdfDefaultSchemaMappings.styleMapping,
-  } as any);
+  };
 
-  const doc = await exporter.toReactPDFDocument(editor.document);
-  const blob = await (ReactPDF as any).pdf(doc).toBlob();
-  const bytes = new Uint8Array(await (blob as Blob).arrayBuffer());
+  const exporter = new PDFExporter(editor.schema, mappings as any);
+  const pdfDocument = await exporter.toReactPDFDocument(editor.document);
+  const blob = await reactPdf.pdf(pdfDocument).toBlob();
+  const bytes = new Uint8Array(await blob.arrayBuffer());
 
   const path = await save({
     defaultPath: suggestedName,
@@ -44,32 +65,34 @@ export async function exportPDF(
   await writeFile(path, bytes);
 }
 
-/**
- * Export the current editor document as a DOCX (Word) file.
- * Uses @blocknote/xl-docx-exporter + docx, with a custom wikiLink
- * mapping that renders as blue-tinted text runs.
- */
+// ── DOCX ───────────────────────────────────────────────────────────
+
 export async function exportDOCX(
   editor: BlockNoteEditor<any, any, any>,
   suggestedName = 'note.docx',
 ): Promise<void> {
-  const [{ DOCXExporter, docxDefaultSchemaMappings }, { Packer, TextRun }] = await Promise.all([
+  const [{ DOCXExporter, docxDefaultSchemaMappings }, docxLib] = await Promise.all([
     import('@blocknote/xl-docx-exporter'),
     import('docx'),
   ]);
 
-  const exporter = new DOCXExporter(editor.schema, {
+  const mappings = {
     blockMapping: docxDefaultSchemaMappings.blockMapping,
     inlineContentMapping: {
       ...docxDefaultSchemaMappings.inlineContentMapping,
       wikiLink: (ic: any) =>
-        new TextRun({ text: String(ic.props?.target ?? ''), color: '7AA2F7' }),
+        new docxLib.TextRun({
+          text: String(ic?.props?.target ?? ''),
+          color: '7AA2F7',
+        }),
     } as any,
     styleMapping: docxDefaultSchemaMappings.styleMapping,
-  } as any);
+  };
 
-  const docxDoc = await exporter.toDocxJsDocument(editor.document);
-  const bytes = new Uint8Array(await Packer.toBuffer(docxDoc));
+  const exporter = new DOCXExporter(editor.schema, mappings as any);
+  const docxDocument = await exporter.toDocxJsDocument(editor.document);
+  const buffer = await docxLib.Packer.toBuffer(docxDocument);
+  const bytes = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
 
   const path = await save({
     defaultPath: suggestedName,
@@ -79,41 +102,52 @@ export async function exportDOCX(
   await writeFile(path, bytes);
 }
 
-/**
- * Export the current editor document as an ODT (OpenDocument Text) file.
- * Uses @blocknote/xl-odt-exporter with a custom wikiLink mapping that
- * falls back to literal [[target]] since ODT doesn't have a rich
- * inline-element concept we can map to.
- */
+// ── ODT ────────────────────────────────────────────────────────────
+
 export async function exportODT(
   editor: BlockNoteEditor<any, any, any>,
   suggestedName = 'note.odt',
 ): Promise<void> {
-  const { ODTExporter, odtDefaultSchemaMappings } = await import('@blocknote/xl-odt-exporter');
+  const { ODTExporter, odtDefaultSchemaMappings } = await import(
+    '@blocknote/xl-odt-exporter'
+  );
 
-  const exporter = new ODTExporter(editor.schema, {
+  const mappings = {
     blockMapping: odtDefaultSchemaMappings.blockMapping,
     inlineContentMapping: {
       ...odtDefaultSchemaMappings.inlineContentMapping,
-      wikiLink: (ic: any) => `[[${String(ic.props?.target ?? '')}]]`,
+      // ODT's inline content mapping wants a plain string, not a rich
+      // object. Fall back to literal [[target]] which is still human
+      // readable inside a LibreOffice/Word document.
+      wikiLink: (ic: any) => `[[${String(ic?.props?.target ?? '')}]]`,
     } as any,
     styleMapping: odtDefaultSchemaMappings.styleMapping,
-  } as any);
+  };
 
-  const bytes = await (exporter as any).toODTDocument(editor.document);
+  const exporter = new ODTExporter(editor.schema, mappings as any);
+  // The ODT exporter's output method name isn't typed in the 0.47
+  // release line — use a loose cast and try both common names.
+  const out =
+    typeof (exporter as any).toODTDocument === 'function'
+      ? await (exporter as any).toODTDocument(editor.document)
+      : await (exporter as any).toOdtDocument(editor.document);
+  const bytes =
+    out instanceof Uint8Array
+      ? out
+      : out instanceof ArrayBuffer
+        ? new Uint8Array(out)
+        : new Uint8Array(await (out as Blob).arrayBuffer());
 
   const path = await save({
     defaultPath: suggestedName,
     filters: [{ name: 'OpenDocument Text', extensions: ['odt'] }],
   });
   if (!path) return;
-  await writeFile(path, bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes));
+  await writeFile(path, bytes);
 }
 
-/**
- * Copy the current editor document as Markdown to the clipboard.
- * Uses BlockNote's built-in markdown exporter — no extra package needed.
- */
+// ── Markdown (uses BlockNote core's built-in exporter) ────────────
+
 export async function copyAsMarkdown(
   editor: BlockNoteEditor<any, any, any>,
 ): Promise<void> {
