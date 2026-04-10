@@ -33,11 +33,20 @@ export function joinFrontmatter(frontmatter: string, body: string): string {
 /**
  * Preprocess markdown before feeding to BlockNote.
  * Handles syntax that BlockNote doesn't understand natively.
+ *
+ * Note: this function DOES strip the `=WIDTHx` syntax from images so
+ * the standard markdown parser doesn't choke — the widths are recovered
+ * later by `markdownToHTMLWithWikiLinks()`, which calls
+ * `extractImageWidths()` on the raw markdown BEFORE the strip happens
+ * and injects the width back into the HTML output.
  */
 export function preprocessMarkdown(markdown: string): string {
   let result = markdown;
 
-  // Convert TipTap resizable image syntax: ![alt](url =WIDTHx) → ![alt](url)
+  // Convert TipTap/Noctodeus resizable image syntax:
+  //   ![alt](url =WIDTHx) → ![alt](url)
+  // The width is re-injected into the HTML stage by extractImageWidths
+  // below, so this strip is safe.
   result = result.replace(
     /!\[([^\]]*)\]\(([^)]*?)\s+=\d+x\d*\)/g,
     '![$1]($2)',
@@ -53,11 +62,58 @@ export function preprocessMarkdown(markdown: string): string {
 }
 
 /**
- * Postprocess markdown output from BlockNote.
- * No-op for now — wiki links are serialized by the WikiLink toExternalHTML spec.
+ * Postprocess markdown output from BlockNote. Currently only reattaches
+ * `=WIDTHx` resize hints for images — the caller provides a map of
+ * `url → previewWidth` gathered from the editor's document before the
+ * blocksToMarkdownLossy call.
  */
-export function postprocessMarkdown(markdown: string): string {
-  return markdown;
+export function postprocessMarkdown(
+  markdown: string,
+  imageWidths?: Record<string, number>,
+): string {
+  if (!imageWidths || Object.keys(imageWidths).length === 0) {
+    return markdown;
+  }
+
+  // Re-inject the =WIDTHx hint on images whose URL matches an entry in
+  // the map. Match `![alt](url)` — stop at the closing paren. If the
+  // url already has a width hint (shouldn't happen since lossy export
+  // drops it), leave it alone.
+  return markdown.replace(
+    /!\[([^\]]*)\]\(([^)]+?)\)/g,
+    (full, alt: string, url: string) => {
+      if (/\s+=\d+x\d*$/.test(url)) return full;
+      const w = imageWidths[url];
+      if (!w) return full;
+      return `![${alt}](${url} =${Math.round(w)}x)`;
+    },
+  );
+}
+
+// ── Image width round-tripping ───────────────────────────────────────
+//
+// Standard markdown has no syntax for image dimensions. BlockNote's
+// image blocks expose `previewWidth` which the resize handles update.
+// We use TipTap's `=WIDTHx` convention to round-trip the width through
+// the markdown file so resizes actually persist across saves.
+
+/**
+ * Scan a markdown string for `![alt](url =WIDTHx)` patterns and return
+ * a `url → width` map. Called before the markdown is stripped and
+ * passed to BlockNote's markdownToHTML.
+ */
+export function extractImageWidths(markdown: string): Record<string, number> {
+  const widths: Record<string, number> = {};
+  const re = /!\[[^\]]*\]\(([^)\s]+)\s+=(\d+)x\d*\)/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(markdown)) !== null) {
+    const url = m[1];
+    const w = parseInt(m[2], 10);
+    if (url && Number.isFinite(w)) {
+      widths[url] = w;
+    }
+  }
+  return widths;
 }
 
 // ── Wiki-link HTML injection ─────────────────────────────────────────
@@ -88,23 +144,42 @@ export function postprocessMarkdown(markdown: string): string {
 const WIKI_LINK_RE = /\[\[([^\]]+)\]\]/g;
 
 /**
- * Convert markdown to HTML with wiki-link elements injected.
+ * Convert markdown to HTML with wiki-link elements injected AND image
+ * widths re-attached from the `=WIDTHx` hints in the original markdown.
  *
- * Uses BlockNote's markdownToHTML to get standard HTML, then replaces
- * [[target]] text occurrences with <span data-wiki-target="target">
- * elements that the WikiLink ProseMirror parse rule can recognize.
+ * Pipeline:
+ *   1. Scan raw markdown for `=WIDTHx` image hints (before strip)
+ *   2. Run preprocess + markdownToHTML (strip already happened above)
+ *   3. Walk the HTML output: inject wiki-link spans AND add width="..."
+ *      attributes to <img> tags whose src matches an extracted hint
+ *
+ * BlockNote's ImageBlockContent parser reads `imageElement.width` into
+ * `previewWidth`, so once the HTML has `<img src="..." width="300">`
+ * BlockNote will render the image at the resized width.
  */
 export function markdownToHTMLWithWikiLinks(markdown: string): string {
+  // Extract image widths BEFORE the preprocess step strips them
+  const widths = extractImageWidths(markdown);
   const html = markdownToHTML(markdown);
 
-  // Replace [[target]] in the HTML text with wiki-link spans.
-  // We need to be careful not to replace inside HTML attribute values.
-  // Since [[...]] only appears as text content (not in attributes),
-  // a simple global replace is safe here.
-  return html.replace(WIKI_LINK_RE, (_match, target: string) => {
+  // Inject wiki-link spans
+  let out = html.replace(WIKI_LINK_RE, (_match, target: string) => {
     const escaped = escapeHtml(target);
     return `<span data-wiki-target="${escaped}">${escaped}</span>`;
   });
+
+  // Inject width attributes onto <img> tags whose src matches a hint
+  if (Object.keys(widths).length > 0) {
+    out = out.replace(/<img\b([^>]*?)\bsrc="([^"]+)"([^>]*)>/g, (full, pre: string, src: string, post: string) => {
+      const w = widths[src];
+      if (!w) return full;
+      // Don't double-inject if width already present
+      if (/\bwidth=/.test(pre) || /\bwidth=/.test(post)) return full;
+      return `<img${pre}src="${src}"${post} width="${w}">`;
+    });
+  }
+
+  return out;
 }
 
 /**

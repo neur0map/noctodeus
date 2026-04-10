@@ -168,7 +168,13 @@
     padding: 8px 20px !important;
   }
 
-  .blocknote-container :global([data-file-block] .bn-file-block-content-wrapper) {
+  /* Only shrink the wrapper to content for the empty/placeholder state
+     (the "Add file" button and the file-name icon row). For actual
+     loaded images the wrapper's width is driven by BlockNote's resize
+     handles via an inline style — forcing fit-content with !important
+     there breaks image resize entirely. */
+  .blocknote-container :global([data-file-block] .bn-file-block-content-wrapper:has(.bn-add-file-button)),
+  .blocknote-container :global([data-file-block] .bn-file-block-content-wrapper:has(.bn-file-name-with-icon)) {
     width: fit-content !important;
   }
 

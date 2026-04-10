@@ -159,8 +159,16 @@ export default function BlockNoteWrapper(props: BlockNoteEditorProps) {
       },
 
       async getMarkdown() {
+        // Collect image widths from the block tree so we can reattach
+        // =WIDTHx hints to the markdown output. blocksToMarkdownLossy
+        // drops previewWidth by design (standard markdown has no image
+        // size syntax), so resizes would otherwise not persist.
+        const imageWidths: Record<string, number> = {};
+        for (const block of editor.document) {
+          collectImageWidths(block as any, imageWidths);
+        }
         const raw = await editor.blocksToMarkdownLossy(editor.document);
-        return postprocessMarkdown(raw);
+        return postprocessMarkdown(raw, imageWidths);
       },
 
       async setContent(markdown: string) {
@@ -277,6 +285,29 @@ export default function BlockNoteWrapper(props: BlockNoteEditorProps) {
       </BlockNoteView>
     </div>
   );
+}
+
+/**
+ * Walk a block and its children, collecting image URLs → previewWidth
+ * into the target record. Used by getMarkdown() to preserve image
+ * resizes across markdown round-trips.
+ */
+function collectImageWidths(
+  block: { type?: string; props?: Record<string, unknown>; children?: unknown[] },
+  out: Record<string, number>,
+): void {
+  if (block.type === 'image' && block.props) {
+    const url = block.props.url as string | undefined;
+    const previewWidth = block.props.previewWidth as number | undefined;
+    if (url && typeof previewWidth === 'number' && Number.isFinite(previewWidth)) {
+      out[url] = previewWidth;
+    }
+  }
+  if (Array.isArray(block.children)) {
+    for (const child of block.children) {
+      collectImageWidths(child as any, out);
+    }
+  }
 }
 
 function extractBlockText(block: { content?: unknown; children?: unknown[] }): string {
