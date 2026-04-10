@@ -3,15 +3,35 @@ import { sveltekit } from "@sveltejs/kit/vite";
 import tailwindcss from "@tailwindcss/vite";
 
 const host = process.env.TAURI_DEV_HOST;
+const NODE_ENV = process.env.NODE_ENV || 'development';
 
 // https://vite.dev/config/
 export default defineConfig(async () => ({
   plugins: [tailwindcss(), sveltekit()],
+
   // Use esbuild's built-in JSX transform for .tsx files (no @vitejs/plugin-react
   // needed — its Fast Refresh preamble conflicts with SvelteKit's pipeline)
   esbuild: {
     jsx: /** @type {'automatic'} */ ('automatic'),
     jsxImportSource: 'react',
+  },
+
+  // Statically fold `process.env.NODE_ENV` so esbuild can evaluate the
+  // conditional inside `node_modules/react/jsx-runtime.js`:
+  //
+  //   if (process.env.NODE_ENV === 'production') {
+  //     module.exports = require('./cjs/react-jsx-runtime.production.js');
+  //   } else {
+  //     module.exports = require('./cjs/react-jsx-runtime.development.js');
+  //   }
+  //
+  // Without this, esbuild can't determine which CJS file is being
+  // re-exported, falls back to "no named exports", and every prebuilt
+  // package that does `import { jsx } from "react/jsx-runtime"` fails
+  // with "Importing binding name 'jsx' is not found". That's what was
+  // breaking @blocknote/xl-pdf-exporter and @blocknote/xl-docx-exporter.
+  define: {
+    'process.env.NODE_ENV': JSON.stringify(NODE_ENV),
   },
   // Ensure React/BlockNote packages are bundled client-side, not SSR'd
   ssr: {
