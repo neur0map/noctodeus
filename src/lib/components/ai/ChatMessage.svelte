@@ -33,38 +33,47 @@
    * the visible content, so they can be shown collapsed instead of
    * polluting the chat view.
    */
-  let processed = $derived(() => {
-    const raw = message.content ?? '';
+  function processMessage(raw: string): { clean: string; hidden: string[] } {
     const hidden: string[] = [];
     let clean = raw;
 
-    // Strip <tool_call>...</tool_call> blocks
     clean = clean.replace(/<tool_call>[\s\S]*?<\/tool_call>/g, (match) => {
       hidden.push(match);
       return '';
     });
 
-    // Strip <think>...</think> reasoning blocks
     clean = clean.replace(/<think>[\s\S]*?<\/think>/g, (match) => {
       hidden.push(match);
       return '';
     });
 
-    // Clean up extra blank lines left behind
     clean = clean.replace(/\n{3,}/g, '\n\n').trim();
-
     return { clean, hidden };
+  }
+
+  let processed = $derived(processMessage(message.content ?? ''));
+
+  /**
+   * Should this message render at all?
+   * Skip empty assistant messages (only had tool calls that got stripped).
+   */
+  let shouldRender = $derived(() => {
+    if (message.role !== 'assistant') return true;
+    if (message.streaming) return true;
+    const p = processMessage(message.content ?? '');
+    return !!(processed.clean || processed.hidden.length > 0);
   });
 
   async function copyToClipboard() {
     try {
-      await navigator.clipboard.writeText(processed().clean);
+      await navigator.clipboard.writeText(processed.clean);
     } catch {
       // fallback — ignore
     }
   }
 </script>
 
+{#if shouldRender()}
 <div
   class="cm"
   class:cm--user={isUser}
@@ -98,26 +107,27 @@
   {:else}
     <div class="cm__content">
       {#if isAssistant}
-        {@const p = processed()}
-        {#if p.hidden.length > 0}
-          <button
-            class="cm__thinking"
-            class:cm__thinking--open={thinkingExpanded}
-            onclick={() => (thinkingExpanded = !thinkingExpanded)}
-          >
-            <ChevronRight size={11} />
-            <span class="cm__thinking-label">Thinking</span>
-            <span class="cm__thinking-count">{p.hidden.length}</span>
-          </button>
-          {#if thinkingExpanded}
-            <pre class="cm__thinking-body">{p.hidden.join('\n\n')}</pre>
+        {#if true}
+          {#if processed.hidden.length > 0}
+            <button
+              class="cm__thinking"
+              class:cm__thinking--open={thinkingExpanded}
+              onclick={() => (thinkingExpanded = !thinkingExpanded)}
+            >
+              <ChevronRight size={11} />
+              <span class="cm__thinking-label">Thinking</span>
+              <span class="cm__thinking-count">{processed.hidden.length}</span>
+            </button>
+            {#if thinkingExpanded}
+              <pre class="cm__thinking-body">{processed.hidden.join('\n\n')}</pre>
+            {/if}
+          {/if}
+          {#if processed.clean || (message.streaming && !processed.hidden.length)}
+            <div class="cm__text cm__text--assistant">{processed.clean}{#if message.streaming}<span class="cm__cursor">&#x2588;</span>{/if}</div>
           {/if}
         {/if}
-        {#if p.clean || message.streaming}
-          <pre class="cm__text cm__text--assistant">{p.clean}{#if message.streaming}<span class="cm__cursor">&#x2588;</span>{/if}</pre>
-        {/if}
       {:else}
-        <pre class="cm__text cm__text--user">{message.content}</pre>
+        <div class="cm__text cm__text--user">{message.content}</div>
       {/if}
     </div>
   {/if}
@@ -138,6 +148,7 @@
     {/if}
   </div>
 </div>
+{/if}
 
 <style lang="scss">
   .cm {
@@ -298,11 +309,13 @@
 
   // ---- Shared text ----
   .cm__text {
-    font-family: var(--font-mono);
-    font-size: 13px;
-    line-height: 1.65;
+    font-family: var(--font-content);
+    font-size: 14px;
+    line-height: 1.6;
+    letter-spacing: -0.005em;
     white-space: pre-wrap;
-    word-break: break-word;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
     margin: 0;
     padding: 0;
     background: transparent;
@@ -310,11 +323,11 @@
   }
 
   .cm__text--user {
-    color: var(--color-foreground);
+    color: var(--foreground);
   }
 
   .cm__text--assistant {
-    color: var(--color-muted-foreground);
+    color: var(--foreground);
   }
 
   // ---- Streaming cursor ----
