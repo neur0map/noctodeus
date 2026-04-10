@@ -55,9 +55,9 @@ jobs:
           - platform: ubuntu-22.04
             args: ""
             label: "Linux x64"
-          - platform: windows-latest
-            args: ""
-            label: "Windows x64"
+          # Windows x64 disabled — MSVC linker error 1169 (duplicate
+          # symbols) due to large Rust dependency graph (ort + memvid-core
+          # + tantivy). Needs dependency refactor to re-enable.
 
     runs-on: ${{ matrix.platform }}
     name: Build (${{ matrix.label }})
