@@ -6,30 +6,22 @@
 
   const ui = getUiState();
 
-  let open = $state(false);
+  // ui.aiChatVisible is the single source of truth.
+  let open = $derived(ui.aiChatVisible);
+
   let hoverTooltip = $state(false);
   let panelEl: HTMLDivElement | undefined = $state();
   let bubbleEl: HTMLButtonElement | undefined = $state();
 
-  function toggle() {
-    open = !open;
+  function openChat() {
+    hoverTooltip = false; // dismiss any stuck tooltip
+    ui.showAiChat();
   }
 
   function close() {
-    open = false;
+    hoverTooltip = false;
+    ui.hideAiChat();
   }
-
-  // Sync with global ui state so Cmd+J shortcut works
-  $effect(() => {
-    open = ui.aiChatVisible;
-  });
-
-  $effect(() => {
-    if (open !== ui.aiChatVisible) {
-      if (open) ui.showAiChat();
-      else ui.hideAiChat();
-    }
-  });
 
   // Close on Escape or click outside
   onMount(() => {
@@ -79,9 +71,10 @@
     <button
       class="bubble-btn"
       bind:this={bubbleEl}
-      onclick={toggle}
+      onclick={openChat}
       onmouseenter={() => (hoverTooltip = true)}
       onmouseleave={() => (hoverTooltip = false)}
+      onblur={() => (hoverTooltip = false)}
       aria-label="Open AI chat"
     >
       <EyeIcon size={22} />

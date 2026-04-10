@@ -24,7 +24,7 @@ export const APP_SHORTCUTS: AppShortcuts = {
   toggle_right_panel: `${MOD}+\\`,
   collapse_sidebar: `${MOD}+Shift+B`,
   delete_file: `${MOD}+Backspace`,
-  toggle_ai_chat: `${MOD}+Shift+I`,
+  toggle_ai_chat: `${MOD}+J`,
 };
 
 export const DEFAULT_SHORTCUTS: AppShortcuts = { ...APP_SHORTCUTS };

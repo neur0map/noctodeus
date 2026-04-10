@@ -7,7 +7,6 @@
   import { getUiState } from '$lib/stores/ui.svelte';
   import { nerdIcon } from '$lib/utils/nerd-icons';
   import Share2 from '@lucide/svelte/icons/share-2';
-  import Sparkles from '@lucide/svelte/icons/sparkles';
   import BookOpen from '@lucide/svelte/icons/book-open';
 
   let {
@@ -62,14 +61,6 @@
     title="Research"
   >
     <BookOpen size={13} />
-  </button>
-  <button
-    class="ai-trigger"
-    class:ai-trigger--active={ui.aiChatVisible}
-    onclick={() => ui.toggleAiChat()}
-    title="AI Chat ({navigator.platform?.includes('Mac') ? '\u2318' : 'Ctrl'}+\u21e7+I)"
-  >
-    <Sparkles size={13} />
   </button>
 </div>
 
