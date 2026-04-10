@@ -1,242 +1,144 @@
-import type { AiMessage, AiProvider, StreamToken } from '$lib/ai/types';
-import { aiChat, aiChatCancel } from '$lib/bridge/ai';
-import { mcpCallTool } from '$lib/bridge/mcp';
+import type { AiMessage, AiProvider } from '$lib/ai/types';
 import type { McpTool } from '$lib/bridge/mcp';
+import { mcpCallTool } from '$lib/bridge/mcp';
 import { getMcpState } from '$lib/stores/mcp.svelte';
-import { listen } from '@tauri-apps/api/event';
+import { getAIModel, getMaxTokens } from '$lib/ai/client';
+import { invoke } from '@tauri-apps/api/core';
+import {
+  streamText,
+  tool,
+  jsonSchema,
+  stepCountIs,
+  convertToModelMessages,
+  type UIMessage,
+  type Tool,
+  type ToolSet,
+} from 'ai';
+
+// ── Reactive state ───────────────────────────────────────────────────
 
 let messages = $state<AiMessage[]>([]);
 let streaming = $state(false);
 let provider = $state<AiProvider | null>(null);
 let error = $state<string | null>(null);
+let abortController: AbortController | null = null;
 
-// Listen for streaming tokens from the Rust backend
-let listenerReady = false;
-
-async function setupListener() {
-  if (listenerReady) return;
-  listenerReady = true;
-  try {
-    await listen<StreamToken>('ai:token', (event) => {
-      const { delta, done } = event.payload;
-      if (done) {
-        streaming = false;
-        // Mark last assistant message as not streaming
-        const idx = messages.length - 1;
-        if (idx >= 0 && messages[idx].role === 'assistant') {
-          messages[idx] = { ...messages[idx], streaming: false };
-        }
-        return;
-      }
-      // Append delta to last assistant message
-      const idx = messages.length - 1;
-      if (idx >= 0 && messages[idx].role === 'assistant' && messages[idx].streaming) {
-        messages[idx] = { ...messages[idx], content: messages[idx].content + delta };
-      }
-    });
-  } catch {
-    // Expected to fail in browser dev mode without Tauri
-    listenerReady = false;
-  }
-}
-
-// ── Tool-call helpers ──
-
-const TOOL_CALL_RE = /<tool_call>\s*([\s\S]*?)\s*<\/tool_call>/g;
-
-interface ParsedToolCall {
-  name: string;
-  arguments: Record<string, unknown>;
-}
-
-function parseToolCalls(text: string): ParsedToolCall[] {
-  const calls: ParsedToolCall[] = [];
-  let match: RegExpExecArray | null;
-  TOOL_CALL_RE.lastIndex = 0;
-  while ((match = TOOL_CALL_RE.exec(text)) !== null) {
-    try {
-      const parsed = JSON.parse(match[1]);
-      if (parsed && typeof parsed.name === 'string') {
-        calls.push({
-          name: parsed.name,
-          arguments: parsed.arguments ?? {},
-        });
-      }
-    } catch {
-      // Malformed JSON in tool_call — skip
-    }
-  }
-  return calls;
-}
+// ── Context types ────────────────────────────────────────────────────
 
 export interface AiContext {
   coreName?: string;
   corePath?: string;
   activeFilePath?: string;
   activeFileContent?: string;
-  noteList?: string[]; // top-level note paths for awareness
+  noteList?: string[];
 }
 
-function buildSystemPrompt(userPrompt: string, tools: McpTool[], ctx?: AiContext, ragContext?: string): string {
-  const parts: string[] = [];
+// ── Native tools (call Rust Tauri commands) ──────────────────────────
+//
+// These are the SAME commands the old native-tools.ts used to wrap in
+// fake-MCP shape — now they're first-class AI SDK tool() definitions.
+// The AI SDK maxSteps loop handles the tool-call cycle automatically.
 
-  // Identity + boundaries
-  parts.push(
-    'You are the AI assistant built into Noctodeus, a local-first note-taking application. ' +
-    'You help users write, organize, research, and think through their notes. ' +
-    'You are running inside the app as a sidebar chat panel.\n\n' +
-    'Boundaries: You cannot execute code, run shell commands, access the filesystem, ' +
-    'or take any actions on the user\'s machine. You can only read and write text in this conversation.' +
-    (tools.length > 0
-      ? ' The only exception is the MCP tools listed below, which the user has explicitly connected.'
-      : ' If the user wants you to have external capabilities, they can connect MCP tool servers in Settings > MCP.')
-  );
+const nativeTools: Record<string, Tool<any, any>> = {
+  list_recent_notes: tool({
+    description:
+      'List recently modified notes in the active Noctodeus vault. ' +
+      'Returns an array of { path, title, modified_at }.',
+    inputSchema: jsonSchema({
+      type: 'object',
+      properties: {
+        limit: {
+          type: 'number',
+          description: 'Max number of notes to return (default 10).',
+        },
+      },
+    } as any),
+    execute: async (args: { limit?: number }) =>
+      invoke('search_recent', { limit: args.limit ?? 10 }),
+  }),
 
-  // Behavior — be decisive, stop over-asking
-  parts.push(`## How to behave
+  search_notes: tool({
+    description:
+      'Keyword search across all notes in the vault via SQLite FTS5. ' +
+      'Returns an array of { path, title, snippet }. Use this for exact-term lookups.',
+    inputSchema: jsonSchema({
+      type: 'object',
+      properties: {
+        query: {
+          type: 'string',
+          description: 'Search query. Supports FTS5 syntax.',
+        },
+      },
+      required: ['query'],
+    } as any),
+    execute: async (args: { query: string }) =>
+      invoke('search_query', { query: args.query }),
+  }),
 
-**Be decisive. Act, don't interrogate.**
+  semantic_search: tool({
+    description:
+      'Semantic search across all notes via RAG vector embeddings. ' +
+      'Use this for meaning-based queries where exact keywords may not match.',
+    inputSchema: jsonSchema({
+      type: 'object',
+      properties: {
+        query: { type: 'string' },
+        limit: { type: 'number', description: 'Max results (default 5).' },
+      },
+      required: ['query'],
+    } as any),
+    execute: async (args: { query: string; limit?: number }) =>
+      invoke('rag_search', { query: args.query, limit: args.limit ?? 5 }),
+  }),
 
-- When the user's intent is clear enough to act, just do it. Do NOT ask multiple rounds of "which option" or "where exactly" before taking action.
-- If something is genuinely ambiguous, make ONE reasonable assumption, state it in a single short sentence, and proceed. Do not enumerate options 1/2/3 unless the user asks.
-- Combine steps into one response. "Do X and then Y" means: do X and Y in the same turn — don't stop after X to confirm.
-- Don't re-confirm what the user already said. If they said "insert those into the file," insert them. If they said "at the end," append to the end. Trust the instruction.
-- Only ask a clarifying question if the action is destructive AND irreversible (deleting files, overwriting content, sending messages). For everything else: pick the sensible default and act.
-- Skip meta-questions about naming conventions, placement choices, or style preferences unless the user explicitly invites you to debate them. Pick what matches the existing codebase and go.
-- Keep responses short. No preambles ("Sure, I can help with that!"), no trailing summaries ("Let me know if you want anything else!"). Just the work.`);
+  read_note: tool({
+    description:
+      'Read the full markdown content of a note by its vault-relative path ' +
+      '(e.g. "welcome.md" or "projects/roadmap.md"). NOT absolute paths.',
+    inputSchema: jsonSchema({
+      type: 'object',
+      properties: {
+        path: {
+          type: 'string',
+          description: 'Vault-relative path to the note.',
+        },
+      },
+      required: ['path'],
+    } as any),
+    execute: async (args: { path: string }) =>
+      invoke('file_read', { path: args.path }),
+  }),
+};
 
-  // Core and note context
-  if (ctx) {
-    const ctxLines: string[] = [];
-    if (ctx.coreName) {
-      ctxLines.push(`The user's active vault (core) is named "${ctx.coreName}".`);
-    }
-    if (ctx.corePath) {
-      ctxLines.push(`Vault root path on disk: ${ctx.corePath}`);
-    }
-    if (ctx.noteList && ctx.noteList.length > 0) {
-      const shown = ctx.noteList.slice(0, 30);
-      ctxLines.push(`Notes in this vault (${ctx.noteList.length} total): ${shown.join(', ')}${ctx.noteList.length > 30 ? ', ...' : ''}`);
-    }
-    if (ctx.activeFilePath) {
-      ctxLines.push(`The user currently has "${ctx.activeFilePath}" open in the editor.`);
-    }
-    if (ctx.activeFileContent) {
-      const preview = ctx.activeFileContent.length > 2000
-        ? ctx.activeFileContent.slice(0, 2000) + '\n... (truncated)'
-        : ctx.activeFileContent;
-      ctxLines.push(`Content of the open note:\n---\n${preview}\n---`);
-    }
-    if (ctxLines.length > 0) {
-      parts.push('Current context:\n' + ctxLines.join('\n'));
-    }
+// ── MCP tool conversion ──────────────────────────────────────────────
+
+/**
+ * Dynamically convert the MCP store's current tool list into AI SDK
+ * tool() definitions. Each MCP tool becomes a tool() whose execute
+ * routes back into the Rust MCP subprocess bridge.
+ */
+function mcpToolsAsAISDK(): Record<string, Tool<any, any>> {
+  const out: Record<string, Tool<any, any>> = {};
+  for (const t of getMcpState().tools) {
+    const serverName = findServerForTool(t.name);
+    if (!serverName) continue; // orphaned tool, skip
+    out[t.name] = tool({
+      description: t.description ?? t.name,
+      inputSchema: jsonSchema((t.inputSchema ?? { type: 'object' }) as any),
+      execute: async (args: unknown) => {
+        const result = await mcpCallTool(serverName, t.name, args as Record<string, unknown>);
+        const resultText = result.content
+          .map((c) => c.text ?? '')
+          .filter(Boolean)
+          .join('\n');
+        return result.isError ? `Error: ${resultText}` : resultText;
+      },
+    });
   }
-
-  // Noctodeus data model — critical for the AI to build correct queries
-  parts.push(`## Noctodeus data model
-
-The vault is a directory of markdown (.md) files with an indexed SQLite database for fast queries.
-
-Key facts:
-- **All note paths are VAULT-RELATIVE** (e.g. "welcome.md", "projects/roadmap.md", "journal/2026-04-10.md"). Never absolute paths.
-- The native tools (list_recent_notes, search_notes, semantic_search, read_note) use these vault-relative paths.
-- Each note has: path (string), title (from frontmatter or filename), content (markdown body), modified_at (unix seconds), aliases (optional array of alternative names).
-- Notes are indexed in SQLite with FTS (full-text search) for instant keyword queries.
-- Notes are also embedded in a RAG vector store for semantic search.
-- Wiki links use double-bracket syntax: [[target-note]] or [[folder/note]]. These create a graph of connections between notes.
-
-## Tool routing rules (CRITICAL)
-
-You have TWO kinds of tools: native Noctodeus tools and (possibly) MCP tools.
-
-**ALWAYS prefer native Noctodeus tools for ANY vault/note operation:**
-- To list notes → use \`list_recent_notes\`, NEVER use MCP filesystem \`list_directory\` or \`search_files\`
-- To find notes by keyword → use \`search_notes\` (SQLite FTS, instant)
-- To find notes by meaning → use \`semantic_search\` (RAG embeddings)
-- To read a note → use \`read_note\` with a vault-relative path like "welcome.md"
-
-**NEVER use MCP filesystem tools (read_file, search_files, list_directory) for notes.** They don't know about the vault structure and will fail or return wrong paths.
-
-**Paths in native tool results are already vault-relative.** When you see a result like "testing.md", pass it directly to \`read_note\` — do NOT prepend any directory.`);
-
-
-  // RAG context from memvid search
-  if (ragContext) {
-    parts.push('Relevant notes from the user\'s vault:\n' + ragContext);
-  }
-
-  // User's custom system prompt (from settings)
-  if (userPrompt.trim()) {
-    parts.push(userPrompt.trim());
-  }
-
-  // MCP tools
-  if (tools.length > 0) {
-    parts.push(buildToolSystemSuffix(tools));
-  }
-
-  return parts.join('\n\n');
+  return out;
 }
 
-function buildToolSystemSuffix(tools: McpTool[]): string {
-  if (tools.length === 0) return '';
-
-  const NATIVE_TOOL_NAMES = new Set([
-    'list_recent_notes',
-    'search_notes',
-    'semantic_search',
-    'read_note',
-  ]);
-
-  const nativeTools = tools.filter((t) => NATIVE_TOOL_NAMES.has(t.name));
-  const mcpTools = tools.filter((t) => !NATIVE_TOOL_NAMES.has(t.name));
-
-  const formatTool = (t: McpTool, prefix: string) => {
-    let line = `${prefix} ${t.name}`;
-    if (t.description) line += `\nDescription: ${t.description}`;
-    if (t.inputSchema) {
-      const schema = typeof t.inputSchema === 'string'
-        ? t.inputSchema
-        : JSON.stringify(t.inputSchema);
-      line += `\nArguments: ${schema}`;
-    }
-    return line;
-  };
-
-  const sections: string[] = [];
-
-  if (nativeTools.length > 0) {
-    sections.push(
-      '## Native Noctodeus tools (PREFERRED — use these for all vault operations)',
-      '',
-      nativeTools.map((t) => formatTool(t, 'Tool:')).join('\n\n'),
-    );
-  }
-
-  if (mcpTools.length > 0) {
-    sections.push(
-      '## MCP tools (user-connected, use only for external operations NOT related to the vault)',
-      '',
-      mcpTools.map((t) => formatTool(t, 'Tool:')).join('\n\n'),
-    );
-  }
-
-  return [
-    'You have access to tools you can call by writing <tool_call> XML blocks.',
-    '',
-    sections.join('\n\n'),
-    '',
-    'To use a tool, include this in your response:',
-    '<tool_call>',
-    '{"name": "tool_name", "arguments": {...}}',
-    '</tool_call>',
-    '',
-    'You may use multiple tools in one response. Wait for results before drawing conclusions.',
-    'If the user asks about MCP or tools, explain which tools you currently have access to.',
-  ].join('\n');
-}
-
-/** Find which server owns a tool by name */
+/** Find which MCP server owns a tool by name. */
 function findServerForTool(toolName: string): string | null {
   const mcp = getMcpState();
   for (const server of mcp.servers) {
@@ -247,17 +149,134 @@ function findServerForTool(toolName: string): string | null {
   return null;
 }
 
-// ── Max tool-call loop depth to prevent infinite loops ──
-const MAX_TOOL_ROUNDS = 10;
+// ── System prompt ────────────────────────────────────────────────────
+
+function buildSystemPrompt(
+  userPrompt: string,
+  ctx?: AiContext,
+  ragContext?: string,
+): string {
+  const parts: string[] = [];
+
+  parts.push(
+    'You are the AI assistant built into Noctodeus, a local-first note-taking application. ' +
+      'You help users write, organize, research, and think through their notes. ' +
+      'You are running inside the app as a sidebar chat panel.\n\n' +
+      "Boundaries: You cannot execute code, run shell commands, access the filesystem, " +
+      "or take any actions on the user's machine. The only external capabilities you have " +
+      'are the tools listed (native Noctodeus vault tools and any MCP tools the user has ' +
+      'connected in Settings → MCP).',
+  );
+
+  parts.push(`## How to behave
+
+**Be decisive. Act, don't interrogate.**
+
+- When the user's intent is clear enough to act, just do it. Do NOT ask multiple rounds of "which option" or "where exactly" before taking action.
+- If something is genuinely ambiguous, make ONE reasonable assumption, state it in a single short sentence, and proceed. Do not enumerate options 1/2/3 unless the user asks.
+- Combine steps into one response. "Do X and then Y" means: do X and Y in the same turn — don't stop after X to confirm.
+- Don't re-confirm what the user already said. If they said "insert those into the file," insert them. If they said "at the end," append to the end. Trust the instruction.
+- Only ask a clarifying question if the action is destructive AND irreversible. For everything else: pick the sensible default and act.
+- Keep responses short. No preambles, no trailing summaries. Just the work.`);
+
+  if (ctx) {
+    const ctxLines: string[] = [];
+    if (ctx.coreName) ctxLines.push(`The user's active vault (core) is named "${ctx.coreName}".`);
+    if (ctx.corePath) ctxLines.push(`Vault root path on disk: ${ctx.corePath}`);
+    if (ctx.noteList && ctx.noteList.length > 0) {
+      const shown = ctx.noteList.slice(0, 30);
+      ctxLines.push(
+        `Notes in this vault (${ctx.noteList.length} total): ${shown.join(', ')}${
+          ctx.noteList.length > 30 ? ', ...' : ''
+        }`,
+      );
+    }
+    if (ctx.activeFilePath) {
+      ctxLines.push(`The user currently has "${ctx.activeFilePath}" open in the editor.`);
+    }
+    if (ctx.activeFileContent) {
+      const preview =
+        ctx.activeFileContent.length > 2000
+          ? ctx.activeFileContent.slice(0, 2000) + '\n... (truncated)'
+          : ctx.activeFileContent;
+      ctxLines.push(`Content of the open note:\n---\n${preview}\n---`);
+    }
+    if (ctxLines.length > 0) {
+      parts.push('Current context:\n' + ctxLines.join('\n'));
+    }
+  }
+
+  parts.push(`## Noctodeus data model
+
+The vault is a directory of markdown (.md) files with an indexed SQLite database for fast queries.
+
+Key facts:
+- **All note paths are VAULT-RELATIVE** (e.g. "welcome.md", "projects/roadmap.md"). Never absolute paths.
+- The native tools (list_recent_notes, search_notes, semantic_search, read_note) use these vault-relative paths.
+- Each note has: path, title, content (markdown body), modified_at (unix seconds), aliases (optional).
+- Notes are indexed in SQLite with FTS5 for instant keyword queries.
+- Notes are also embedded in a RAG vector store for semantic search.
+- Wiki links use double-bracket syntax: [[target-note]] or [[folder/note]].
+
+## Tool routing rules (CRITICAL)
+
+**ALWAYS prefer native Noctodeus tools for ANY vault/note operation:**
+- To list notes → use \`list_recent_notes\`, NEVER use MCP filesystem \`list_directory\` or \`search_files\`
+- To find notes by keyword → use \`search_notes\` (SQLite FTS5, instant)
+- To find notes by meaning → use \`semantic_search\` (RAG embeddings)
+- To read a note → use \`read_note\` with a vault-relative path like "welcome.md"
+
+**NEVER use MCP filesystem tools (read_file, search_files, list_directory) for notes.** They don't know about the vault structure and will fail or return wrong paths.
+
+**Paths in native tool results are already vault-relative.** When you see a result like "testing.md", pass it directly to \`read_note\` — do NOT prepend any directory.`);
+
+  if (ragContext) {
+    parts.push("Relevant notes from the user's vault:\n" + ragContext);
+  }
+
+  if (userPrompt.trim()) {
+    parts.push(userPrompt.trim());
+  }
+
+  return parts.join('\n\n');
+}
+
+// ── Message conversion ───────────────────────────────────────────────
+
+/**
+ * Convert our internal AiMessage history into AI SDK UIMessage format,
+ * then to ModelMessages. We skip frontend-only empty streaming assistant
+ * placeholders and tool messages (which become part of the tool-step
+ * history handled by maxSteps automatically, not re-injected as user
+ * messages like the old code did).
+ */
+async function buildModelMessages(msgs: AiMessage[]) {
+  const uiMessages: UIMessage[] = msgs
+    .filter((m) => m.role === 'user' || (m.role === 'assistant' && !m.streaming))
+    .map((m, i) => ({
+      id: String(i),
+      role: m.role as 'user' | 'assistant',
+      parts: [{ type: 'text', text: m.content }],
+    }));
+  return await convertToModelMessages(uiMessages);
+}
+
+// ── Public store ─────────────────────────────────────────────────────
 
 export function getAiState() {
-  setupListener();
-
   return {
-    get messages() { return messages; },
-    get streaming() { return streaming; },
-    get provider() { return provider; },
-    get error() { return error; },
+    get messages() {
+      return messages;
+    },
+    get streaming() {
+      return streaming;
+    },
+    get provider() {
+      return provider;
+    },
+    get error() {
+      return error;
+    },
 
     setProvider(p: AiProvider) {
       provider = p;
@@ -265,195 +284,188 @@ export function getAiState() {
 
     async send(content: string, systemPrompt?: string, context?: AiContext) {
       if (streaming) return;
-      if (!provider) {
-        error = 'No AI provider configured. Open Settings > AI to set one up.';
+
+      const model = getAIModel();
+      if (!model) {
+        error = 'No AI provider configured. Open Settings → AI to set one up.';
         return;
       }
       error = null;
 
-      // Add user message
-      messages = [...messages, {
-        role: 'user',
-        content,
-        timestamp: Date.now(),
-      }];
+      // Append the user message
+      messages = [
+        ...messages,
+        {
+          role: 'user',
+          content,
+          timestamp: Date.now(),
+        },
+      ];
 
-      // Determine available tools: native Noctodeus tools + any MCP tools
-      const mcp = getMcpState();
-      const { getNativeToolsAsMcp } = await import('$lib/ai/native-tools');
-      const availableTools = [...getNativeToolsAsMcp(), ...mcp.tools];
-
-      // Fetch RAG context from memvid before building system prompt
+      // Fetch RAG context from memvid before building the system prompt
       let noteContext = '';
       if (context?.corePath) {
         try {
           const { ragContext: fetchRagContext } = await import('$lib/bridge/rag');
           noteContext = await fetchRagContext(content, context.corePath, 2000);
         } catch {
-          // RAG not available
+          // RAG not available — proceed without it
         }
       }
 
-      // Build the full system prompt with identity, context, RAG, and tools
-      let fullSystemPrompt = buildSystemPrompt(systemPrompt ?? '', availableTools, context, noteContext);
+      const fullSystemPrompt = buildSystemPrompt(systemPrompt ?? '', context, noteContext);
 
-      await this._sendRound(fullSystemPrompt, availableTools, 0);
-    },
+      // Build the model-compatible message list from our current transcript
+      // (BEFORE appending the empty assistant streaming placeholder).
+      const modelMessages = await buildModelMessages(messages);
 
-    /** Internal: send one round and handle tool calls in a loop */
-    async _sendRound(systemPrompt: string, availableTools: McpTool[], depth: number) {
-      if (depth >= MAX_TOOL_ROUNDS) {
-        error = 'Tool call loop limit reached. The AI made too many consecutive tool calls.';
-        return;
-      }
-
-      // Add empty assistant message for streaming
-      messages = [...messages, {
-        role: 'assistant',
-        content: '',
-        timestamp: Date.now(),
-        streaming: true,
-      }];
+      // Append an empty assistant placeholder that we'll fill as text chunks arrive
+      const assistantIndex = messages.length;
+      messages = [
+        ...messages,
+        {
+          role: 'assistant',
+          content: '',
+          timestamp: Date.now(),
+          streaming: true,
+        },
+      ];
 
       streaming = true;
+      abortController = new AbortController();
+
+      const tools: ToolSet = {
+        ...nativeTools,
+        ...mcpToolsAsAISDK(),
+      };
 
       try {
-        // Build clean message list for the API (strip frontend-only fields)
-        // Convert 'tool' role to 'user' since we use prompt-based tool calling,
-        // not OpenAI's native function calling format
-        const apiMessages = messages
-          .filter(m => !(m.role === 'assistant' && m.streaming && !m.content))
-          .map(m => ({
-            role: m.role === 'tool' ? 'user' : m.role,
-            content: m.role === 'tool'
-              ? `[Tool result for ${m.toolCallId ?? 'unknown'}]:\n${m.content}`
-              : m.content,
-          }));
-
-        // Honor the user's configured max-tokens ceiling. 0 = provider default.
-        const { getSettings } = await import('$lib/stores/settings.svelte');
-        const userCap = getSettings().aiMaxTokens ?? 0;
-
-        await aiChat({
-          provider: provider!,
-          messages: apiMessages,
-          systemPrompt,
-          ...(userCap > 0 ? { maxTokens: userCap } : {}),
+        const result = streamText({
+          model,
+          system: fullSystemPrompt,
+          messages: modelMessages,
+          tools,
+          stopWhen: stepCountIs(10),
+          maxOutputTokens: getMaxTokens(),
+          abortSignal: abortController.signal,
         });
+
+        for await (const part of result.fullStream) {
+          if (abortController.signal.aborted) break;
+
+          if (part.type === 'text-delta') {
+            // Append streaming text delta to the current assistant message
+            const current = messages[assistantIndex];
+            if (current && current.role === 'assistant') {
+              messages[assistantIndex] = {
+                ...current,
+                content: current.content + part.text,
+              };
+              messages = [...messages];
+            }
+            continue;
+          }
+
+          if (part.type === 'tool-call') {
+            // Record the tool call as its own message so the UI can show
+            // it in the "Used N tools" grouped card.
+            messages = [
+              ...messages,
+              {
+                role: 'tool',
+                content: '',
+                toolCallId: part.toolCallId,
+                toolCalls: {
+                  name: part.toolName,
+                  arguments: (part as any).input ?? {},
+                  loading: true,
+                  error: null,
+                },
+                timestamp: Date.now(),
+              },
+            ];
+            continue;
+          }
+
+          if (part.type === 'tool-result') {
+            // Fill in the result on the matching tool message (by id)
+            const output = (part as any).output;
+            const resultText =
+              typeof output === 'string' ? output : JSON.stringify(output);
+            const idx = messages.findIndex(
+              (m) => m.role === 'tool' && m.toolCallId === part.toolCallId,
+            );
+            if (idx >= 0) {
+              const existing = messages[idx];
+              messages[idx] = {
+                ...existing,
+                content: resultText,
+                toolCalls: {
+                  ...(existing.toolCalls as Record<string, unknown>),
+                  loading: false,
+                  error: null,
+                  result: resultText,
+                },
+              };
+              messages = [...messages];
+            }
+            continue;
+          }
+
+          if (part.type === 'tool-error') {
+            const errText =
+              (part as any).error instanceof Error
+                ? (part as any).error.message
+                : String((part as any).error);
+            const idx = messages.findIndex(
+              (m) => m.role === 'tool' && m.toolCallId === part.toolCallId,
+            );
+            if (idx >= 0) {
+              const existing = messages[idx];
+              messages[idx] = {
+                ...existing,
+                content: `Error: ${errText}`,
+                toolCalls: {
+                  ...(existing.toolCalls as Record<string, unknown>),
+                  loading: false,
+                  error: errText,
+                },
+              };
+              messages = [...messages];
+            }
+            continue;
+          }
+
+          if (part.type === 'error') {
+            const errText =
+              (part as any).error instanceof Error
+                ? (part as any).error.message
+                : String((part as any).error);
+            error = errText;
+            continue;
+          }
+
+          // 'finish' / 'start' / 'text-start' / 'text-end' / other chunks —
+          // nothing to do for now.
+        }
       } catch (err) {
         const { errorMessage: errMsg } = await import('$lib/utils/errors');
         error = errMsg(err);
+      } finally {
+        // Finalize the assistant message as no longer streaming
+        const final = messages[assistantIndex];
+        if (final && final.role === 'assistant') {
+          messages[assistantIndex] = { ...final, streaming: false };
+          messages = [...messages];
+        }
         streaming = false;
-        // Remove the empty assistant message on error
-        const last = messages[messages.length - 1];
-        if (last?.role === 'assistant' && !last.content) {
-          messages = messages.slice(0, -1);
-        }
-        return;
+        abortController = null;
       }
-
-      // After streaming completes, check for tool calls in the assistant's response
-      // Wait briefly for the streaming done event to fire
-      await waitForStreamEnd();
-
-      const lastMsg = messages[messages.length - 1];
-      if (!lastMsg || lastMsg.role !== 'assistant') return;
-
-      const toolCalls = availableTools.length > 0
-        ? parseToolCalls(lastMsg.content)
-        : [];
-
-      if (toolCalls.length === 0) return;
-
-      const { isNativeTool, executeNativeTool } = await import('$lib/ai/native-tools');
-
-      // Execute each tool call
-      for (const call of toolCalls) {
-        // Add tool message placeholder (loading)
-        const toolMsgIdx = messages.length;
-        messages = [...messages, {
-          role: 'tool' as const,
-          content: '',
-          toolCallId: call.name,
-          toolCalls: { name: call.name, arguments: call.arguments, loading: true, error: null },
-          timestamp: Date.now(),
-        }];
-
-        // Native Noctodeus tool — call Tauri command directly
-        if (isNativeTool(call.name)) {
-          try {
-            const resultText = await executeNativeTool(call.name, call.arguments);
-            messages[toolMsgIdx] = {
-              ...messages[toolMsgIdx],
-              content: resultText,
-              toolCalls: {
-                name: call.name,
-                arguments: call.arguments,
-                loading: false,
-                error: null,
-                result: resultText,
-              },
-            };
-          } catch (err: any) {
-            const errText = err?.message || String(err);
-            messages[toolMsgIdx] = {
-              ...messages[toolMsgIdx],
-              content: `Error: ${errText}`,
-              toolCalls: { name: call.name, arguments: call.arguments, loading: false, error: errText },
-            };
-          }
-          continue;
-        }
-
-        // MCP tool — route to the appropriate server
-        const serverName = findServerForTool(call.name);
-        if (!serverName) {
-          messages[toolMsgIdx] = {
-            ...messages[toolMsgIdx],
-            content: `Error: No server found for tool "${call.name}"`,
-            toolCalls: { name: call.name, arguments: call.arguments, loading: false, error: `No server found for tool "${call.name}"` },
-          };
-          continue;
-        }
-
-        try {
-          const result = await mcpCallTool(serverName, call.name, call.arguments);
-          const resultText = result.content
-            .map((c) => c.text ?? '')
-            .filter(Boolean)
-            .join('\n');
-
-          messages[toolMsgIdx] = {
-            ...messages[toolMsgIdx],
-            content: result.isError ? `Error: ${resultText}` : resultText,
-            toolCalls: {
-              name: call.name,
-              arguments: call.arguments,
-              loading: false,
-              error: result.isError ? resultText : null,
-              result: result.isError ? null : resultText,
-            },
-          };
-        } catch (err: any) {
-          const errText = err?.message || String(err);
-          messages[toolMsgIdx] = {
-            ...messages[toolMsgIdx],
-            content: `Error: ${errText}`,
-            toolCalls: { name: call.name, arguments: call.arguments, loading: false, error: errText },
-          };
-        }
-      }
-
-      // Re-send conversation to let AI process tool results
-      await this._sendRound(systemPrompt, availableTools, depth + 1);
     },
 
     async cancel() {
-      try {
-        await aiChatCancel();
-      } catch {
-        // ignore
-      }
+      abortController?.abort();
+      abortController = null;
       streaming = false;
     },
 
@@ -461,22 +473,8 @@ export function getAiState() {
       messages = [];
       error = null;
       streaming = false;
+      abortController?.abort();
+      abortController = null;
     },
   };
-}
-
-/** Wait for the streaming flag to become false (max ~30s) */
-function waitForStreamEnd(): Promise<void> {
-  return new Promise((resolve) => {
-    if (!streaming) { resolve(); return; }
-    const start = Date.now();
-    const check = () => {
-      if (!streaming || Date.now() - start > 30_000) {
-        resolve();
-        return;
-      }
-      setTimeout(check, 50);
-    };
-    check();
-  });
 }
