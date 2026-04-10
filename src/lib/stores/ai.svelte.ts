@@ -98,6 +98,9 @@ function buildSystemPrompt(userPrompt: string, tools: McpTool[], ctx?: AiContext
     if (ctx.coreName) {
       ctxLines.push(`The user's active vault (core) is named "${ctx.coreName}".`);
     }
+    if (ctx.corePath) {
+      ctxLines.push(`Vault root path on disk: ${ctx.corePath}`);
+    }
     if (ctx.noteList && ctx.noteList.length > 0) {
       const shown = ctx.noteList.slice(0, 30);
       ctxLines.push(`Notes in this vault (${ctx.noteList.length} total): ${shown.join(', ')}${ctx.noteList.length > 30 ? ', ...' : ''}`);
@@ -115,6 +118,34 @@ function buildSystemPrompt(userPrompt: string, tools: McpTool[], ctx?: AiContext
       parts.push('Current context:\n' + ctxLines.join('\n'));
     }
   }
+
+  // Noctodeus data model — critical for the AI to build correct queries
+  parts.push(`## Noctodeus data model
+
+The vault is a directory of markdown (.md) files with an indexed SQLite database for fast queries.
+
+Key facts:
+- **All note paths are VAULT-RELATIVE** (e.g. "welcome.md", "projects/roadmap.md", "journal/2026-04-10.md"). Never absolute paths.
+- The native tools (list_recent_notes, search_notes, semantic_search, read_note) use these vault-relative paths.
+- Each note has: path (string), title (from frontmatter or filename), content (markdown body), modified_at (unix seconds), aliases (optional array of alternative names).
+- Notes are indexed in SQLite with FTS (full-text search) for instant keyword queries.
+- Notes are also embedded in a RAG vector store for semantic search.
+- Wiki links use double-bracket syntax: [[target-note]] or [[folder/note]]. These create a graph of connections between notes.
+
+## Tool routing rules (CRITICAL)
+
+You have TWO kinds of tools: native Noctodeus tools and (possibly) MCP tools.
+
+**ALWAYS prefer native Noctodeus tools for ANY vault/note operation:**
+- To list notes → use \`list_recent_notes\`, NEVER use MCP filesystem \`list_directory\` or \`search_files\`
+- To find notes by keyword → use \`search_notes\` (SQLite FTS, instant)
+- To find notes by meaning → use \`semantic_search\` (RAG embeddings)
+- To read a note → use \`read_note\` with a vault-relative path like "welcome.md"
+
+**NEVER use MCP filesystem tools (read_file, search_files, list_directory) for notes.** They don't know about the vault structure and will fail or return wrong paths.
+
+**Paths in native tool results are already vault-relative.** When you see a result like "testing.md", pass it directly to \`read_note\` — do NOT prepend any directory.`);
+
 
   // RAG context from memvid search
   if (ragContext) {
@@ -137,8 +168,18 @@ function buildSystemPrompt(userPrompt: string, tools: McpTool[], ctx?: AiContext
 function buildToolSystemSuffix(tools: McpTool[]): string {
   if (tools.length === 0) return '';
 
-  const toolLines = tools.map((t) => {
-    let line = `Tool: ${t.name}`;
+  const NATIVE_TOOL_NAMES = new Set([
+    'list_recent_notes',
+    'search_notes',
+    'semantic_search',
+    'read_note',
+  ]);
+
+  const nativeTools = tools.filter((t) => NATIVE_TOOL_NAMES.has(t.name));
+  const mcpTools = tools.filter((t) => !NATIVE_TOOL_NAMES.has(t.name));
+
+  const formatTool = (t: McpTool, prefix: string) => {
+    let line = `${prefix} ${t.name}`;
     if (t.description) line += `\nDescription: ${t.description}`;
     if (t.inputSchema) {
       const schema = typeof t.inputSchema === 'string'
@@ -147,15 +188,30 @@ function buildToolSystemSuffix(tools: McpTool[]): string {
       line += `\nArguments: ${schema}`;
     }
     return line;
-  }).join('\n\n');
+  };
+
+  const sections: string[] = [];
+
+  if (nativeTools.length > 0) {
+    sections.push(
+      '## Native Noctodeus tools (PREFERRED — use these for all vault operations)',
+      '',
+      nativeTools.map((t) => formatTool(t, 'Tool:')).join('\n\n'),
+    );
+  }
+
+  if (mcpTools.length > 0) {
+    sections.push(
+      '## MCP tools (user-connected, use only for external operations NOT related to the vault)',
+      '',
+      mcpTools.map((t) => formatTool(t, 'Tool:')).join('\n\n'),
+    );
+  }
 
   return [
-    'You have access to external tools via MCP (Model Context Protocol) servers running on the user\'s machine.',
-    'These tools are already connected and ready to use.',
+    'You have access to tools you can call by writing <tool_call> XML blocks.',
     '',
-    'Available tools:',
-    '',
-    toolLines,
+    sections.join('\n\n'),
     '',
     'To use a tool, include this in your response:',
     '<tool_call>',
