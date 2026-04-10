@@ -147,8 +147,26 @@
       else if (fmt === 'odt') await exportODT(editor, `${name}.odt`);
       else if (fmt === 'md') await copyAsMarkdown(editor);
     } catch (err: any) {
-      exportError =
-        err instanceof Error ? err.message : typeof err === 'string' ? err : JSON.stringify(err);
+      // Surface the raw message to the user AND dump the full error to the
+      // console so devtools has a stack trace when an export fails.
+      console.error('[ShareExport] export failed:', fmt, err);
+      const rawMessage =
+        err instanceof Error
+          ? err.message
+          : typeof err === 'string'
+            ? err
+            : JSON.stringify(err);
+      // Known failure: react-pdf glyph-positioning error when fonts didn't
+      // register properly. Explain what to try.
+      if (rawMessage.includes('unsupported number')) {
+        exportError =
+          'Export failed because the PDF font engine received bad glyph metrics. ' +
+          'This usually means Vite pre-bundled the exporter package. Fully ' +
+          'restart the dev server (stop and re-run `npm run tauri dev`) so the ' +
+          'new optimizeDeps.exclude config takes effect.';
+      } else {
+        exportError = rawMessage;
+      }
     } finally {
       exporting = null;
     }

@@ -15,7 +15,35 @@ export default defineConfig(async () => ({
   },
   // Ensure React/BlockNote packages are bundled client-side, not SSR'd
   ssr: {
-    noExternal: ['@blocknote/core', '@blocknote/react', '@blocknote/mantine', '@mantine/core'],
+    noExternal: [
+      '@blocknote/core',
+      '@blocknote/react',
+      '@blocknote/mantine',
+      '@blocknote/xl-ai',
+      '@blocknote/xl-multi-column',
+      '@blocknote/xl-pdf-exporter',
+      '@blocknote/xl-docx-exporter',
+      '@blocknote/xl-odt-exporter',
+      '@mantine/core',
+      '@react-pdf/renderer',
+    ],
+  },
+
+  // Keep Vite's dep pre-bundler OUT of the xl exporters — they ship
+  // prebuilt ES modules with deep dynamic imports of co-located font
+  // chunks (Inter_*.js, GeistMono-*.js) which Vite's pre-bundler loses
+  // silently, leaving Font.register with empty data and making glyph
+  // advance widths Infinity at render time ("unsupported number:
+  // Infinity" from @react-pdf/render).
+  optimizeDeps: {
+    exclude: [
+      '@blocknote/xl-ai',
+      '@blocknote/xl-multi-column',
+      '@blocknote/xl-pdf-exporter',
+      '@blocknote/xl-docx-exporter',
+      '@blocknote/xl-odt-exporter',
+      '@react-pdf/renderer',
+    ],
   },
   test: {
     environment: 'jsdom',
