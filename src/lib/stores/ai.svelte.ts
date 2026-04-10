@@ -209,9 +209,10 @@ export function getAiState() {
         timestamp: Date.now(),
       }];
 
-      // Determine available MCP tools
+      // Determine available tools: native Noctodeus tools + any MCP tools
       const mcp = getMcpState();
-      const availableTools = mcp.tools;
+      const { getNativeToolsAsMcp } = await import('$lib/ai/native-tools');
+      const availableTools = [...getNativeToolsAsMcp(), ...mcp.tools];
 
       // Fetch RAG context from memvid before building system prompt
       let noteContext = '';
@@ -290,10 +291,10 @@ export function getAiState() {
 
       if (toolCalls.length === 0) return;
 
+      const { isNativeTool, executeNativeTool } = await import('$lib/ai/native-tools');
+
       // Execute each tool call
       for (const call of toolCalls) {
-        const serverName = findServerForTool(call.name);
-
         // Add tool message placeholder (loading)
         const toolMsgIdx = messages.length;
         messages = [...messages, {
@@ -304,8 +305,35 @@ export function getAiState() {
           timestamp: Date.now(),
         }];
 
+        // Native Noctodeus tool — call Tauri command directly
+        if (isNativeTool(call.name)) {
+          try {
+            const resultText = await executeNativeTool(call.name, call.arguments);
+            messages[toolMsgIdx] = {
+              ...messages[toolMsgIdx],
+              content: resultText,
+              toolCalls: {
+                name: call.name,
+                arguments: call.arguments,
+                loading: false,
+                error: null,
+                result: resultText,
+              },
+            };
+          } catch (err: any) {
+            const errText = err?.message || String(err);
+            messages[toolMsgIdx] = {
+              ...messages[toolMsgIdx],
+              content: `Error: ${errText}`,
+              toolCalls: { name: call.name, arguments: call.arguments, loading: false, error: errText },
+            };
+          }
+          continue;
+        }
+
+        // MCP tool — route to the appropriate server
+        const serverName = findServerForTool(call.name);
         if (!serverName) {
-          // Tool not found in any server
           messages[toolMsgIdx] = {
             ...messages[toolMsgIdx],
             content: `Error: No server found for tool "${call.name}"`,
