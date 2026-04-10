@@ -12,6 +12,7 @@
   import Lightbulb from '@lucide/svelte/icons/lightbulb';
   import PenLine from '@lucide/svelte/icons/pen-line';
   import Search from '@lucide/svelte/icons/search';
+  import ChevronRight from '@lucide/svelte/icons/chevron-right';
 
   let {
     visible = false,
@@ -78,6 +79,38 @@
     const name = path.split('/').pop() ?? path;
     return name.replace(/\.(md|markdown)$/i, '');
   });
+
+  // Group messages — consecutive tool calls collapse into one group
+  type MessageGroup =
+    | { kind: 'msg'; msg: any; key: string }
+    | { kind: 'tools'; tools: any[]; key: string };
+
+  let groupedMessages = $derived(() => {
+    const groups: MessageGroup[] = [];
+    let toolBuffer: any[] = [];
+
+    for (let i = 0; i < ai.messages.length; i++) {
+      const m = ai.messages[i];
+      if (m.role === 'tool') {
+        toolBuffer.push(m);
+        continue;
+      }
+      if (toolBuffer.length > 0) {
+        groups.push({ kind: 'tools', tools: toolBuffer, key: `tools-${i - toolBuffer.length}` });
+        toolBuffer = [];
+      }
+      groups.push({ kind: 'msg', msg: m, key: `msg-${i}` });
+    }
+    if (toolBuffer.length > 0) {
+      groups.push({ kind: 'tools', tools: toolBuffer, key: `tools-${ai.messages.length - toolBuffer.length}` });
+    }
+    return groups;
+  });
+
+  let expandedToolGroups = $state<Record<string, boolean>>({});
+  function toggleToolGroup(key: string) {
+    expandedToolGroups[key] = !expandedToolGroups[key];
+  }
 
   // Auto-scroll to bottom when messages change
   $effect(() => {
@@ -207,8 +240,33 @@
           </div>
         </div>
       {:else}
-        {#each ai.messages as msg, i (i)}
-          <ChatMessage message={msg} {oninsert} />
+        {#each groupedMessages() as group (group.key)}
+          {#if group.kind === 'msg'}
+            <ChatMessage message={group.msg} {oninsert} />
+          {:else}
+            <div class="cp__tool-group">
+              <button
+                class="cp__tool-group-head"
+                class:cp__tool-group-head--open={expandedToolGroups[group.key]}
+                onclick={() => toggleToolGroup(group.key)}
+              >
+                <ChevronRight size={11} />
+                <span class="cp__tool-group-label">
+                  {group.tools.length === 1 ? 'Used tool' : `Used ${group.tools.length} tools`}
+                </span>
+                <span class="cp__tool-group-names">
+                  {group.tools.map((t: any) => t.toolCalls?.name ?? t.toolCallId ?? '?').join(', ')}
+                </span>
+              </button>
+              {#if expandedToolGroups[group.key]}
+                <div class="cp__tool-group-body">
+                  {#each group.tools as tool, ti (ti)}
+                    <ChatMessage message={tool} {oninsert} />
+                  {/each}
+                </div>
+              {/if}
+            </div>
+          {/if}
         {/each}
         {#if ai.error}
           <div class="cp__error">{ai.error}</div>
@@ -534,6 +592,66 @@
     background: color-mix(in srgb, var(--accent-red, #f7768e) 8%, transparent);
     border: 1px solid color-mix(in srgb, var(--accent-red, #f7768e) 14%, transparent);
     border-radius: 8px;
+  }
+
+  /* ── Tool group (collapsed consecutive tool calls) ── */
+  .cp__tool-group {
+    margin: 6px 16px;
+  }
+
+  .cp__tool-group-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 8px 12px;
+    background: color-mix(in srgb, var(--foreground) 4%, transparent);
+    border: 1px solid color-mix(in srgb, var(--foreground) 8%, transparent);
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: var(--font-content);
+    font-size: 12px;
+    color: var(--muted-foreground);
+    text-align: left;
+    transition: background 120ms, color 120ms, border-color 120ms;
+  }
+
+  .cp__tool-group-head:hover {
+    background: color-mix(in srgb, var(--foreground) 7%, transparent);
+    color: var(--foreground);
+    border-color: color-mix(in srgb, var(--foreground) 14%, transparent);
+  }
+
+  .cp__tool-group-head :global(svg) {
+    flex-shrink: 0;
+    transition: transform 140ms ease;
+  }
+
+  .cp__tool-group-head--open :global(svg) {
+    transform: rotate(90deg);
+  }
+
+  .cp__tool-group-label {
+    font-weight: 500;
+    color: var(--foreground);
+    flex-shrink: 0;
+  }
+
+  .cp__tool-group-names {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted-foreground);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+    flex: 1;
+  }
+
+  .cp__tool-group-body {
+    margin-top: 4px;
+    padding-left: 12px;
+    border-left: 2px solid color-mix(in srgb, var(--foreground) 10%, transparent);
   }
 
   /* ── Tools badge ── */
