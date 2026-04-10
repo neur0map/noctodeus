@@ -8,7 +8,7 @@
   import Trash2 from '@lucide/svelte/icons/trash-2';
   import X from '@lucide/svelte/icons/x';
   import Settings from '@lucide/svelte/icons/settings';
-  import Sparkles from '@lucide/svelte/icons/sparkles';
+  import EyeIcon from './EyeIcon.svelte';
   import Lightbulb from '@lucide/svelte/icons/lightbulb';
   import PenLine from '@lucide/svelte/icons/pen-line';
   import Search from '@lucide/svelte/icons/search';
@@ -148,7 +148,7 @@
     <div class="cp__head">
       <div class="cp__head-left">
         <div class="cp__icon-wrap">
-          <Sparkles size={14} />
+          <EyeIcon size={14} />
         </div>
         <div class="cp__head-info">
           <span class="cp__model">{modelLabel()}</span>
@@ -192,7 +192,7 @@
         <!-- Empty state with suggestions -->
         <div class="cp__empty">
           <div class="cp__empty-icon cp__empty-icon--accent">
-            <Sparkles size={24} />
+            <EyeIcon size={24} />
           </div>
           <p class="cp__empty-title">What can I help with?</p>
           <p class="cp__empty-desc">Ask about your notes, get writing help, or brainstorm ideas.</p>
