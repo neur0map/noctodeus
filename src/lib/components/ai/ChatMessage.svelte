@@ -2,6 +2,7 @@
   import type { AiMessage } from '$lib/ai/types';
   import ClipboardCopy from '@lucide/svelte/icons/clipboard-copy';
   import FileInput from '@lucide/svelte/icons/file-input';
+  import ChevronRight from '@lucide/svelte/icons/chevron-right';
   import ToolCallBlock from './ToolCallBlock.svelte';
 
   let {
@@ -13,6 +14,7 @@
   } = $props();
 
   let hovered = $state(false);
+  let thinkingExpanded = $state(false);
 
   let timeLabel = $derived(() => {
     if (!message.timestamp) return '';
@@ -26,9 +28,37 @@
 
   let toolExpanded = $state(false);
 
+  /**
+   * Extract hidden AI internals (tool calls, thinking blocks) from
+   * the visible content, so they can be shown collapsed instead of
+   * polluting the chat view.
+   */
+  let processed = $derived(() => {
+    const raw = message.content ?? '';
+    const hidden: string[] = [];
+    let clean = raw;
+
+    // Strip <tool_call>...</tool_call> blocks
+    clean = clean.replace(/<tool_call>[\s\S]*?<\/tool_call>/g, (match) => {
+      hidden.push(match);
+      return '';
+    });
+
+    // Strip <think>...</think> reasoning blocks
+    clean = clean.replace(/<think>[\s\S]*?<\/think>/g, (match) => {
+      hidden.push(match);
+      return '';
+    });
+
+    // Clean up extra blank lines left behind
+    clean = clean.replace(/\n{3,}/g, '\n\n').trim();
+
+    return { clean, hidden };
+  });
+
   async function copyToClipboard() {
     try {
-      await navigator.clipboard.writeText(message.content);
+      await navigator.clipboard.writeText(processed().clean);
     } catch {
       // fallback — ignore
     }
@@ -68,7 +98,24 @@
   {:else}
     <div class="cm__content">
       {#if isAssistant}
-        <pre class="cm__text cm__text--assistant">{message.content}{#if message.streaming}<span class="cm__cursor">&#x2588;</span>{/if}</pre>
+        {@const p = processed()}
+        {#if p.hidden.length > 0}
+          <button
+            class="cm__thinking"
+            class:cm__thinking--open={thinkingExpanded}
+            onclick={() => (thinkingExpanded = !thinkingExpanded)}
+          >
+            <ChevronRight size={11} />
+            <span class="cm__thinking-label">Thinking</span>
+            <span class="cm__thinking-count">{p.hidden.length}</span>
+          </button>
+          {#if thinkingExpanded}
+            <pre class="cm__thinking-body">{p.hidden.join('\n\n')}</pre>
+          {/if}
+        {/if}
+        {#if p.clean || message.streaming}
+          <pre class="cm__text cm__text--assistant">{p.clean}{#if message.streaming}<span class="cm__cursor">&#x2588;</span>{/if}</pre>
+        {/if}
       {:else}
         <pre class="cm__text cm__text--user">{message.content}</pre>
       {/if}
@@ -187,6 +234,66 @@
     white-space: pre-wrap;
     word-break: break-word;
     overflow-x: auto;
+  }
+
+  // ---- Thinking disclosure (hidden tool_call / think blocks) ----
+  .cm__thinking {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 9px 4px 6px;
+    margin-bottom: 6px;
+    border: 1px solid color-mix(in srgb, var(--foreground) 10%, transparent);
+    background: transparent;
+    border-radius: 999px;
+    cursor: pointer;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted-foreground);
+    transition: color 120ms, background 120ms, border-color 120ms;
+  }
+
+  .cm__thinking:hover {
+    color: var(--foreground);
+    background: color-mix(in srgb, var(--foreground) 5%, transparent);
+    border-color: color-mix(in srgb, var(--foreground) 16%, transparent);
+  }
+
+  .cm__thinking :global(svg) {
+    transition: transform 150ms ease;
+    flex-shrink: 0;
+  }
+
+  .cm__thinking--open :global(svg) {
+    transform: rotate(90deg);
+  }
+
+  .cm__thinking-count {
+    padding: 1px 6px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--foreground) 10%, transparent);
+    font-size: 9px;
+    min-width: 14px;
+    text-align: center;
+  }
+
+  .cm__thinking-body {
+    margin: 0 0 8px;
+    padding: 10px 12px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    line-height: 1.5;
+    color: var(--muted-foreground);
+    background: color-mix(in srgb, var(--foreground) 4%, transparent);
+    border: 1px solid color-mix(in srgb, var(--foreground) 8%, transparent);
+    border-radius: 8px;
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-x: auto;
+    max-height: 200px;
+    overflow-y: auto;
   }
 
   // ---- Shared text ----
