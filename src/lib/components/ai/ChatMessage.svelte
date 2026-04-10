@@ -6,6 +6,8 @@
   import ToolCallBlock from './ToolCallBlock.svelte';
   import { getFilesState } from '$lib/stores/files.svelte';
   import { getUiState } from '$lib/stores/ui.svelte';
+  import { onDestroy } from 'svelte';
+  import { mountReadonlyBlockNote } from './readonly-blocknote';
 
   let {
     message,
@@ -95,6 +97,20 @@
   let toolExpanded = $state(false);
 
   /**
+   * Strip AI internals (tool calls, thinking, reasoning blocks) from a
+   * raw message so they don't leak into the rendered view.
+   */
+  function cleanContent(raw: string): string {
+    return raw
+      .replace(/<tool_call>[\s\S]*?<\/tool_call>/g, '')
+      .replace(/<think>[\s\S]*?<\/think>/g, '')
+      .replace(/<thinking>[\s\S]*?<\/thinking>/g, '')
+      .replace(/<reasoning>[\s\S]*?<\/reasoning>/g, '')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+  }
+
+  /**
    * Extract hidden AI internals (tool calls, thinking blocks) from
    * the visible content, so they can be shown collapsed instead of
    * polluting the chat view.
@@ -113,11 +129,52 @@
       return '';
     });
 
+    clean = clean.replace(/<thinking>[\s\S]*?<\/thinking>/g, (match) => {
+      hidden.push(match);
+      return '';
+    });
+
+    clean = clean.replace(/<reasoning>[\s\S]*?<\/reasoning>/g, (match) => {
+      hidden.push(match);
+      return '';
+    });
+
     clean = clean.replace(/\n{3,}/g, '\n\n').trim();
     return { clean, hidden };
   }
 
   let processed = $derived(processMessage(message.content ?? ''));
+  let visible = $derived(cleanContent(message.content ?? ''));
+
+  // Read-only BlockNote mount target + cleanup handle for assistant msgs
+  let renderEl: HTMLDivElement | undefined = $state();
+  let unmount: (() => void) | undefined;
+
+  $effect(() => {
+    // Re-mount whenever the visible content changes.
+    const el = renderEl;
+    const content = visible;
+    if (!el || !isAssistant) return;
+    if (unmount) {
+      try { unmount(); } catch {}
+      unmount = undefined;
+    }
+    let cancelled = false;
+    mountReadonlyBlockNote(el, content).then((fn) => {
+      if (cancelled) {
+        try { fn(); } catch {}
+        return;
+      }
+      unmount = fn;
+    });
+    return () => {
+      cancelled = true;
+    };
+  });
+
+  onDestroy(() => {
+    try { unmount?.(); } catch {}
+  });
 
   /**
    * Should this message render at all?
@@ -175,33 +232,23 @@
   {:else}
     <div class="cm__content">
       {#if isAssistant}
-        {#if true}
-          {#if processed.hidden.length > 0}
-            <button
-              class="cm__thinking"
-              class:cm__thinking--open={thinkingExpanded}
-              onclick={() => (thinkingExpanded = !thinkingExpanded)}
-            >
-              <ChevronRight size={11} />
-              <span class="cm__thinking-label">Thinking</span>
-              <span class="cm__thinking-count">{processed.hidden.length}</span>
-            </button>
-            {#if thinkingExpanded}
-              <pre class="cm__thinking-body">{processed.hidden.join('\n\n')}</pre>
-            {/if}
+        {#if processed.hidden.length > 0}
+          <button
+            class="cm__thinking"
+            class:cm__thinking--open={thinkingExpanded}
+            onclick={() => (thinkingExpanded = !thinkingExpanded)}
+          >
+            <ChevronRight size={11} />
+            <span class="cm__thinking-label">Thinking</span>
+            <span class="cm__thinking-count">{processed.hidden.length}</span>
+          </button>
+          {#if thinkingExpanded}
+            <pre class="cm__thinking-body">{processed.hidden.join('\n\n')}</pre>
           {/if}
-          {#if processed.clean || (message.streaming && !processed.hidden.length)}
-            <div class="cm__text cm__text--assistant">
-              {#each parseWithLinks(processed.clean) as seg}
-                {#if seg.kind === 'link' && seg.path}
-                  <button class="cm__link" onclick={() => handleFileClick(seg.path!)} title="Open {seg.path}">{seg.text}</button>
-                {:else}
-                  {seg.text}
-                {/if}
-              {/each}
-              {#if message.streaming}<span class="cm__cursor">&#x2588;</span>{/if}
-            </div>
-          {/if}
+        {/if}
+        {#if visible || (message.streaming && !processed.hidden.length)}
+          <div class="msg__bn" bind:this={renderEl}></div>
+          {#if message.streaming}<span class="cm__cursor">&#x2588;</span>{/if}
         {/if}
       {:else}
         <div class="cm__text cm__text--user">{message.content}</div>
@@ -382,6 +429,15 @@
     overflow-x: auto;
     max-height: 200px;
     overflow-y: auto;
+  }
+
+  // ---- Assistant BlockNote read-only view ----
+  .msg__bn :global(.bn-editor) {
+    padding: 0 !important;
+    min-height: auto !important;
+  }
+  .msg__bn :global(.bn-container) {
+    min-height: auto !important;
   }
 
   // ---- Shared text ----
