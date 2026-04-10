@@ -411,6 +411,13 @@
 
   // --- Startup ---
   onMount(() => {
+    // Listen for wiki-link-click events dispatched from anywhere (e.g. chat)
+    const handleWindowWikiLink = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail?.target) handleWikiLinkNavigate(detail.target);
+    };
+    window.addEventListener('wiki-link-click', handleWindowWikiLink);
+
     // Auto-open last Core
     (async () => {
       try {
@@ -447,6 +454,7 @@
       window.removeEventListener("beforeunload", handleBeforeUnload);
       window.removeEventListener("noctodeus-open-core", handleOpenCoreEvent);
       window.removeEventListener("noctodeus-switch-core", handleSwitchCoreEvent);
+      window.removeEventListener("wiki-link-click", handleWindowWikiLink);
     };
   });
 

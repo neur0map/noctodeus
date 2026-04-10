@@ -4,14 +4,80 @@
   import FileInput from '@lucide/svelte/icons/file-input';
   import ChevronRight from '@lucide/svelte/icons/chevron-right';
   import ToolCallBlock from './ToolCallBlock.svelte';
+  import { getFilesState } from '$lib/stores/files.svelte';
+  import { getUiState } from '$lib/stores/ui.svelte';
 
   let {
     message,
     oninsert,
+    onopenfile,
   }: {
     message: AiMessage;
     oninsert?: (content: string) => void;
+    onopenfile?: (path: string) => void;
   } = $props();
+
+  const filesState = getFilesState();
+  const ui = getUiState();
+
+  interface TextSegment {
+    kind: 'text' | 'link';
+    text: string;
+    path?: string;
+  }
+
+  /**
+   * Parse text into segments, converting note references into clickable links.
+   * Matches: [[wiki-link]], wiki-link.md, path/to/note.md
+   */
+  function parseWithLinks(text: string): TextSegment[] {
+    const segments: TextSegment[] = [];
+    // Match either [[...]] or a bare path ending in .md (with optional parens around it)
+    const re = /\[\[([^\]]+)\]\]|\(?([a-zA-Z0-9_\-./]+\.md)\)?/g;
+    let lastIndex = 0;
+    let match: RegExpExecArray | null;
+
+    while ((match = re.exec(text)) !== null) {
+      if (match.index > lastIndex) {
+        segments.push({ kind: 'text', text: text.slice(lastIndex, match.index) });
+      }
+      const rawPath = match[1] ?? match[2] ?? '';
+      const path = rawPath.replace(/\.(md|markdown)$/i, '');
+      // Validate that this path actually exists in the vault
+      const exists = Array.from(filesState.fileMap.values()).some((f) => {
+        if (f.is_directory) return false;
+        const nameNoExt = f.name.replace(/\.(md|markdown)$/i, '');
+        const pathNoExt = f.path.replace(/\.(md|markdown)$/i, '');
+        return nameNoExt === path || pathNoExt === path;
+      });
+      if (exists) {
+        segments.push({ kind: 'link', text: match[0], path });
+      } else {
+        segments.push({ kind: 'text', text: match[0] });
+      }
+      lastIndex = match.index + match[0].length;
+    }
+
+    if (lastIndex < text.length) {
+      segments.push({ kind: 'text', text: text.slice(lastIndex) });
+    }
+
+    return segments;
+  }
+
+  function handleFileClick(path: string) {
+    if (onopenfile) {
+      onopenfile(path);
+    } else {
+      // Close the chat and open the file — dispatch a custom event the layout can catch
+      const event = new CustomEvent('wiki-link-click', {
+        bubbles: true,
+        detail: { target: path },
+      });
+      window.dispatchEvent(event);
+      ui.hideAiChat();
+    }
+  }
 
   let hovered = $state(false);
   let thinkingExpanded = $state(false);
@@ -123,7 +189,16 @@
             {/if}
           {/if}
           {#if processed.clean || (message.streaming && !processed.hidden.length)}
-            <div class="cm__text cm__text--assistant">{processed.clean}{#if message.streaming}<span class="cm__cursor">&#x2588;</span>{/if}</div>
+            <div class="cm__text cm__text--assistant">
+              {#each parseWithLinks(processed.clean) as seg}
+                {#if seg.kind === 'link' && seg.path}
+                  <button class="cm__link" onclick={() => handleFileClick(seg.path!)} title="Open {seg.path}">{seg.text}</button>
+                {:else}
+                  {seg.text}
+                {/if}
+              {/each}
+              {#if message.streaming}<span class="cm__cursor">&#x2588;</span>{/if}
+            </div>
           {/if}
         {/if}
       {:else}
@@ -328,6 +403,26 @@
 
   .cm__text--assistant {
     color: var(--foreground);
+  }
+
+  // ---- Clickable file references ----
+  .cm__link {
+    display: inline;
+    padding: 0;
+    margin: 0;
+    border: none;
+    background: transparent;
+    color: var(--accent-blue, var(--color-accent, #7aa2f7));
+    font: inherit;
+    cursor: pointer;
+    text-decoration: none;
+    border-bottom: 1px dashed color-mix(in srgb, var(--accent-blue, #7aa2f7) 40%, transparent);
+    transition: opacity 100ms, border-bottom-style 100ms;
+  }
+
+  .cm__link:hover {
+    opacity: 0.85;
+    border-bottom-style: solid;
   }
 
   // ---- Streaming cursor ----
