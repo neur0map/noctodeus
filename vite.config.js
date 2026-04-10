@@ -18,21 +18,24 @@ export default defineConfig(async () => ({
     noExternal: ['@blocknote/core', '@blocknote/react', '@blocknote/mantine', '@mantine/core'],
   },
 
-  // Keep Vite's dep pre-bundler OUT of the exporters ONLY. They ship
-  // prebuilt ES modules with deep dynamic imports of co-located font
-  // chunks (Inter_*.js, GeistMono-*.js) which Vite's pre-bundler loses
-  // silently, leaving Font.register with empty data and making glyph
-  // advance widths Infinity at render time ("unsupported number:
-  // Infinity" from @react-pdf/render).
+  // Force Vite to pre-bundle the @blocknote/xl-* exporters AND
+  // @react-pdf/renderer so their prebuilt `import { jsx } from "react/jsx-runtime"`
+  // references resolve correctly. Without this, Vite tries to serve
+  // these packages as raw ESM and the jsx named export is missing
+  // (we're not using @vitejs/plugin-react due to a SvelteKit conflict),
+  // which produces: "Importing binding name 'jsx' is not found".
   //
-  // xl-ai and xl-multi-column do NOT have this problem — their imports
-  // are static, so leave them to Vite's normal CJS/ESM interop or the
-  // editor will fail to load with "Importing a module script failed".
+  // Pre-bundling them lets esbuild convert the jsx runtime imports into
+  // proper ESM with the correct named exports. It also bundles in the
+  // co-located font data-URL chunks that the exporters lazy-load.
   optimizeDeps: {
-    exclude: [
+    include: [
       '@blocknote/xl-pdf-exporter',
       '@blocknote/xl-docx-exporter',
       '@blocknote/xl-odt-exporter',
+      '@react-pdf/renderer',
+      'react/jsx-runtime',
+      'react/jsx-dev-runtime',
     ],
   },
   test: {
