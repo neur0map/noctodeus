@@ -107,8 +107,11 @@ export async function exportDOCX(
     resolveFileUrl: passthroughResolveFileUrl,
   });
   const docxDocument = await exporter.toDocxJsDocument(editor.document);
-  const buffer = await docxLib.Packer.toBuffer(docxDocument);
-  const bytes = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
+  // Use toArrayBuffer() not toBuffer(). toBuffer() returns a Node.js
+  // Buffer which doesn't exist in the Tauri WebView — it throws
+  // "nodebuffer is not supported by this platform" from JSZip.
+  const arrayBuffer = await docxLib.Packer.toArrayBuffer(docxDocument);
+  const bytes = new Uint8Array(arrayBuffer);
 
   const path = await save({
     defaultPath: suggestedName,
