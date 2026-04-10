@@ -44,11 +44,13 @@ If you care about owning your tools and not just your data, give it 5 minutes.
 
 **Full-text search** across every note. SQLite FTS5 with stemming, so "writing" matches "write" and "written." Highlighted snippets in results.
 
-**Inline AI** — press `Space` on an empty line to ask the AI to write, edit, or transform content. Works with OpenAI, Anthropic, Ollama, OpenRouter, Groq, or any OpenAI-compatible API. Your key is stored locally.
+**AI editing that actually edits.** BlockNote-native AI menu with inline diff review — select text and tap the sparkle for rewrite / improve / shorter / longer / translate / simplify, type `/ai` for the full command list, or press `Space` on an empty line for Notion-style invocation. Every change streams inline and you accept or reject per-edit before it's applied. Five Noctodeus-exclusive commands (Extract Wisdom, Create Tags, Create Outline, Create Flashcards, Explain Terms — adapted from [Fabric](https://github.com/danielmiessler/fabric)) sit alongside BlockNote's defaults. Works with OpenAI, Anthropic, Ollama, OpenRouter, Groq, or any OpenAI-compatible API. Your key is stored locally.
 
-**Fabric AI patterns** as slash commands — `/summarize`, `/improve-writing`, `/extract-wisdom`, `/create-outline`, `/explain-terms`, and more. Curated prompts adapted from [Fabric](https://github.com/danielmiessler/fabric).
+**Chat bubble** — bottom-right floating AI assistant with native SQLite + RAG tools and MCP server support. Assistant messages render with the same BlockNote typography as the main editor. Press `Cmd+J` to toggle.
 
-**Chat bubble** — bottom-right assistant that can read and search your vault with native SQLite + RAG tools. No need to configure MCP servers for basic vault queries.
+**Export everywhere.** PDF, DOCX, ODT, and plain Markdown — all wired into the Share & Export modal. Wiki links render as styled text in every format. Click the Share button in the tab bar.
+
+**Multi-column layouts.** Drag any block to the side of another for Notion-style columns.
 
 **Daily notes.** Click a date in the sidebar calendar. A templated journal entry appears. No plugins, no setup.
 
@@ -134,7 +136,7 @@ Inline AI: press `Space` on an empty line to open the prompt bar. Fabric pattern
 
 ## Built With
 
-Rust, [Tauri 2](https://tauri.app), [Svelte 5](https://svelte.dev), [BlockNote](https://www.blocknotejs.org/) (React bridge), SQLite + FTS5, and Tailwind CSS v4.
+Rust, [Tauri 2](https://tauri.app), [Svelte 5](https://svelte.dev), [BlockNote](https://www.blocknotejs.org/) + its full [XL package suite](https://www.blocknotejs.org/docs/features/ai) (AI, PDF/DOCX/ODT exporters, multi-column), [Vercel AI SDK](https://sdk.vercel.ai), SQLite + FTS5, and Tailwind CSS v4.
 
 ---
 
@@ -163,12 +165,18 @@ npm run tauri build
 
 Noctodeus stands on a lot of open-source shoulders:
 
-- Editor — [BlockNote](https://www.blocknotejs.org/) (MPL-2.0)
-- Icons — [Lucide](https://lucide.dev/) (ISC)
-- AI patterns — adapted from [Fabric](https://github.com/danielmiessler/fabric) (MIT)
+- Editor core — [BlockNote](https://www.blocknotejs.org/) (MPL-2.0 for `@blocknote/core`, GPL-3.0 for the XL packages — see license note below)
+- AI orchestration — [Vercel AI SDK](https://sdk.vercel.ai) (Apache-2.0)
+- Icons — [Lucide](https://lucide.dev/) (ISC), [Remix Icon](https://remixicon.com/) (Apache-2.0 via `react-icons`)
+- AI commands — five Noctodeus-exclusive patterns adapted from [Fabric](https://github.com/danielmiessler/fabric) (MIT)
 - Search — [SQLite FTS5](https://www.sqlite.org/fts5.html) + [tantivy](https://github.com/quickwit-oss/tantivy)
 - Encrypted sharing — [Cryptgeon](https://cryptgeon.org/)
+- Exporters — [react-pdf](https://react-pdf.org/), [docx](https://github.com/dolanmiu/docx)
 - App shell — [Tauri](https://tauri.app)
+
+### BlockNote XL package licensing
+
+Noctodeus uses several `@blocknote/xl-*` packages (`xl-ai`, `xl-pdf-exporter`, `xl-docx-exporter`, `xl-odt-exporter`, `xl-multi-column`) under the **GPL-3.0** branch of BlockNote's dual license (`GPL-3.0 OR PROPRIETARY`). This is permissible because Noctodeus itself is licensed under AGPL-3.0, which is compatible with GPL-3.0 per GPL-3.0 §13. If you fork Noctodeus into a non-copyleft project, you'll need either to adopt AGPL-3.0/GPL-3.0 for the fork or to acquire a [BlockNote commercial license](https://www.blocknotejs.org/pricing).
 
 ---
 
