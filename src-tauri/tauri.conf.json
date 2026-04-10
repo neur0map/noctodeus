@@ -26,7 +26,10 @@
       "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' asset: https: data: blob:; media-src 'self' asset: https: blob:; font-src 'self' data:; connect-src ipc: http://ipc.localhost",
       "assetProtocol": {
         "enable": true,
-        "scope": ["$APPDATA/**", "$HOME/**"]
+        "scope": [
+          "$APPDATA/**",
+          "$HOME/**"
+        ]
       }
     }
   },
