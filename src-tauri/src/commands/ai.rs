@@ -2,28 +2,16 @@ use std::time::Duration;
 
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
-use tauri::AppHandle;
 
 use crate::ai::providers;
-use crate::ai::stream;
-use crate::ai::{AiProvider, ChatRequest};
+use crate::ai::AiProvider;
 use crate::errors::{CmdResult, NoctoError};
 
-/// Stream a chat completion. Emits `ai:token` events.
-/// Returns the full response text when done.
-#[tauri::command]
-pub async fn ai_chat(request: ChatRequest, app: AppHandle) -> CmdResult<String> {
-    stream::stream_chat(&app, &request).await
-}
-
-/// Cancel the current AI streaming request.
-#[tauri::command]
-pub async fn ai_chat_cancel() -> CmdResult<()> {
-    stream::cancel();
-    Ok(())
-}
-
 /// Get the list of built-in provider presets.
+///
+/// Chat completions themselves happen JS-side via the Vercel AI SDK —
+/// there is no longer a Rust `ai_chat` command. Rust only surfaces the
+/// provider preset list and the /models endpoint helper.
 #[tauri::command]
 pub fn ai_providers() -> CmdResult<Vec<AiProvider>> {
     Ok(providers::presets())

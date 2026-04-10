@@ -113,9 +113,8 @@ pub fn run() {
             // Share commands
             commands::share_note,
             commands::share_status,
-            // AI commands
-            commands::ai_chat,
-            commands::ai_chat_cancel,
+            // AI commands (provider listing / model catalog only —
+            // actual chat runs JS-side via the Vercel AI SDK)
             commands::ai_providers,
             commands::ai_models,
             // MCP commands

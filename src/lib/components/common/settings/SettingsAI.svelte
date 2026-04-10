@@ -1,7 +1,7 @@
 <script lang="ts">
   import { getSettings } from '../../../stores/settings.svelte';
-  import { aiProviders, aiChat, aiModels } from '$lib/bridge/ai';
-  import type { ModelInfo } from '$lib/bridge/ai';
+  import { aiProviders, aiModels } from '$lib/bridge/ai-providers';
+  import type { ModelInfo } from '$lib/bridge/ai-providers';
   import type { AiProvider } from '$lib/ai/types';
 
   type Settings = ReturnType<typeof getSettings>;
@@ -70,22 +70,27 @@
     testMessage = '';
 
     try {
-      await aiChat({
-        provider: {
-          id: settings.aiProviderId || 'custom',
-          name: 'Test',
-          baseUrl: settings.aiBaseUrl,
-          apiKey: settings.aiApiKey,
-          model: settings.aiModel,
-        },
-        messages: [{ role: 'user', content: 'Say "connected" and nothing else.' }],
-        systemPrompt: 'Respond with only the word "connected".',
+      const { generateText } = await import('ai');
+      const { getAIModel } = await import('$lib/ai/client');
+      const model = getAIModel();
+      if (!model) throw new Error('AI provider not configured — fill in base URL, API key, and model.');
+
+      const { text } = await generateText({
+        model,
+        prompt: 'Respond with only the word "connected".',
+        maxOutputTokens: 16,
       });
-      testStatus = 'success';
-      testMessage = 'Connection successful.';
+
+      if (text.toLowerCase().includes('connect')) {
+        testStatus = 'success';
+        testMessage = 'Connection successful.';
+      } else {
+        testStatus = 'error';
+        testMessage = `Unexpected response: ${text.slice(0, 80)}`;
+      }
     } catch (err: any) {
       testStatus = 'error';
-      testMessage = err?.message || err?.detail || (typeof err === 'string' ? err : JSON.stringify(err));
+      testMessage = err?.message || (typeof err === 'string' ? err : JSON.stringify(err));
     }
   }
 </script>

@@ -1,8 +1,7 @@
-import type { AiMessage, AiProvider, StreamToken } from '$lib/ai/types';
-import { aiChat, aiChatCancel } from '$lib/bridge/ai';
+import type { AiMessage, AiProvider } from '$lib/ai/types';
 import { readFile } from '$lib/bridge/commands';
-import { getSettings } from '$lib/stores/settings.svelte';
-import { listen } from '@tauri-apps/api/event';
+import { getAIModel, getMaxTokens } from '$lib/ai/client';
+import { streamText, convertToModelMessages, type UIMessage } from 'ai';
 
 const RESEARCH_SYSTEM_PROMPT = `You are a research assistant analyzing the user's notes. You have been given specific notes as context.
 Answer questions based ONLY on the provided note content. If the answer isn't in the notes, say so.
@@ -24,80 +23,57 @@ let messages = $state<AiMessage[]>([]);
 let streaming = $state(false);
 let error = $state<string | null>(null);
 let provider = $state<AiProvider | null>(null);
-
-// Separate streaming listener for research channel
-let listenerReady = false;
-
-async function setupListener() {
-  if (listenerReady) return;
-  listenerReady = true;
-  try {
-    await listen<StreamToken>('ai:token', (event) => {
-      const { delta, done } = event.payload;
-      if (done) {
-        streaming = false;
-        const idx = messages.length - 1;
-        if (idx >= 0 && messages[idx].role === 'assistant') {
-          messages[idx] = { ...messages[idx], streaming: false };
-        }
-        return;
-      }
-      const idx = messages.length - 1;
-      if (idx >= 0 && messages[idx].role === 'assistant' && messages[idx].streaming) {
-        messages[idx] = { ...messages[idx], content: messages[idx].content + delta };
-      }
-    });
-  } catch {
-    listenerReady = false;
-  }
-}
+let abortController: AbortController | null = null;
 
 function buildContextBlock(): string {
   if (sources.length === 0) return '';
 
   const parts = sources.map((src, i) => {
-    const truncated = src.content.length > MAX_CHARS_PER_SOURCE
-      ? src.content.slice(0, MAX_CHARS_PER_SOURCE) + '\n... (truncated)'
-      : src.content;
+    const truncated =
+      src.content.length > MAX_CHARS_PER_SOURCE
+        ? src.content.slice(0, MAX_CHARS_PER_SOURCE) + '\n... (truncated)'
+        : src.content;
     return `--- Note ${i + 1}: "${src.title}" (${src.path}) ---\n${truncated}`;
   });
 
   return `The user has loaded ${sources.length} note(s) for analysis:\n\n${parts.join('\n\n')}`;
 }
 
-/** Wait for the streaming flag to become false (max ~30s) */
-function waitForStreamEnd(): Promise<void> {
-  return new Promise((resolve) => {
-    if (!streaming) { resolve(); return; }
-    const start = Date.now();
-    const check = () => {
-      if (!streaming || Date.now() - start > 30_000) {
-        resolve();
-        return;
-      }
-      setTimeout(check, 50);
-    };
-    check();
-  });
+async function toModelMessages(msgs: AiMessage[]) {
+  const ui: UIMessage[] = msgs
+    .filter((m) => m.role === 'user' || (m.role === 'assistant' && !m.streaming))
+    .map((m, i) => ({
+      id: String(i),
+      role: m.role as 'user' | 'assistant',
+      parts: [{ type: 'text', text: m.content }],
+    }));
+  return await convertToModelMessages(ui);
 }
 
 export function getResearchState() {
-  setupListener();
-
   return {
-    get sources() { return sources; },
-    get messages() { return messages; },
-    get streaming() { return streaming; },
-    get error() { return error; },
-    get provider() { return provider; },
+    get sources() {
+      return sources;
+    },
+    get messages() {
+      return messages;
+    },
+    get streaming() {
+      return streaming;
+    },
+    get error() {
+      return error;
+    },
+    get provider() {
+      return provider;
+    },
 
     setProvider(p: AiProvider) {
       provider = p;
     },
 
     async addSource(path: string) {
-      // Already loaded?
-      if (sources.some(s => s.path === path)) return;
+      if (sources.some((s) => s.path === path)) return;
       if (sources.length >= MAX_SOURCES) {
         error = `Maximum ${MAX_SOURCES} sources allowed.`;
         return;
@@ -105,7 +81,8 @@ export function getResearchState() {
 
       try {
         const result = await readFile(path);
-        const title = result.metadata.title || result.metadata.name.replace(/\.(md|markdown)$/i, '');
+        const title =
+          result.metadata.title || result.metadata.name.replace(/\.(md|markdown)$/i, '');
         const preview = result.content.replace(/^---[\s\S]*?---\n?/, '').trim().slice(0, 60);
         const content = result.content;
 
@@ -117,90 +94,89 @@ export function getResearchState() {
     },
 
     removeSource(path: string) {
-      sources = sources.filter(s => s.path !== path);
+      sources = sources.filter((s) => s.path !== path);
     },
 
     async send(content: string) {
       if (streaming) return;
-      if (!provider) {
-        // Try to sync from settings
-        const settings = getSettings();
-        if (settings.aiApiKey && settings.aiBaseUrl && settings.aiModel) {
-          provider = {
-            id: settings.aiProviderId || 'custom',
-            name: 'Custom',
-            baseUrl: settings.aiBaseUrl,
-            apiKey: settings.aiApiKey,
-            model: settings.aiModel,
-          };
-        } else {
-          error = 'No AI provider configured. Open Settings > AI to set one up.';
-          return;
-        }
-      }
 
+      const model = getAIModel();
+      if (!model) {
+        error = 'No AI provider configured. Open Settings → AI to set one up.';
+        return;
+      }
       error = null;
 
-      // Add user message
-      messages = [...messages, {
-        role: 'user',
-        content,
-        timestamp: Date.now(),
-      }];
+      messages = [
+        ...messages,
+        {
+          role: 'user',
+          content,
+          timestamp: Date.now(),
+        },
+      ];
 
-      // Build system prompt with context
       const contextBlock = buildContextBlock();
       const systemParts: string[] = [RESEARCH_SYSTEM_PROMPT];
       if (contextBlock) {
         systemParts.push(contextBlock);
       } else {
-        systemParts.push('No notes have been loaded yet. Ask the user to add notes as sources before asking questions.');
+        systemParts.push(
+          'No notes have been loaded yet. Ask the user to add notes as sources before asking questions.',
+        );
       }
       const fullSystemPrompt = systemParts.join('\n\n');
 
-      // Add empty assistant message for streaming
-      messages = [...messages, {
-        role: 'assistant',
-        content: '',
-        timestamp: Date.now(),
-        streaming: true,
-      }];
+      const modelMessages = await toModelMessages(messages);
+
+      const assistantIndex = messages.length;
+      messages = [
+        ...messages,
+        {
+          role: 'assistant',
+          content: '',
+          timestamp: Date.now(),
+          streaming: true,
+        },
+      ];
 
       streaming = true;
+      abortController = new AbortController();
 
       try {
-        const apiMessages = messages
-          .filter(m => !(m.role === 'assistant' && m.streaming && !m.content))
-          .map(m => ({
-            role: m.role as 'user' | 'assistant' | 'system',
-            content: m.content,
-          }));
-
-        await aiChat({
-          provider: provider!,
-          messages: apiMessages,
-          systemPrompt: fullSystemPrompt,
+        const result = streamText({
+          model,
+          system: fullSystemPrompt,
+          messages: modelMessages,
+          maxOutputTokens: getMaxTokens(),
+          abortSignal: abortController.signal,
         });
+
+        for await (const chunk of result.textStream) {
+          if (abortController.signal.aborted) break;
+          const current = messages[assistantIndex];
+          if (current && current.role === 'assistant') {
+            messages[assistantIndex] = { ...current, content: current.content + chunk };
+            messages = [...messages];
+          }
+        }
       } catch (err) {
         const { errorMessage: errMsg } = await import('$lib/utils/errors');
         error = errMsg(err);
-        streaming = false;
-        const last = messages[messages.length - 1];
-        if (last?.role === 'assistant' && !last.content) {
-          messages = messages.slice(0, -1);
+      } finally {
+        const final = messages[assistantIndex];
+        if (final && final.role === 'assistant') {
+          messages[assistantIndex] = { ...final, streaming: false };
+          messages = [...messages];
         }
-        return;
+        streaming = false;
+        abortController = null;
       }
-
-      await waitForStreamEnd();
     },
 
     async cancel() {
-      try {
-        await aiChatCancel();
-      } catch {
-        // ignore
-      }
+      abortController?.abort();
+      abortController = null;
       streaming = false;
     },
 
@@ -208,6 +184,8 @@ export function getResearchState() {
       messages = [];
       error = null;
       streaming = false;
+      abortController?.abort();
+      abortController = null;
     },
 
     clearAll() {
@@ -215,6 +193,8 @@ export function getResearchState() {
       sources = [];
       error = null;
       streaming = false;
+      abortController?.abort();
+      abortController = null;
     },
   };
 }

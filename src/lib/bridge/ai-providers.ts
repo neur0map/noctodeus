@@ -1,14 +1,12 @@
 import { invoke } from '@tauri-apps/api/core';
-import type { AiProvider, ChatRequest } from '$lib/ai/types';
+import type { AiProvider } from '$lib/ai/types';
 
-export async function aiChat(request: ChatRequest): Promise<string> {
-  return invoke<string>('ai_chat', { request });
-}
-
-export async function aiChatCancel(): Promise<void> {
-  return invoke('ai_chat_cancel');
-}
-
+/**
+ * Provider preset list surfaced by the Rust backend for the Settings > AI
+ * dropdown. Chat completions themselves happen JS-side via the Vercel AI
+ * SDK — this module only exposes the preset catalog and the /models
+ * endpoint helper.
+ */
 export async function aiProviders(): Promise<AiProvider[]> {
   return invoke<AiProvider[]>('ai_providers');
 }
