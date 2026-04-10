@@ -1,40 +1,80 @@
 /**
  * System prompt for the inline AI editor.
+ * Two modes: context-window (default) and full-document (explicit opt-in).
  */
-export const INLINE_AI_SYSTEM_PROMPT = `You are the AI editor for Noctodeus. You edit the user's note based on their instructions.
 
-## How this works
+export const CONTEXT_WINDOW_SYSTEM_PROMPT = `You are an inline AI editor. You receive a CONTEXT WINDOW of blocks around the user's cursor and an instruction.
 
-1. You receive the user's CURRENT NOTE as markdown.
-2. You receive their INSTRUCTION (what they want changed).
-3. You output the UPDATED NOTE as markdown.
+Your output is inserted at the [CURSOR] position. Output ONLY the new content — never reproduce the [ABOVE] or [BELOW] blocks.
 
-## Critical rules
+TWO OUTPUT MODES:
 
-- Your output COMPLETELY REPLACES the current note. There is no "insert" or "append" — your output IS the new note.
-- If the user asks to remove something, remove it. If they ask to add something, add it to the existing content. If they ask to reorganize, reorganize what's already there.
-- NEVER duplicate existing content. If content already exists in the note, keep one copy (modified if requested), not two.
-- Output ONLY raw markdown. No explanations, no "Here is the updated note:", no commentary. Just the markdown.
-- Preserve all content the user didn't ask to change. Don't delete things they didn't mention.
-- Match the existing style and formatting of the note.
+1. INSERT (default): If the user asks to ADD new content (write, draft, list, create, generate, explain), output only the new content to insert at [CURSOR]. Do not prefix anything.
 
-## Formatting rules
+2. REPLACE: If the user asks to MODIFY existing content in the context window (edit, fix, rename, reorganize, remove, clean up, add a title, move), output the modified version of the affected blocks from the context window. Prefix the FIRST LINE with exactly [REPLACE] — this tells the system to replace the context window instead of inserting.
 
-- Tables: standard markdown pipe syntax
-- Lists: - for bullets, 1. for numbered, - [ ] for tasks
-- Code: fenced code blocks with language
-- Headings: ## or ### (not # which is the note title)
-- Keep it concise. Don't add filler.`;
+Critical rules:
+- Raw markdown only. No explanations, no "Here is...", no meta commentary.
+- NEVER reproduce text from [ABOVE] or [BELOW] unless you're in REPLACE mode and modifying those exact blocks.
+- Keep output focused and concise.
+- Do not use # for headings (it's reserved for the note title). Use ## or ###.
+- For lists: - for bullets, 1. for numbered, - [ ] for tasks.
+- For code: fenced code blocks with language.
+- For tables: standard markdown pipe syntax.`;
+
+export const FULL_DOC_SYSTEM_PROMPT = `You are an AI editor. You receive the FULL document and an instruction to edit it.
+
+Your output REPLACES the entire document. Output the complete updated document as markdown.
+
+Critical rules:
+- Raw markdown only. No explanations, no "Here is the updated document:".
+- Preserve all content the user didn't ask to change.
+- NEVER duplicate content. If something exists, keep one copy (modified if requested).
+- Do not use # for headings (reserved for note title). Use ## or ###.
+- Match the existing style of the note.`;
 
 /**
- * Wraps the user's instruction with the current note content.
+ * Build the user message for context-window mode.
  */
-export function buildAiPrompt(instruction: string, noteMarkdown: string): string {
-  return `## Current note
+export function buildContextWindowMessage(
+  instruction: string,
+  aboveMarkdown: string,
+  belowMarkdown: string,
+): string {
+  const parts: string[] = [];
 
-${noteMarkdown}
+  if (aboveMarkdown.trim()) {
+    parts.push('[ABOVE]\n' + aboveMarkdown.trim());
+  } else {
+    parts.push('[ABOVE]\n(start of document)');
+  }
 
-## Instruction
+  parts.push('\n[CURSOR]\n');
 
-${instruction}`;
+  if (belowMarkdown.trim()) {
+    parts.push('[BELOW]\n' + belowMarkdown.trim());
+  } else {
+    parts.push('[BELOW]\n(end of document)');
+  }
+
+  parts.push('\n[INSTRUCTION]\n' + instruction);
+
+  return parts.join('\n');
+}
+
+/**
+ * Build the user message for full-document mode.
+ */
+export function buildFullDocMessage(instruction: string, noteMarkdown: string): string {
+  return `[FULL DOCUMENT]\n${noteMarkdown}\n\n[INSTRUCTION]\n${instruction}`;
+}
+
+/**
+ * Detect if the instruction is a full-document request.
+ * Small, explicit regex — no fuzzy matching.
+ */
+export function isFullDocumentRequest(instruction: string): boolean {
+  return /\b(whole|entire)\s+(note|document|thing|file)|\beverything\b|\ball of (it|this)\b|organize (this|the) note|restructure (this|the) note|clean up (this|the) note\b/i.test(
+    instruction,
+  );
 }

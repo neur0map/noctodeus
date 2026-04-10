@@ -1,12 +1,21 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import type { BlockNoteEditor } from '@blocknote/core';
-import { INLINE_AI_SYSTEM_PROMPT, buildAiPrompt } from './ai-prompt-system';
+import {
+  CONTEXT_WINDOW_SYSTEM_PROMPT,
+  FULL_DOC_SYSTEM_PROMPT,
+  buildContextWindowMessage,
+  buildFullDocMessage,
+  isFullDocumentRequest,
+} from './ai-prompt-system';
 
 interface AiPromptOverlayProps {
   editor: BlockNoteEditor<any, any, any>;
   blockId: string;
   onClose: () => void;
 }
+
+const ABOVE_COUNT = 10;
+const BELOW_COUNT = 5;
 
 export function AiPromptOverlay({ editor, blockId, onClose }: AiPromptOverlayProps) {
   const [input, setInput] = useState('');
@@ -43,9 +52,6 @@ export function AiPromptOverlay({ editor, blockId, onClose }: AiPromptOverlayPro
     streamRef.current = '';
 
     try {
-      // Get the full note as markdown — this is what the AI sees and edits
-      const noteMarkdown = await editor.blocksToMarkdownLossy(editor.document);
-
       const { aiChat } = await import('$lib/bridge/ai');
       const { listen } = await import('@tauri-apps/api/event');
       const { getSettings } = await import('$lib/stores/settings.svelte');
@@ -65,8 +71,32 @@ export function AiPromptOverlay({ editor, blockId, onClose }: AiPromptOverlayPro
         model: settings.aiModel,
       };
 
-      // Build the user message with the full note + instruction
-      const userMessage = buildAiPrompt(instruction, noteMarkdown);
+      // Decide mode: full-document or context-window
+      const fullDocMode = isFullDocumentRequest(instruction);
+
+      // Gather context
+      const doc = editor.document;
+      const cursorIdx = doc.findIndex((b) => b.id === blockId);
+      const aboveBlocks = cursorIdx > 0 ? doc.slice(Math.max(0, cursorIdx - ABOVE_COUNT), cursorIdx) : [];
+      const belowBlocks = cursorIdx >= 0 ? doc.slice(cursorIdx + 1, cursorIdx + 1 + BELOW_COUNT) : [];
+
+      let systemPrompt: string;
+      let userMessage: string;
+
+      if (fullDocMode) {
+        const noteMarkdown = await editor.blocksToMarkdownLossy(doc);
+        systemPrompt = FULL_DOC_SYSTEM_PROMPT;
+        userMessage = buildFullDocMessage(instruction, noteMarkdown);
+      } else {
+        const aboveMarkdown = aboveBlocks.length > 0
+          ? await editor.blocksToMarkdownLossy(aboveBlocks)
+          : '';
+        const belowMarkdown = belowBlocks.length > 0
+          ? await editor.blocksToMarkdownLossy(belowBlocks)
+          : '';
+        systemPrompt = CONTEXT_WINDOW_SYSTEM_PROMPT;
+        userMessage = buildContextWindowMessage(instruction, aboveMarkdown, belowMarkdown);
+      }
 
       // Listen to streaming tokens
       const unlisten = await listen<{ delta: string; done: boolean }>('ai:token', (event) => {
@@ -79,22 +109,42 @@ export function AiPromptOverlay({ editor, blockId, onClose }: AiPromptOverlayPro
       const response = await aiChat({
         provider,
         messages: [{ role: 'user', content: userMessage }],
-        systemPrompt: INLINE_AI_SYSTEM_PROMPT,
-        maxTokens: 4000,
+        systemPrompt,
+        maxTokens: fullDocMode ? 4000 : 1500,
       });
 
       unlisten();
 
-      const markdown = (response || streamRef.current).trim();
+      let markdown = (response || streamRef.current).trim();
       if (!markdown) {
         setError('AI returned empty response. Try again.');
         setLoading(false);
         return;
       }
 
-      // Replace the ENTIRE document with the AI's output
-      const blocks = editor.tryParseMarkdownToBlocks(markdown);
-      editor.replaceBlocks(editor.document, blocks);
+      if (fullDocMode) {
+        // Full document replacement
+        const blocks = editor.tryParseMarkdownToBlocks(markdown);
+        editor.replaceBlocks(doc, blocks);
+      } else {
+        // Detect [REPLACE] prefix
+        const replaceMode = /^\[REPLACE\]\s*\n?/i.test(markdown);
+        if (replaceMode) {
+          markdown = markdown.replace(/^\[REPLACE\]\s*\n?/i, '');
+        }
+
+        const blocks = editor.tryParseMarkdownToBlocks(markdown);
+
+        if (replaceMode) {
+          // Replace the context window (above + cursor + below blocks) with the new content
+          const cursorBlock = doc[cursorIdx];
+          const toReplace = [...aboveBlocks, cursorBlock, ...belowBlocks].filter(Boolean);
+          editor.replaceBlocks(toReplace, blocks);
+        } else {
+          // Insert new content after the cursor block
+          editor.insertBlocks(blocks, blockId, 'after');
+        }
+      }
 
       onClose();
       editor.focus();
@@ -138,7 +188,7 @@ export function AiPromptOverlay({ editor, blockId, onClose }: AiPromptOverlayPro
         <input
           ref={inputRef}
           className="ai-prompt__input"
-          placeholder={loading ? 'Editing note...' : 'Tell AI what to do with this note...'}
+          placeholder={loading ? 'Thinking...' : 'Ask AI to write, edit, or transform...'}
           value={input}
           onChange={(e) => { setInput(e.target.value); setError(''); }}
           onKeyDown={handleKeyDown}
