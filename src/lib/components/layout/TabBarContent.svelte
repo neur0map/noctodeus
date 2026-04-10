@@ -24,7 +24,7 @@
 
   function handleShare() {
     if (!files.activeFilePath) return;
-    window.dispatchEvent(new CustomEvent('noctodeus-share-file', { detail: { path: files.activeFilePath } }));
+    ui.showShareExport();
   }
 </script>
 

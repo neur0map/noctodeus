@@ -9,6 +9,7 @@ let tasksVisible = $state(false);
 let panelModalVisible = $state(false);
 let aiChatVisible = $state(false);
 let researchVisible = $state(false);
+let shareExportVisible = $state(false);
 
 export function getUiState() {
   return {
@@ -44,6 +45,9 @@ export function getUiState() {
     },
     get researchVisible() {
       return researchVisible;
+    },
+    get shareExportVisible() {
+      return shareExportVisible;
     },
 
     toggleSidebar() {
@@ -118,6 +122,14 @@ export function getUiState() {
     toggleResearch() {
       researchVisible = !researchVisible;
     },
+    showShareExport() {
+      shareExportVisible = true;
+      quickOpenVisible = false;
+      commandPaletteVisible = false;
+    },
+    hideShareExport() {
+      shareExportVisible = false;
+    },
     closeAllOverlays() {
       quickOpenVisible = false;
       commandPaletteVisible = false;
@@ -125,6 +137,7 @@ export function getUiState() {
       tasksVisible = false;
       panelModalVisible = false;
       graphPanelVisible = false;
+      shareExportVisible = false;
       // Note: aiChatVisible is NOT closed here — it's a persistent side panel, not a modal overlay
     },
 
@@ -140,6 +153,7 @@ export function getUiState() {
       panelModalVisible = false;
       aiChatVisible = false;
       researchVisible = false;
+      shareExportVisible = false;
     },
   };
 }

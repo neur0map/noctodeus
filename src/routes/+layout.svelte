@@ -41,7 +41,7 @@
   import { handleExport as doExport } from "../lib/utils/export";
 
   import FocusManager from "../lib/components/common/FocusManager.svelte";
-  import ShareModal from "../lib/components/common/ShareModal.svelte";
+  import ShareExportModal from "../lib/components/common/ShareExportModal.svelte";
   import FloatingChatBubble from "../lib/components/ai/FloatingChatBubble.svelte";
 
   let { children }: { children: Snippet } = $props();
@@ -154,10 +154,6 @@
   // Export dialog state
   let exportDialogVisible = $state(false);
   let exportDialogPath = $state('');
-
-  // Share modal state
-  let shareModalVisible = $state(false);
-  let shareContent = $state('');
 
   // Search state
   let searchResults = $state<SearchHit[]>([]);
@@ -272,14 +268,13 @@
   }
 
   async function handleShareNote(path: string) {
-    try {
-      const { readFile } = await import('../lib/bridge/commands');
-      const { content } = await readFile(path);
-      shareContent = content;
-      shareModalVisible = true;
-    } catch (err) {
-      logger.error(`Failed to read file for sharing: ${err}`);
+    // The new unified modal reads the file itself — just activate it
+    // for the currently-selected file. If a different path was requested
+    // (e.g. from the sidebar context menu), select it first.
+    if (files.activeFilePath !== path) {
+      files.setActiveFile(path);
     }
+    ui.showShareExport();
   }
 
   function handleTreeContextMenu(path: string, isDir: boolean, e: MouseEvent) {
@@ -459,21 +454,6 @@
         `Tauri event subscription failed (expected in browser dev mode): ${err}`,
       );
     }
-
-    const handleShareEvent = (e: Event) => {
-      const detail = (e as CustomEvent).detail;
-      shareContent = detail.content;
-      shareModalVisible = true;
-    };
-    window.addEventListener('noctodeus-share', handleShareEvent);
-    unlisteners.push(() => window.removeEventListener('noctodeus-share', handleShareEvent));
-
-    const handleShareFileEvent = async (e: Event) => {
-      const path = (e as CustomEvent).detail.path;
-      await handleShareNote(path);
-    };
-    window.addEventListener('noctodeus-share-file', handleShareFileEvent);
-    unlisteners.push(() => window.removeEventListener('noctodeus-share-file', handleShareFileEvent));
 
     // Auto-start configured MCP servers
     if (appSettings.mcpServers && appSettings.mcpServers.length > 0) {
@@ -728,10 +708,9 @@
   onFileOpen={(path) => { ui.hideTasks(); handleFileSelect(path); }}
 />
 
-<ShareModal
-  visible={shareModalVisible}
-  content={shareContent}
-  onclose={() => shareModalVisible = false}
+<ShareExportModal
+  visible={ui.shareExportVisible}
+  onclose={() => ui.hideShareExport()}
 />
 
 </FocusManager>

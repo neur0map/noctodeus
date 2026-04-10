@@ -237,11 +237,11 @@
     },
     {
       id: "share-note",
-      label: "Share: Encrypted Link",
-      action: async () => {
+      label: "Share & Export",
+      action: () => {
         ui.hideCommandPalette();
-        if (!currentFilePath || !currentContent) return;
-        window.dispatchEvent(new CustomEvent('noctodeus-share', { detail: { content: currentContent } }));
+        if (!currentFilePath) return;
+        ui.showShareExport();
       },
     },
     {
