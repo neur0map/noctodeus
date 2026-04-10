@@ -243,7 +243,8 @@
   .cp {
     display: flex;
     flex-direction: column;
-    height: 100%;
+    height: auto;
+    max-height: 100%;
     background: transparent;
     font-family: var(--font-content);
     animation: cp-fade 180ms ease both;
@@ -325,14 +326,20 @@
     }
   }
 
-  /* ── Body ── */
+  /* ── Body: flex:1 only when there are messages, auto when empty ── */
   .cp__messages {
-    flex: 1;
+    flex: 1 1 auto;
+    min-height: 0;
     overflow-y: auto;
     overflow-x: hidden;
-    padding: 8px 0;
+    padding: 0;
     scrollbar-width: thin;
     scrollbar-color: color-mix(in srgb, var(--foreground) 12%, transparent) transparent;
+  }
+
+  /* When only the greeting is inside, don't let it stretch */
+  .cp__messages:has(.cp__greet) {
+    flex: 0 0 auto;
   }
 
   .cp__messages::-webkit-scrollbar {
@@ -349,8 +356,8 @@
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    padding: 24px 24px 0;
-    gap: 16px;
+    padding: 12px 20px 8px;
+    gap: 14px;
   }
 
   .cp__greet-mark {

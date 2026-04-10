@@ -1,13 +1,15 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import { getUiState } from '$lib/stores/ui.svelte';
   import ChatPanel from './ChatPanel.svelte';
   import EyeIcon from './EyeIcon.svelte';
-  import X from '@lucide/svelte/icons/x';
 
   const ui = getUiState();
 
   let open = $state(false);
   let hoverTooltip = $state(false);
+  let panelEl: HTMLDivElement | undefined = $state();
+  let bubbleEl: HTMLButtonElement | undefined = $state();
 
   function toggle() {
     open = !open;
@@ -28,39 +30,64 @@
       else ui.hideAiChat();
     }
   });
+
+  // Close on Escape or click outside
+  onMount(() => {
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === 'Escape' && open) {
+        e.preventDefault();
+        close();
+      }
+    }
+
+    function handlePointerDown(e: PointerEvent) {
+      if (!open) return;
+      const target = e.target as Node | null;
+      if (!target) return;
+      if (panelEl?.contains(target)) return;
+      if (bubbleEl?.contains(target)) return;
+      close();
+    }
+
+    document.addEventListener('keydown', handleKey);
+    document.addEventListener('pointerdown', handlePointerDown, true);
+
+    return () => {
+      document.removeEventListener('keydown', handleKey);
+      document.removeEventListener('pointerdown', handlePointerDown, true);
+    };
+  });
 </script>
 
-<!-- Chat panel (shown when open) -->
+<!-- Chat panel (shown when open) — floats from bottom-right over the bubble position -->
 {#if open}
-  <div class="bubble-panel">
+  <div class="bubble-panel" bind:this={panelEl}>
     <ChatPanel visible={true} onclose={close} />
   </div>
 {/if}
 
-<!-- Floating bubble button -->
-<div class="bubble-wrap">
-  {#if hoverTooltip && !open}
-    <div class="bubble-tooltip">
-      Chat about this page
-      <span class="bubble-tooltip__kbd">⌘J</span>
-    </div>
-  {/if}
-
-  <button
-    class="bubble-btn"
-    class:bubble-btn--open={open}
-    onclick={toggle}
-    onmouseenter={() => (hoverTooltip = true)}
-    onmouseleave={() => (hoverTooltip = false)}
-    aria-label={open ? 'Close AI chat' : 'Open AI chat'}
-  >
-    {#if open}
-      <X size={20} />
-    {:else}
-      <EyeIcon size={22} />
+<!-- Floating bubble button (hidden when panel is open) -->
+{#if !open}
+  <div class="bubble-wrap">
+    {#if hoverTooltip}
+      <div class="bubble-tooltip">
+        Chat about this page
+        <span class="bubble-tooltip__kbd">⌘J</span>
+      </div>
     {/if}
-  </button>
-</div>
+
+    <button
+      class="bubble-btn"
+      bind:this={bubbleEl}
+      onclick={toggle}
+      onmouseenter={() => (hoverTooltip = true)}
+      onmouseleave={() => (hoverTooltip = false)}
+      aria-label="Open AI chat"
+    >
+      <EyeIcon size={22} />
+    </button>
+  </div>
+{/if}
 
 <style>
   .bubble-wrap {
@@ -177,12 +204,12 @@
   /* ── Premium floating panel ── */
   .bubble-panel {
     position: fixed;
-    bottom: 96px;
+    bottom: 28px;
     right: 28px;
     z-index: 99;
-    width: 440px;
-    height: min(680px, calc(100vh - 140px));
-    border-radius: 18px;
+    width: 420px;
+    max-height: min(580px, calc(100vh - 80px));
+    border-radius: 16px;
     overflow: hidden;
     background: var(--surface-1, var(--card));
     border: 1px solid color-mix(in srgb, var(--foreground) 10%, transparent);
@@ -193,9 +220,10 @@
       0 12px 40px -10px rgba(0, 0, 0, 0.4);
     display: flex;
     flex-direction: column;
-    animation: bubble-panel-in 280ms cubic-bezier(0.16, 1, 0.3, 1);
+    animation: bubble-panel-in 260ms cubic-bezier(0.16, 1, 0.3, 1);
     backdrop-filter: blur(20px) saturate(1.1);
     -webkit-backdrop-filter: blur(20px) saturate(1.1);
+    transform-origin: bottom right;
   }
 
   .bubble-panel :global(> *) {
