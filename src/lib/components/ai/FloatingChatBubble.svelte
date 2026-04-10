@@ -2,7 +2,6 @@
   import { getUiState } from '$lib/stores/ui.svelte';
   import ChatPanel from './ChatPanel.svelte';
   import X from '@lucide/svelte/icons/x';
-  import MessageCircle from '@lucide/svelte/icons/message-circle';
 
   const ui = getUiState();
 
@@ -57,7 +56,13 @@
     {#if open}
       <X size={20} />
     {:else}
-      <MessageCircle size={20} />
+      <!-- Eye icon (Variant 3) — Soft Eye with organic curves -->
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M2 12c2.5-4.5 6-7 10-7s7.5 2.5 10 7" />
+        <path d="M2 12c2.5 4.5 6 7 10 7s7.5-2.5 10-7" />
+        <circle cx="12" cy="12" r="3" />
+        <circle cx="12" cy="12" r="1" fill="currentColor" stroke="none" />
+      </svg>
     {/if}
   </button>
 </div>
@@ -158,6 +163,14 @@
     min-height: 0;
     display: flex;
     flex-direction: column;
+  }
+
+  /* Override ChatPanel's right-docked styles */
+  .bubble-panel :global(.cp) {
+    height: 100% !important;
+    border-left: none !important;
+    background: transparent !important;
+    animation: none !important;
   }
 
   @keyframes bubble-tooltip-in {

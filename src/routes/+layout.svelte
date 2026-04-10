@@ -662,7 +662,7 @@
 <AppShell
   sidebarVisible={ui.sidebarVisible}
   sidebarCollapsed={ui.sidebarCollapsed}
-  rightPanelVisible={ui.aiChatVisible}
+  rightPanelVisible={false}
 >
   {#snippet sidebar()}
     <SidebarContent
