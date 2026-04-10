@@ -1,6 +1,6 @@
 [package]
 name = "noctodeus"
-version = "0.3.0"
+version = "0.3.1"
 description = "A creative IDE for thought"
 authors = ["neur0map"]
 edition = "2021"
