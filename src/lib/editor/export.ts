@@ -7,20 +7,32 @@ import { writeFile } from '@tauri-apps/plugin-fs';
  *
  * These functions mirror the official BlockNote example at
  * https://github.com/TypeCellOS/BlockNote/tree/main/examples/05-interoperability/05-converting-blocks-to-pdf
- * as closely as possible. The only Noctodeus-specific parts are:
+ * as closely as possible. The Noctodeus-specific parts are:
  *
  *   1. We use dynamic imports so the exporters aren't pulled into the
  *      SvelteKit SSR bundle.
  *   2. We pipe the resulting blob through Tauri's plugin-dialog
  *      (native save dialog) + plugin-fs (write file) instead of the
  *      browser anchor-download trick.
- *
- * We intentionally DO NOT pass custom inlineContentMapping / blockMapping
- * overrides — the default mappings handle standard BlockNote content.
- * Our custom `wikiLink` inline content renders as plain text fallback,
- * which is acceptable for v0.3.x exports. Per-format custom mappings
- * can be added in a later release once the basic exports are proven.
+ *   3. **We override `resolveFileUrl` to be a pass-through identity.**
+ *      The exporters' default resolver routes every image URL through
+ *      BlockNote's CORS proxy (https://corsproxy.api.blocknotejs.org/...)
+ *      which fails in a Tauri WebView with the generic WebKit error
+ *      "Load failed". In our WebView we have direct access to both
+ *      `asset://` URLs (Tauri's local-file protocol) and any HTTPS URL
+ *      via the relaxed CSP, so we don't need a proxy at all.
+ *   4. Custom `wikiLink` inline content mappings on each exporter so
+ *      notes containing [[target]] don't crash the exporter.
  */
+
+/**
+ * Pass-through resolveFileUrl. The exporter base class calls this for
+ * every image/file URL in the document; the returned URL is then
+ * fetch()'d inside the WebView. Since Tauri's WebView can already
+ * reach both `asset://` local files and https:// endpoints directly,
+ * we just return the URL unchanged. No CORS proxy involved.
+ */
+const passthroughResolveFileUrl = async (url: string): Promise<string> => url;
 
 // ── PDF ────────────────────────────────────────────────────────────
 
@@ -52,7 +64,9 @@ export async function exportPDF(
     styleMapping: pdfDefaultSchemaMappings.styleMapping,
   };
 
-  const exporter = new PDFExporter(editor.schema, mappings as any);
+  const exporter = new PDFExporter(editor.schema, mappings as any, {
+    resolveFileUrl: passthroughResolveFileUrl,
+  });
   const pdfDocument = await exporter.toReactPDFDocument(editor.document);
   const blob = await reactPdf.pdf(pdfDocument).toBlob();
   const bytes = new Uint8Array(await blob.arrayBuffer());
@@ -89,7 +103,9 @@ export async function exportDOCX(
     styleMapping: docxDefaultSchemaMappings.styleMapping,
   };
 
-  const exporter = new DOCXExporter(editor.schema, mappings as any);
+  const exporter = new DOCXExporter(editor.schema, mappings as any, {
+    resolveFileUrl: passthroughResolveFileUrl,
+  });
   const docxDocument = await exporter.toDocxJsDocument(editor.document);
   const buffer = await docxLib.Packer.toBuffer(docxDocument);
   const bytes = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
@@ -124,7 +140,9 @@ export async function exportODT(
     styleMapping: odtDefaultSchemaMappings.styleMapping,
   };
 
-  const exporter = new ODTExporter(editor.schema, mappings as any);
+  const exporter = new ODTExporter(editor.schema, mappings as any, {
+    resolveFileUrl: passthroughResolveFileUrl,
+  });
   // The ODT exporter's output method name isn't typed in the 0.47
   // release line — use a loose cast and try both common names.
   const out =
