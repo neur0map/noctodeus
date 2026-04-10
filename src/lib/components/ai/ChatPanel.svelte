@@ -85,16 +85,43 @@
     | { kind: 'msg'; msg: any; key: string }
     | { kind: 'tools'; tools: any[]; key: string };
 
+  /**
+   * Check if an assistant message is "tool-only" — it contains only
+   * <tool_call> blocks with no actual visible text. These should be
+   * skipped during grouping so consecutive tool runs stay consecutive.
+   */
+  function isToolOnlyAssistant(m: any): boolean {
+    if (m.role !== 'assistant') return false;
+    if (m.streaming) return false;
+    const content = m.content ?? '';
+    // Strip tool_call and think blocks, check what's left
+    const clean = content
+      .replace(/<tool_call>[\s\S]*?<\/tool_call>/g, '')
+      .replace(/<think>[\s\S]*?<\/think>/g, '')
+      .trim();
+    return !clean;
+  }
+
   let groupedMessages = $derived(() => {
     const groups: MessageGroup[] = [];
     let toolBuffer: any[] = [];
 
     for (let i = 0; i < ai.messages.length; i++) {
       const m = ai.messages[i];
+
+      // Consecutive tool messages are buffered
       if (m.role === 'tool') {
         toolBuffer.push(m);
         continue;
       }
+
+      // Empty tool-only assistant messages are skipped (they just break
+      // the tool run visually without adding any information)
+      if (isToolOnlyAssistant(m)) {
+        continue;
+      }
+
+      // Any other message flushes the tool buffer and emits itself
       if (toolBuffer.length > 0) {
         groups.push({ kind: 'tools', tools: toolBuffer, key: `tools-${i - toolBuffer.length}` });
         toolBuffer = [];

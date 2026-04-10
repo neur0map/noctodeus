@@ -121,13 +121,15 @@
 
   /**
    * Should this message render at all?
-   * Skip empty assistant messages (only had tool calls that got stripped).
+   * Skip assistant messages that are ONLY tool calls (no visible text).
+   * The tool group card already shows what tools were used — no need
+   * for a redundant empty "Thinking" bubble.
    */
   let shouldRender = $derived(() => {
     if (message.role !== 'assistant') return true;
     if (message.streaming) return true;
-    const p = processMessage(message.content ?? '');
-    return !!(processed.clean || processed.hidden.length > 0);
+    // Only render if there's actual text content
+    return !!processed.clean;
   });
 
   async function copyToClipboard() {
