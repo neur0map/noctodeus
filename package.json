@@ -17,9 +17,12 @@
     "tauri": "tauri"
   },
   "dependencies": {
+    "@ai-sdk/openai": "^3.0.52",
+    "@ai-sdk/openai-compatible": "^2.0.41",
     "@blocknote/core": "^0.47.3",
     "@blocknote/mantine": "^0.47.3",
     "@blocknote/react": "^0.47.3",
+    "@blocknote/xl-ai": "^0.47.3",
     "@internationalized/date": "^3.12.0",
     "@lucide/svelte": "^1.7.0",
     "@mantine/core": "^8.3.18",
@@ -29,6 +32,7 @@
     "@tauri-apps/plugin-fs": "^2.5.0",
     "@tauri-apps/plugin-opener": "^2",
     "@vscode/markdown-it-katex": "^1.1.2",
+    "ai": "^6.0.158",
     "animejs": "^4.3.6",
     "bits-ui": "^2.17.2",
     "clsx": "^2.1.1",
