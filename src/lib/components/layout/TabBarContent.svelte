@@ -162,30 +162,4 @@
     color: var(--color-accent, #7AA2F7);
     background: rgba(122, 162, 247, 0.1);
   }
-
-  .ai-trigger {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 28px;
-    height: 28px;
-    margin-right: 8px;
-    border: none;
-    border-radius: 6px;
-    background: transparent;
-    color: var(--text-muted, var(--color-placeholder));
-    cursor: pointer;
-    flex-shrink: 0;
-    transition: color 150ms ease-out, background 150ms ease-out;
-  }
-
-  .ai-trigger:hover {
-    color: var(--color-accent, #7AA2F7);
-    background: rgba(122, 162, 247, 0.08);
-  }
-
-  .ai-trigger--active {
-    color: var(--color-accent, #7AA2F7);
-    background: rgba(122, 162, 247, 0.1);
-  }
 </style>
