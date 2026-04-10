@@ -24,6 +24,7 @@
     "@blocknote/react": "^0.47.3",
     "@blocknote/xl-ai": "^0.47.3",
     "@blocknote/xl-docx-exporter": "^0.47.3",
+    "@blocknote/xl-multi-column": "^0.47.3",
     "@blocknote/xl-odt-exporter": "^0.47.3",
     "@blocknote/xl-pdf-exporter": "^0.47.3",
     "@internationalized/date": "^3.12.0",

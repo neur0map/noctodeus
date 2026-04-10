@@ -1,15 +1,18 @@
 import { BlockNoteSchema, defaultInlineContentSpecs } from '@blocknote/core';
+import { withMultiColumn } from '@blocknote/xl-multi-column';
 import { WikiLink } from './wiki-link';
 
 /**
- * Extended BlockNote schema with custom inline content types.
- * Note: aiPrompt is NOT a block type — it's rendered as a React overlay.
+ * Extended BlockNote schema with custom inline content types and
+ * Notion-style multi-column layouts via @blocknote/xl-multi-column.
  */
-export const noctodeusSchema = BlockNoteSchema.create({
+const baseSchema = BlockNoteSchema.create({
   inlineContentSpecs: {
     ...defaultInlineContentSpecs,
     wikiLink: WikiLink,
   },
 });
+
+export const noctodeusSchema = withMultiColumn(baseSchema);
 
 export type NoctodeusSchema = typeof noctodeusSchema;

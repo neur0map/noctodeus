@@ -20,6 +20,7 @@ import {
 } from '@blocknote/xl-ai';
 import { en as aiEn } from '@blocknote/xl-ai/locales';
 import '@blocknote/xl-ai/style.css';
+import { multiColumnDropCursor, locales as multiColumnLocales } from '@blocknote/xl-multi-column';
 import { getFabricAICommands } from './ai-commands';
 
 import '@mantine/core/styles.css';
@@ -55,7 +56,8 @@ export default function BlockNoteWrapper(props: BlockNoteEditorProps) {
   const editor = useCreateBlockNote({
     schema: noctodeusSchema,
     uploadFile,
-    dictionary: { ...blockNoteEn, ai: aiEn },
+    dropCursor: multiColumnDropCursor,
+    dictionary: { ...blockNoteEn, ai: aiEn, multi_column: multiColumnLocales.en },
     extensions: [
       AIExtension({
         transport: noctodeusAITransport(),
