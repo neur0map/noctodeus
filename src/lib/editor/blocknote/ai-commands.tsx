@@ -8,6 +8,7 @@ import {
   RiGraduationCapLine,
   RiBookOpenLine,
 } from 'react-icons/ri';
+import { splitFrontmatter } from './markdown';
 
 // ── System prompts (5 unique Noctodeus Fabric patterns) ─────────────
 //
@@ -26,10 +27,17 @@ with speaker if known), and Facts (any specific facts, statistics, or data point
 from the document. Organize each category as a Heading 2 section with bullets
 underneath. Each bullet max 20 words. Skip sections with no content.`;
 
-const CREATE_TAGS_PROMPT = `Generate 3-7 relevant tags for this document suitable
-for a knowledge management system. Tags must be lowercase and hyphenated (e.g.
-machine-learning, project-planning). Output a single paragraph containing the tags
-as a comma-separated list.`;
+const CREATE_TAGS_PROMPT = `Generate 3-7 relevant tags for the following document,
+suitable for a knowledge management system. Tags must be lowercase and hyphenated
+(e.g. machine-learning, project-planning, note-taking).
+
+Output ONLY the tags as a comma-separated list on a single line. No prose, no
+prefix, no markdown, no quotes. Example of a valid response:
+
+machine-learning, neural-networks, deep-learning, research
+
+Document:
+`;
 
 const CREATE_OUTLINE_PROMPT = `Create a clear hierarchical outline from this
 document. Identify main topics and organize them into a logical hierarchy. Use
@@ -93,7 +101,18 @@ export function getFabricAICommands(
       title: 'Create Tags',
       aliases: ['tags', 'keywords', 'categorize'],
       icon: <RiHashtag size={18} />,
-      onItemClick: makeClickHandler(CREATE_TAGS_PROMPT),
+      // Create Tags is SPECIAL — it writes directly to the note's YAML
+      // frontmatter `tags:` field instead of inserting a paragraph block.
+      // That's why it bypasses xl-ai's invokeAI pipeline entirely.
+      onItemClick: async () => {
+        ai.closeAIMenu();
+        await runCreateTags(editor).catch(async (err) => {
+          const { toast } = await import('$lib/stores/toast.svelte');
+          toast.error(
+            `Create Tags failed: ${err instanceof Error ? err.message : String(err)}`,
+          );
+        });
+      },
       size: 'small',
     },
     {
@@ -121,4 +140,144 @@ export function getFabricAICommands(
       size: 'small',
     },
   ];
+}
+
+// ── Create Tags custom runner ────────────────────────────────────────
+//
+// Reads the active file's raw content, asks the LLM for tags, parses
+// them, splices them into the YAML frontmatter's `tags:` field, and
+// writes back. Reloads the editor so the PropertiesPanel picks up the
+// change. Does NOT go through xl-ai's invokeAI / tool-call pipeline
+// because we want metadata, not document content.
+
+async function runCreateTags(editor: BlockNoteEditor<any, any, any>): Promise<void> {
+  const [{ getFilesState }, { readFile, writeFile }, { generateText }, { getAIModel, getMaxTokens }, { toast }, { getActiveEditorState }] =
+    await Promise.all([
+      import('$lib/stores/files.svelte'),
+      import('$lib/bridge/commands'),
+      import('ai'),
+      import('$lib/ai/client'),
+      import('$lib/stores/toast.svelte'),
+      import('$lib/stores/active-editor.svelte'),
+    ]);
+
+  const files = getFilesState();
+  const path = files.activeFilePath;
+  if (!path) {
+    throw new Error('No active file');
+  }
+
+  const model = getAIModel();
+  if (!model) {
+    throw new Error('AI provider not configured — open Settings → AI');
+  }
+
+  // 1. Read the raw file content (not the editor document — we need the
+  //    original frontmatter which may have other keys we must preserve)
+  const fileContent = await readFile(path);
+  const raw = fileContent.content;
+  const [existingFm, body] = splitFrontmatter(raw);
+
+  if (!body.trim()) {
+    throw new Error('Note body is empty — nothing to tag');
+  }
+
+  // 2. Ask the LLM for tags (plain comma-separated, no frontmatter)
+  const bodyForAI = body.length > 6000 ? body.slice(0, 6000) + '\n\n...(truncated)' : body;
+  const { text } = await generateText({
+    model,
+    prompt: `${CREATE_TAGS_PROMPT}${bodyForAI}`,
+    maxOutputTokens: Math.min(getMaxTokens() ?? 200, 200),
+  });
+
+  // 3. Parse the response into a clean list of hyphen-lowercase tags
+  const tags = parseTagList(text);
+  if (tags.length === 0) {
+    throw new Error(`AI returned no usable tags: "${text.slice(0, 100)}"`);
+  }
+
+  // 4. Splice into frontmatter
+  const newFm = upsertTagsInFrontmatter(existingFm, tags);
+  const newContent = newFm + '\n\n' + body.trimStart();
+
+  // 5. Write the file back
+  await writeFile(path, newContent);
+
+  // 6. Reload the editor content so the PropertiesPanel picks it up
+  const activeEditor = getActiveEditorState();
+  if (activeEditor.handle) {
+    await activeEditor.handle.setContent(newContent);
+  }
+
+  toast.success(`Added ${tags.length} tag${tags.length === 1 ? '' : 's'}: ${tags.join(', ')}`);
+}
+
+/**
+ * Parse a raw LLM tag response into a clean list of lowercase-hyphen tags.
+ * Tolerates responses prefixed with "Tags:", wrapped in markdown, split
+ * by commas or spaces, or quoted.
+ */
+function parseTagList(raw: string): string[] {
+  // Strip common prefixes and markdown wrappers
+  const cleaned = raw
+    .replace(/^\s*\*?\*?tags\*?\*?\s*:\s*/i, '')
+    .replace(/`/g, '')
+    .replace(/^\*+|\*+$/g, '')
+    .trim();
+
+  // Split on commas first, then whitespace if the model ignored commas
+  const parts = cleaned.includes(',') ? cleaned.split(',') : cleaned.split(/\s+/);
+
+  const tags: string[] = [];
+  for (const part of parts) {
+    const tag = part
+      .trim()
+      .toLowerCase()
+      .replace(/^["'#]+|["'#]+$/g, '') // strip wrapping punctuation
+      .replace(/\s+/g, '-'); // "machine learning" → "machine-learning"
+
+    if (!tag) continue;
+    if (!/^[a-z0-9][a-z0-9-]*$/.test(tag)) continue; // drop non-conforming
+    if (tags.includes(tag)) continue; // dedupe
+    tags.push(tag);
+    if (tags.length >= 10) break;
+  }
+  return tags;
+}
+
+/**
+ * Take existing YAML frontmatter (including --- delimiters) and return
+ * a new frontmatter block with the `tags:` field set to the provided
+ * tags, preserving all other keys. If there's no frontmatter at all,
+ * creates a minimal one with only `tags`.
+ */
+function upsertTagsInFrontmatter(existingFm: string, tags: string[]): string {
+  const tagsLine = `tags: [${tags.join(', ')}]`;
+
+  if (!existingFm) {
+    return `---\n${tagsLine}\n---`;
+  }
+
+  // Strip the delimiters so we can work on the YAML body
+  const inner = existingFm
+    .replace(/^---\r?\n/, '')
+    .replace(/\r?\n---\r?\n?$/, '');
+
+  const lines = inner.split(/\r?\n/);
+  const tagsIdx = lines.findIndex((l) => /^\s*tags\s*:/.test(l));
+
+  if (tagsIdx >= 0) {
+    // Replace single-line tags entry
+    lines[tagsIdx] = tagsLine;
+    // If the original was a multi-line (YAML list) tags block, also drop
+    // the following indented continuation lines
+    let i = tagsIdx + 1;
+    while (i < lines.length && /^\s{2,}-\s/.test(lines[i])) {
+      lines.splice(i, 1);
+    }
+  } else {
+    lines.push(tagsLine);
+  }
+
+  return `---\n${lines.join('\n')}\n---`;
 }
