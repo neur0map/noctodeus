@@ -85,11 +85,11 @@
       background 150ms var(--ease-expo-out),
       color 150ms var(--ease-expo-out),
       border-color 150ms var(--ease-expo-out);
-    animation: tab-enter 400ms var(--ease-expo-out) both;
+    animation: tab-enter 320ms var(--ease-expo-out) both;
   }
 
   @keyframes tab-enter {
-    from { opacity: 0; transform: translateY(-4px) scale(0.97); }
+    from { opacity: 0; transform: translateY(-5px) scale(0.96); }
     to { opacity: 1; transform: translateY(0) scale(1); }
   }
 
@@ -174,7 +174,8 @@
     transition:
       opacity 150ms var(--ease-expo-out),
       color 150ms var(--ease-expo-out),
-      background 150ms var(--ease-expo-out);
+      background 150ms var(--ease-expo-out),
+      transform 140ms cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .tab-item:hover .tab-item__close {
@@ -185,6 +186,11 @@
     opacity: 1 !important;
     color: var(--accent-red, #F7768E);
     background: rgba(255, 255, 255, 0.08);
+    transform: scale(1.15);
+  }
+
+  .tab-item__close:active {
+    transform: scale(0.9);
   }
 
   @media (prefers-reduced-motion: reduce) {

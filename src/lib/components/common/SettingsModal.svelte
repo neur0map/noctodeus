@@ -32,6 +32,27 @@
   type Section = 'general' | 'editor' | 'appearance' | 'files' | 'hotkeys' | 'sync' | 'ai' | 'mcp';
 
   let activeSection = $state<Section>('general');
+  let closing = $state(false);
+  let closeTimer: ReturnType<typeof setTimeout> | undefined;
+  const CLOSE_MS = 240;
+
+  function dismiss() {
+    if (closing) return;
+    closing = true;
+    closeTimer = setTimeout(() => {
+      closing = false;
+      closeTimer = undefined;
+      onclose();
+    }, CLOSE_MS);
+  }
+
+  $effect(() => {
+    if (visible && closeTimer) {
+      clearTimeout(closeTimer);
+      closeTimer = undefined;
+      closing = false;
+    }
+  });
 
   const sections: { id: Section; label: string }[] = [
     { id: 'general', label: 'General' },
@@ -47,20 +68,25 @@
   function handleKeydown(e: KeyboardEvent) {
     if (e.key === 'Escape') {
       e.preventDefault();
-      onclose();
+      dismiss();
     }
   }
 
   function handleBackdropClick(e: MouseEvent) {
-    if (e.target === e.currentTarget) onclose();
+    if (e.target === e.currentTarget) dismiss();
   }
 </script>
 
 {#if visible}
   <!-- svelte-ignore a11y_no_static_element_interactions -->
-  <div class="settings-backdrop" onclick={handleBackdropClick} onkeydown={handleKeydown}>
+  <div
+    class="settings-backdrop"
+    class:settings-backdrop--closing={closing}
+    onclick={handleBackdropClick}
+    onkeydown={handleKeydown}
+  >
     <!-- svelte-ignore a11y_no_static_element_interactions -->
-    <div class="settings" onkeydown={handleKeydown}>
+    <div class="settings" class:settings--closing={closing} onkeydown={handleKeydown}>
       <!-- Sidebar nav -->
       <nav class="settings__nav">
         <div class="settings__nav-group">
@@ -94,7 +120,7 @@
           <h2 class="settings__title">
             {sections.find(s => s.id === activeSection)?.label}
           </h2>
-          <button class="settings__close" onclick={onclose} title="Close"><X size={14} /></button>
+          <button class="settings__close" onclick={dismiss} title="Close"><X size={14} /></button>
         </div>
 
         <div class="settings__body">
@@ -131,12 +157,22 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    animation: backdrop-in 300ms ease both;
+    animation: backdrop-in 260ms ease both;
+  }
+
+  .settings-backdrop--closing {
+    animation: backdrop-out 240ms ease forwards;
+    pointer-events: none;
   }
 
   @keyframes backdrop-in {
     from { opacity: 0; }
     to { opacity: 1; }
+  }
+
+  @keyframes backdrop-out {
+    from { opacity: 1; }
+    to { opacity: 0; }
   }
 
   .settings {
@@ -148,12 +184,22 @@
     border-radius: 6px;
     box-shadow: var(--shadow-modal, 0 8px 32px rgba(0,0,0,0.4));
     overflow: hidden;
-    animation: settings-in 450ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: settings-in 360ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    transform-origin: center;
+  }
+
+  .settings--closing {
+    animation: settings-out 240ms cubic-bezier(0.4, 0, 1, 1) forwards;
   }
 
   @keyframes settings-in {
-    from { opacity: 0; transform: scale(0.95) translateY(8px); }
+    from { opacity: 0; transform: scale(0.96) translateY(10px); }
     to { opacity: 1; transform: scale(1) translateY(0); }
+  }
+
+  @keyframes settings-out {
+    from { opacity: 1; transform: scale(1) translateY(0); }
+    to { opacity: 0; transform: scale(0.97) translateY(6px); }
   }
 
   /* ── Nav sidebar ── */

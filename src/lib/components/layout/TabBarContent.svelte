@@ -92,13 +92,21 @@
     cursor: pointer;
     white-space: nowrap;
     flex-shrink: 0;
-    transition: border-color 150ms ease-out, color 150ms ease-out, background 150ms ease-out;
+    transition:
+      border-color 150ms ease-out,
+      color 150ms ease-out,
+      background 150ms ease-out,
+      transform 140ms cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .search-trigger:hover {
     border-color: var(--border-active, var(--color-border));
     color: var(--text-secondary, var(--color-muted-foreground));
     background: var(--surface-2, var(--color-hover));
+  }
+
+  .search-trigger:active {
+    transform: scale(0.97);
   }
 
   .search-trigger__icon {
@@ -129,12 +137,19 @@
     color: var(--text-muted, var(--color-placeholder));
     cursor: pointer;
     flex-shrink: 0;
-    transition: color 150ms ease-out, background 150ms ease-out;
+    transition:
+      color 150ms ease-out,
+      background 150ms ease-out,
+      transform 140ms cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .share-trigger:hover {
     color: var(--color-foreground);
     background: var(--color-hover);
+  }
+
+  .share-trigger:active {
+    transform: scale(0.9);
   }
 
   .research-trigger {
@@ -150,12 +165,19 @@
     color: var(--text-muted, var(--color-placeholder));
     cursor: pointer;
     flex-shrink: 0;
-    transition: color 150ms ease-out, background 150ms ease-out;
+    transition:
+      color 150ms ease-out,
+      background 150ms ease-out,
+      transform 140ms cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .research-trigger:hover {
     color: var(--color-accent, #7AA2F7);
     background: rgba(122, 162, 247, 0.08);
+  }
+
+  .research-trigger:active {
+    transform: scale(0.9);
   }
 
   .research-trigger--active {

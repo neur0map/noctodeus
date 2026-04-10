@@ -59,9 +59,11 @@ export function AiPromptOverlay({ editor, blockId, onClose }: AiPromptOverlayPro
   const [loading, setLoading] = useState(false);
   const [streaming, setStreaming] = useState('');
   const [error, setError] = useState('');
+  const [closing, setClosing] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const streamRef = useRef('');
   const previewRef = useRef<HTMLDivElement>(null);
+  const CLOSE_MS = 220;
 
   useEffect(() => {
     requestAnimationFrame(() => inputRef.current?.focus());
@@ -74,10 +76,16 @@ export function AiPromptOverlay({ editor, blockId, onClose }: AiPromptOverlayPro
   }, [streaming]);
 
   const dismiss = useCallback(() => {
-    onClose();
-    editor.setTextCursorPosition(blockId, 'start');
-    editor.focus();
-  }, [editor, blockId, onClose]);
+    if (closing) return;
+    setClosing(true);
+    window.setTimeout(() => {
+      onClose();
+      try {
+        editor.setTextCursorPosition(blockId, 'start');
+        editor.focus();
+      } catch { /* block may no longer exist */ }
+    }, CLOSE_MS);
+  }, [closing, editor, blockId, onClose]);
 
   const submit = useCallback(async () => {
     const instruction = input.trim();
@@ -143,11 +151,15 @@ export function AiPromptOverlay({ editor, blockId, onClose }: AiPromptOverlayPro
         }
       });
 
+      // Honor the user-configured ceiling. 0 = provider default.
+      const userCap = settings.aiMaxTokens ?? 0;
+      const maxTokens = userCap > 0 ? userCap : undefined;
+
       const response = await aiChat({
         provider,
         messages: [{ role: 'user', content: userMessage }],
         systemPrompt,
-        maxTokens: fullDocMode ? 4000 : 1500,
+        ...(maxTokens !== undefined ? { maxTokens } : {}),
       });
 
       unlisten();
@@ -206,7 +218,10 @@ export function AiPromptOverlay({ editor, blockId, onClose }: AiPromptOverlayPro
   );
 
   return (
-    <div className="ai-prompt" onMouseDown={(e) => e.stopPropagation()}>
+    <div
+      className={`ai-prompt${closing ? ' ai-prompt--closing' : ''}`}
+      onMouseDown={(e) => e.stopPropagation()}
+    >
       <div className="ai-prompt__bar">
         {loading ? (
           <div className="ai-prompt__spinner" aria-hidden="true">

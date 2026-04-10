@@ -92,6 +92,19 @@ function buildSystemPrompt(userPrompt: string, tools: McpTool[], ctx?: AiContext
       : ' If the user wants you to have external capabilities, they can connect MCP tool servers in Settings > MCP.')
   );
 
+  // Behavior — be decisive, stop over-asking
+  parts.push(`## How to behave
+
+**Be decisive. Act, don't interrogate.**
+
+- When the user's intent is clear enough to act, just do it. Do NOT ask multiple rounds of "which option" or "where exactly" before taking action.
+- If something is genuinely ambiguous, make ONE reasonable assumption, state it in a single short sentence, and proceed. Do not enumerate options 1/2/3 unless the user asks.
+- Combine steps into one response. "Do X and then Y" means: do X and Y in the same turn — don't stop after X to confirm.
+- Don't re-confirm what the user already said. If they said "insert those into the file," insert them. If they said "at the end," append to the end. Trust the instruction.
+- Only ask a clarifying question if the action is destructive AND irreversible (deleting files, overwriting content, sending messages). For everything else: pick the sensible default and act.
+- Skip meta-questions about naming conventions, placement choices, or style preferences unless the user explicitly invites you to debate them. Pick what matches the existing codebase and go.
+- Keep responses short. No preambles ("Sure, I can help with that!"), no trailing summaries ("Let me know if you want anything else!"). Just the work.`);
+
   // Core and note context
   if (ctx) {
     const ctxLines: string[] = [];
@@ -317,10 +330,15 @@ export function getAiState() {
               : m.content,
           }));
 
+        // Honor the user's configured max-tokens ceiling. 0 = provider default.
+        const { getSettings } = await import('$lib/stores/settings.svelte');
+        const userCap = getSettings().aiMaxTokens ?? 0;
+
         await aiChat({
           provider: provider!,
           messages: apiMessages,
           systemPrompt,
+          ...(userCap > 0 ? { maxTokens: userCap } : {}),
         });
       } catch (err) {
         const { errorMessage: errMsg } = await import('$lib/utils/errors');

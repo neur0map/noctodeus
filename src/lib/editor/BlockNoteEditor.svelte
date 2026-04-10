@@ -262,6 +262,23 @@
     margin-left: auto;
     margin-right: auto;
     padding: 0 48px 0 48px;
+    animation: -global-ai-prompt-in 280ms cubic-bezier(0.16, 1, 0.3, 1);
+    transform-origin: left center;
+  }
+
+  .blocknote-container :global(.ai-prompt--closing) {
+    animation: -global-ai-prompt-out 220ms cubic-bezier(0.4, 0, 1, 1) forwards;
+    pointer-events: none;
+  }
+
+  @keyframes -global-ai-prompt-in {
+    from { opacity: 0; transform: translateY(-6px) scale(0.98); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  @keyframes -global-ai-prompt-out {
+    from { opacity: 1; transform: translateY(0) scale(1); }
+    to   { opacity: 0; transform: translateY(-4px) scale(0.985); }
   }
 
   .blocknote-container :global(.ai-prompt__bar) {
@@ -340,7 +357,14 @@
     cursor: pointer;
     background: color-mix(in srgb, var(--foreground) 10%, transparent);
     color: var(--muted-foreground);
-    transition: background 140ms ease, color 140ms ease;
+    transition:
+      background 140ms ease,
+      color 140ms ease,
+      transform 140ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .blocknote-container :global(.ai-prompt__send--ready:active) {
+    transform: scale(0.92);
   }
 
   .blocknote-container :global(.ai-prompt__send:disabled) {
@@ -382,6 +406,342 @@
 
   @keyframes -global-ai-spin {
     to { transform: rotate(360deg); }
+  }
+
+  /* ── Fabric Pattern Executor overlay ── */
+  .blocknote-container :global(.pattern-executor) {
+    position: fixed;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 80;
+    width: min(560px, calc(100vw - 48px));
+    pointer-events: auto;
+    animation: -global-pattern-rise 340ms cubic-bezier(0.2, 0.9, 0.3, 1);
+  }
+
+  .blocknote-container :global(.pattern-executor--closing) {
+    animation: -global-pattern-fall 240ms cubic-bezier(0.4, 0, 1, 1) forwards;
+    pointer-events: none;
+  }
+
+  .blocknote-container :global(.pattern-executor__inner) {
+    display: flex;
+    flex-direction: column;
+    background: var(--popover);
+    border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+    border-radius: 12px;
+    box-shadow:
+      0 1px 0 0 color-mix(in srgb, var(--foreground) 3%, transparent) inset,
+      0 12px 40px -8px color-mix(in srgb, #000 55%, transparent),
+      0 2px 8px -2px color-mix(in srgb, #000 30%, transparent);
+    overflow: hidden;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  .blocknote-container :global(.pattern-executor__header) {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border-bottom: 1px solid color-mix(in srgb, var(--border) 50%, transparent);
+    background: color-mix(in srgb, var(--foreground) 3%, transparent);
+  }
+
+  .blocknote-container :global(.pattern-executor__icon) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--accent-blue, var(--color-accent, #7aa2f7)) 14%, transparent);
+    color: var(--accent-blue, var(--color-accent, #7aa2f7));
+    flex-shrink: 0;
+  }
+
+  .blocknote-container :global(.pattern-executor__meta) {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .blocknote-container :global(.pattern-executor__category) {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--muted-foreground);
+    line-height: 1;
+  }
+
+  .blocknote-container :global(.pattern-executor__name) {
+    font-family: var(--font-content);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--foreground);
+    line-height: 1.3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .blocknote-container :global(.pattern-executor__status) {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted-foreground);
+    flex-shrink: 0;
+  }
+
+  .blocknote-container :global(.pattern-executor__status--error) {
+    color: var(--accent-red, #f7768e);
+  }
+
+  .blocknote-container :global(.pattern-executor__pulse) {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent-blue, var(--color-accent, #7aa2f7));
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent-blue, #7aa2f7) 60%, transparent);
+    animation: -global-pattern-pulse 1.4s ease-out infinite;
+  }
+
+  .blocknote-container :global(.pattern-executor__feed) {
+    padding: 14px 16px;
+    max-height: 260px;
+    overflow-y: auto;
+    font-family: var(--font-content);
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--foreground);
+    white-space: pre-wrap;
+    word-break: break-word;
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--foreground) 20%, transparent) transparent;
+  }
+
+  .blocknote-container :global(.pattern-executor__feed::-webkit-scrollbar) {
+    width: 6px;
+  }
+
+  .blocknote-container :global(.pattern-executor__feed::-webkit-scrollbar-thumb) {
+    background: color-mix(in srgb, var(--foreground) 20%, transparent);
+    border-radius: 3px;
+  }
+
+  .blocknote-container :global(.pattern-executor__placeholder) {
+    color: var(--muted-foreground);
+    font-style: italic;
+  }
+
+  /* Rendered markdown inside the streaming preview */
+  .blocknote-container :global(.pattern-executor__feed > *:first-child) {
+    margin-top: 0;
+  }
+  .blocknote-container :global(.pattern-executor__feed > *:last-child) {
+    margin-bottom: 0;
+  }
+  .blocknote-container :global(.pattern-executor__feed p) {
+    margin: 0 0 10px;
+  }
+  .blocknote-container :global(.pattern-executor__feed h1),
+  .blocknote-container :global(.pattern-executor__feed h2),
+  .blocknote-container :global(.pattern-executor__feed h3),
+  .blocknote-container :global(.pattern-executor__feed h4) {
+    margin: 16px 0 6px;
+    font-weight: 600;
+    color: var(--foreground);
+    letter-spacing: -0.005em;
+  }
+  .blocknote-container :global(.pattern-executor__feed h1) { font-size: 16px; }
+  .blocknote-container :global(.pattern-executor__feed h2) { font-size: 14px; }
+  .blocknote-container :global(.pattern-executor__feed h3),
+  .blocknote-container :global(.pattern-executor__feed h4) { font-size: 13px; }
+  .blocknote-container :global(.pattern-executor__feed ul),
+  .blocknote-container :global(.pattern-executor__feed ol) {
+    margin: 0 0 10px;
+    padding-left: 20px;
+  }
+  .blocknote-container :global(.pattern-executor__feed li) {
+    margin: 3px 0;
+  }
+  .blocknote-container :global(.pattern-executor__feed li::marker) {
+    color: color-mix(in srgb, var(--accent-blue, var(--color-accent, #7aa2f7)) 80%, transparent);
+  }
+  .blocknote-container :global(.pattern-executor__feed code) {
+    font-family: var(--font-mono);
+    font-size: 0.88em;
+    padding: 1px 5px;
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--foreground) 8%, transparent);
+    color: var(--foreground);
+  }
+  .blocknote-container :global(.pattern-executor__feed pre) {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    padding: 10px 12px;
+    margin: 10px 0;
+    border-radius: 7px;
+    background: color-mix(in srgb, var(--foreground) 6%, transparent);
+    border: 1px solid color-mix(in srgb, var(--border) 40%, transparent);
+    overflow-x: auto;
+  }
+  .blocknote-container :global(.pattern-executor__feed pre code) {
+    padding: 0;
+    background: transparent;
+  }
+  .blocknote-container :global(.pattern-executor__feed strong) {
+    font-weight: 600;
+    color: var(--foreground);
+  }
+  .blocknote-container :global(.pattern-executor__feed em) {
+    font-style: italic;
+  }
+  .blocknote-container :global(.pattern-executor__feed blockquote) {
+    margin: 8px 0;
+    padding: 2px 0 2px 12px;
+    border-left: 2px solid color-mix(in srgb, var(--accent-blue, #7aa2f7) 60%, transparent);
+    color: var(--muted-foreground);
+    font-style: italic;
+  }
+  .blocknote-container :global(.pattern-executor__feed hr) {
+    border: none;
+    border-top: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+    margin: 12px 0;
+  }
+  .blocknote-container :global(.pattern-executor__feed a) {
+    color: var(--accent-blue, var(--color-accent, #7aa2f7));
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .blocknote-container :global(.pattern-executor__error) {
+    padding: 18px 16px;
+    font-family: var(--font-content);
+    font-size: 12.5px;
+    line-height: 1.5;
+    color: var(--accent-red, #f7768e);
+    background: color-mix(in srgb, var(--accent-red, #f7768e) 6%, transparent);
+  }
+
+  .blocknote-container :global(.pattern-executor__footer) {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 14px;
+    border-top: 1px solid color-mix(in srgb, var(--border) 50%, transparent);
+    background: color-mix(in srgb, var(--foreground) 2%, transparent);
+  }
+
+  .blocknote-container :global(.pattern-executor__hint) {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted-foreground);
+  }
+
+  .blocknote-container :global(.pattern-executor__actions) {
+    display: flex;
+    gap: 8px;
+  }
+
+  .blocknote-container :global(.pattern-executor__btn) {
+    font-family: var(--font-content);
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1;
+    padding: 8px 14px;
+    border-radius: 7px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition:
+      background 140ms ease,
+      color 140ms ease,
+      border-color 140ms ease,
+      opacity 140ms ease,
+      transform 120ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .blocknote-container :global(.pattern-executor__btn:active:not(:disabled)) {
+    transform: scale(0.96);
+  }
+
+  .blocknote-container :global(.pattern-executor__btn--ghost) {
+    background: transparent;
+    color: var(--muted-foreground);
+    border-color: color-mix(in srgb, var(--border) 60%, transparent);
+  }
+
+  .blocknote-container :global(.pattern-executor__btn--ghost:hover) {
+    color: var(--foreground);
+    background: color-mix(in srgb, var(--foreground) 6%, transparent);
+    border-color: var(--border);
+  }
+
+  .blocknote-container :global(.pattern-executor__btn--primary) {
+    background: var(--accent-blue, var(--color-accent, #7aa2f7));
+    color: var(--primary-foreground, #0b0d12);
+  }
+
+  .blocknote-container :global(.pattern-executor__btn--primary:hover:not(:disabled)) {
+    filter: brightness(1.08);
+  }
+
+  .blocknote-container :global(.pattern-executor__btn--primary:disabled) {
+    background: color-mix(in srgb, var(--foreground) 12%, transparent);
+    color: var(--muted-foreground);
+    cursor: default;
+  }
+
+  @keyframes -global-pattern-rise {
+    from {
+      opacity: 0;
+      transform: translate(-50%, 16px);
+    }
+    to {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+  }
+
+  @keyframes -global-pattern-fall {
+    from {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+    to {
+      opacity: 0;
+      transform: translate(-50%, 12px);
+    }
+  }
+
+  @keyframes -global-pattern-pulse {
+    0%   { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent-blue, #7aa2f7) 55%, transparent); }
+    70%  { box-shadow: 0 0 0 6px color-mix(in srgb, var(--accent-blue, #7aa2f7) 0%, transparent); }
+    100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent-blue, #7aa2f7) 0%, transparent); }
+  }
+
+  /* ── Slash menu AI icon accent ── */
+  /* Tint the Fabric pattern icons blue so users can tell at a glance
+     that they're AI actions, without breaking the default menu layout. */
+  .blocknote-container :global(.bn-ai-slash-icon) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--accent-blue, var(--color-accent, #7aa2f7));
   }
 
 </style>

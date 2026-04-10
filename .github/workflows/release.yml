@@ -15,27 +15,109 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # First job: bump patch version tag
+  # First job: bump the patch version in all manifest files AND tag in one
+  # atomic commit, so the built artifacts match the GitHub release tag.
   tag:
     runs-on: ubuntu-22.04
     permissions:
       contents: write
     outputs:
-      tag: ${{ steps.tag.outputs.new_tag }}
-      version: ${{ steps.tag.outputs.new_version }}
+      tag: ${{ steps.bump.outputs.tag }}
+      version: ${{ steps.bump.outputs.version }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Bump version and push tag
-        id: tag
-        uses: anothrNick/github-tag-action@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          DEFAULT_BUMP: patch
-          WITH_V: true
-          TAG_CONTEXT: repo
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+
+      - name: Compute next version and bump manifest files
+        id: bump
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # Current version from package.json
+          CURRENT=$(jq -r .version package.json)
+          echo "Current manifest version: ${CURRENT}"
+
+          # If v${CURRENT} already has a tag, bump the patch. Otherwise
+          # release as-is — this lets a developer bump the minor or major
+          # manually in a commit and have the next push pick it up exactly.
+          if git rev-parse --verify --quiet "refs/tags/v${CURRENT}" >/dev/null; then
+            IFS=. read -r MAJOR MINOR PATCH <<< "${CURRENT}"
+            NEW_PATCH=$((PATCH + 1))
+            VERSION="${MAJOR}.${MINOR}.${NEW_PATCH}"
+            echo "v${CURRENT} already tagged — bumping patch to ${VERSION}"
+          else
+            VERSION="${CURRENT}"
+            echo "No tag for v${CURRENT} yet — releasing as-is"
+          fi
+
+          NEW_TAG="v${VERSION}"
+
+          # 1. package.json + package-lock.json (npm handles both)
+          npm version "${VERSION}" --no-git-tag-version --allow-same-version
+
+          # 2. tauri.conf.json (jq for safe JSON edit)
+          jq --arg v "${VERSION}" '.version = $v' src-tauri/tauri.conf.json \
+            > src-tauri/tauri.conf.json.tmp
+          mv src-tauri/tauri.conf.json.tmp src-tauri/tauri.conf.json
+
+          # 3. Cargo.toml — replace the FIRST `version = "..."` line only
+          #    (the package version, not any dependency versions)
+          sed -i "0,/^version = \"[^\"]*\"$/s//version = \"${VERSION}\"/" \
+            src-tauri/Cargo.toml
+
+          # 4. Cargo.lock — update the noctodeus package entry
+          awk -v ver="${VERSION}" '
+            /^name = "noctodeus"$/ {
+              print
+              getline
+              sub(/"[^"]*"/, "\"" ver "\"")
+              print
+              next
+            }
+            { print }
+          ' src-tauri/Cargo.lock > src-tauri/Cargo.lock.tmp
+          mv src-tauri/Cargo.lock.tmp src-tauri/Cargo.lock
+
+          echo "tag=${NEW_TAG}"     >> "$GITHUB_OUTPUT"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Commit bump and push tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # Only commit if the bump actually changed files. The first release
+          # at a given version won't — the manifest is already at VERSION.
+          if git diff --quiet -- \
+              package.json \
+              package-lock.json \
+              src-tauri/tauri.conf.json \
+              src-tauri/Cargo.toml \
+              src-tauri/Cargo.lock; then
+            echo "No manifest changes to commit — tagging current HEAD."
+          else
+            git add \
+              package.json \
+              package-lock.json \
+              src-tauri/tauri.conf.json \
+              src-tauri/Cargo.toml \
+              src-tauri/Cargo.lock
+            git commit -m "chore: release ${{ steps.bump.outputs.tag }}"
+            git push origin HEAD:master
+          fi
+
+          git tag "${{ steps.bump.outputs.tag }}"
+          git push origin "${{ steps.bump.outputs.tag }}"
 
   # Second job: build on all platforms using the new tag
   build:
@@ -99,7 +181,24 @@ jobs:
         with:
           tagName: ${{ needs.tag.outputs.tag }}
           releaseName: "Noctodeus ${{ needs.tag.outputs.tag }}"
-          releaseBody: "See the assets below to download and install."
-          releaseDraft: true
+          releaseBody: |
+            ## Install
+
+            **macOS** — download the `.dmg`, open it, drag Noctodeus to Applications. On first launch macOS will refuse to run it because the app is not code-signed. Fix it with one command:
+
+            ```bash
+            xattr -cr /Applications/Noctodeus.app
+            ```
+
+            Then open normally.
+
+            **Linux** — download the `.AppImage`, `chmod +x` it, and run. Or install the `.deb`: `sudo dpkg -i noctodeus_*.deb`.
+
+            **Windows** — not available yet. See the README for status.
+
+            ---
+
+            See the assets below to download.
+          releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}

@@ -34,8 +34,30 @@
   let activeTab = $state<Tab>('stats');
   let panelEl: HTMLElement | undefined = $state();
   let backdropEl: HTMLElement | undefined = $state();
+  let closing = $state(false);
+  let closeTimer: ReturnType<typeof setTimeout> | undefined;
+  const CLOSE_MS = 240;
 
   const slideSpring = createSpring({ stiffness: 280, damping: 26, mass: 0.7 });
+
+  function dismiss() {
+    if (closing) return;
+    closing = true;
+    if (panelEl) {
+      animate(panelEl, {
+        opacity: [1, 0],
+        scale: [1, 0.97],
+        translateY: [0, 8],
+        duration: CLOSE_MS,
+        ease: 'inQuad',
+      });
+    }
+    closeTimer = setTimeout(() => {
+      closing = false;
+      closeTimer = undefined;
+      onclose();
+    }, CLOSE_MS);
+  }
 
   // Stats computation
   let wordCount = $state(0);
@@ -80,13 +102,15 @@
   $effect(() => {
     if (visible) {
       activeTab = 'stats';
+      if (closeTimer) { clearTimeout(closeTimer); closeTimer = undefined; }
+      closing = false;
       requestAnimationFrame(() => {
         if (panelEl) {
           animate(panelEl, {
-            translateY: [12, 0],
-            scale: [0.96, 1],
+            translateY: [14, 0],
+            scale: [0.95, 1],
             opacity: [0, 1],
-            duration: 300,
+            duration: 340,
             ease: slideSpring,
           });
         }
@@ -118,8 +142,8 @@
   <div
     class="sp__backdrop"
     bind:this={backdropEl}
-    onclick={onclose}
-    onkeydown={(e) => { if (e.key === 'Escape') onclose(); }}
+    onclick={dismiss}
+    onkeydown={(e) => { if (e.key === 'Escape') dismiss(); }}
   ></div>
 
   <div class="sp" bind:this={panelEl}>
@@ -214,7 +238,7 @@
             currentAliases={files.activeFilePath ? (files.fileMap.get(files.activeFilePath)?.aliases ?? []) : []}
             nodes={graphState.nodes}
             edges={graphState.edges}
-            onselect={(path) => { onclose(); onfileselect(path); }}
+            onselect={(path) => { dismiss(); onfileselect(path); }}
           />
         </div>
 

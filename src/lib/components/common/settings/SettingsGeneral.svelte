@@ -1,16 +1,30 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
+  import { getVersion } from '@tauri-apps/api/app';
   import { getSettings } from '../../../stores/settings.svelte';
 
   type Settings = ReturnType<typeof getSettings>;
 
   let { settings }: { settings: Settings } = $props();
+
+  // Pull the version from Tauri at runtime so it always matches the built binary.
+  let version = $state('');
+  onMount(async () => {
+    try {
+      version = await getVersion();
+    } catch {
+      version = '';
+    }
+  });
 </script>
 
 <div class="settings__section">
   <div class="settings__row">
     <div class="settings__row-info">
       <span class="settings__row-label">Version</span>
-      <span class="settings__row-desc">Noctodeus v0.1.0</span>
+      <span class="settings__row-desc">
+        {version ? `Noctodeus v${version}` : 'Noctodeus'}
+      </span>
     </div>
   </div>
   <div class="settings__row">

@@ -13,14 +13,27 @@
   let panelEl: HTMLDivElement | undefined = $state();
   let bubbleEl: HTMLButtonElement | undefined = $state();
 
+  // Closing phase — keeps the panel mounted so the exit animation can play.
+  let closing = $state(false);
+  let closeTimer: ReturnType<typeof setTimeout> | undefined;
+  const CLOSE_MS = 240;
+
   function openChat() {
     hoverTooltip = false; // dismiss any stuck tooltip
+    if (closeTimer) { clearTimeout(closeTimer); closeTimer = undefined; }
+    closing = false;
     ui.showAiChat();
   }
 
   function close() {
+    if (!open || closing) return;
     hoverTooltip = false;
-    ui.hideAiChat();
+    closing = true;
+    closeTimer = setTimeout(() => {
+      closing = false;
+      closeTimer = undefined;
+      ui.hideAiChat();
+    }, CLOSE_MS);
   }
 
   // Close on Escape or click outside
@@ -53,7 +66,11 @@
 
 <!-- Chat panel (shown when open) — floats from bottom-right over the bubble position -->
 {#if open}
-  <div class="bubble-panel" bind:this={panelEl}>
+  <div
+    class="bubble-panel"
+    class:bubble-panel--closing={closing}
+    bind:this={panelEl}
+  >
     <ChatPanel visible={true} onclose={close} />
   </div>
 {/if}
@@ -179,7 +196,7 @@
     box-shadow:
       0 10px 40px -10px rgba(0, 0, 0, 0.4),
       0 2px 8px -2px rgba(0, 0, 0, 0.2);
-    animation: bubble-tooltip-in 220ms cubic-bezier(0.16, 1, 0.3, 1);
+    animation: bubble-tooltip-in 260ms cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .bubble-tooltip__kbd {
@@ -213,10 +230,15 @@
       0 12px 40px -10px rgba(0, 0, 0, 0.4);
     display: flex;
     flex-direction: column;
-    animation: bubble-panel-in 260ms cubic-bezier(0.16, 1, 0.3, 1);
+    animation: bubble-panel-in 320ms cubic-bezier(0.16, 1, 0.3, 1);
     backdrop-filter: blur(20px) saturate(1.1);
     -webkit-backdrop-filter: blur(20px) saturate(1.1);
     transform-origin: bottom right;
+  }
+
+  .bubble-panel--closing {
+    animation: bubble-panel-out 240ms cubic-bezier(0.4, 0, 1, 1) forwards;
+    pointer-events: none;
   }
 
   .bubble-panel :global(> *) {
@@ -247,6 +269,17 @@
     to {
       opacity: 1;
       transform: translateY(0) scale(1);
+    }
+  }
+
+  @keyframes bubble-panel-out {
+    from {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+    to {
+      opacity: 0;
+      transform: translateY(8px) scale(0.96);
     }
   }
 

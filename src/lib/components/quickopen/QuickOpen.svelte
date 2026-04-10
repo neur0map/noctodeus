@@ -25,8 +25,38 @@
   let modalEl: HTMLElement | undefined = $state();
   let backdropEl: HTMLElement | undefined = $state();
   let prevResultCount = 0;
+  let closing = $state(false);
+  let closeTimer: ReturnType<typeof setTimeout> | undefined;
+  const CLOSE_MS = 240;
 
   const entrySpring = createSpring({ stiffness: 260, damping: 22, mass: 0.7 });
+
+  function dismiss() {
+    if (closing) return;
+    closing = true;
+    // Reverse the entrance with a snappier out-curve.
+    if (backdropEl) {
+      animate(backdropEl, {
+        opacity: [1, 0],
+        duration: CLOSE_MS,
+        ease: 'inQuad',
+      });
+    }
+    if (modalEl) {
+      animate(modalEl, {
+        opacity: [1, 0],
+        scale: [1, 0.97],
+        translateY: [0, -4],
+        duration: CLOSE_MS,
+        ease: 'inQuad',
+      });
+    }
+    closeTimer = setTimeout(() => {
+      closing = false;
+      closeTimer = undefined;
+      onclose();
+    }, CLOSE_MS);
+  }
 
   /** Strip common markdown syntax from snippet text while preserving <b> highlight tags. */
   function cleanSnippet(s: string): string {
@@ -137,13 +167,15 @@
       contentResults = [];
       searching = false;
       prevResultCount = 0;
+      if (closeTimer) { clearTimeout(closeTimer); closeTimer = undefined; }
+      closing = false;
 
       // Animate entrance with anime.js
       requestAnimationFrame(() => {
         if (backdropEl) {
           animate(backdropEl, {
             opacity: [0, 1],
-            duration: 200,
+            duration: 260,
             ease: 'outQuad',
           });
         }
@@ -151,8 +183,8 @@
           animate(modalEl, {
             opacity: [0, 1],
             scale: [0.96, 1],
-            translateY: [8, 0],
-            duration: 350,
+            translateY: [-8, 0],
+            duration: 360,
             ease: entrySpring,
           });
         }
@@ -198,14 +230,14 @@
         break;
       case 'Escape':
         e.preventDefault();
-        onclose();
+        dismiss();
         break;
     }
   }
 
   function handleBackdropClick(e: MouseEvent) {
     if ((e.target as HTMLElement).classList.contains('quick-open__backdrop')) {
-      onclose();
+      dismiss();
     }
   }
 </script>

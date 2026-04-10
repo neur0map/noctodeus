@@ -3,6 +3,8 @@ import { useCreateBlockNote, SuggestionMenuController, getDefaultReactSlashMenuI
 import { BlockNoteView } from '@blocknote/mantine';
 import { filterSuggestionItems } from '@blocknote/core';
 import { AiPromptOverlay } from './ai-prompt-block';
+import { PatternExecutor } from './PatternExecutor';
+import { createAiSlashItems, type PendingPattern } from './ai-slash-items';
 
 import '@mantine/core/styles.css';
 import '@blocknote/mantine/style.css';
@@ -35,6 +37,8 @@ export default function BlockNoteWrapper(props: BlockNoteEditorProps) {
 
   // AI prompt overlay state
   const [aiPromptBlockId, setAiPromptBlockId] = useState<string | null>(null);
+  // Fabric pattern execution overlay state
+  const [pendingPattern, setPendingPattern] = useState<PendingPattern | null>(null);
 
   const editor = useCreateBlockNote({
     schema: noctodeusSchema,
@@ -210,7 +214,13 @@ export default function BlockNoteWrapper(props: BlockNoteEditorProps) {
         <SuggestionMenuController
           triggerCharacter="/"
           getItems={async (query) =>
-            filterSuggestionItems(getDefaultReactSlashMenuItems(editor), query)
+            filterSuggestionItems(
+              [
+                ...getDefaultReactSlashMenuItems(editor),
+                ...createAiSlashItems(editor, (pending) => setPendingPattern(pending)),
+              ],
+              query,
+            )
           }
         />
         <SuggestionMenuController
@@ -226,6 +236,16 @@ export default function BlockNoteWrapper(props: BlockNoteEditorProps) {
           editor={editor}
           blockId={aiPromptBlockId}
           onClose={() => setAiPromptBlockId(null)}
+        />
+      )}
+
+      {pendingPattern && (
+        <PatternExecutor
+          editor={editor}
+          pattern={pendingPattern.pattern}
+          anchorBlockId={pendingPattern.anchorBlockId}
+          selectionText={pendingPattern.selectionText}
+          onClose={() => setPendingPattern(null)}
         />
       )}
     </div>

@@ -40,16 +40,19 @@
 
   function handlePresetChange(e: Event) {
     const id = (e.target as HTMLSelectElement).value;
-    settings.update('aiProviderId', id);
-
-    const preset = presets.find(p => p.id === id);
-    if (preset) {
-      settings.update('aiBaseUrl', preset.baseUrl);
-      settings.update('aiModel', preset.model);
-      if (preset.apiKey) {
-        settings.update('aiApiKey', preset.apiKey);
-      }
+    if (!id) {
+      settings.update('aiProviderId', '');
+      return;
     }
+
+    // Use switchAiProvider so credentials are preserved per-provider:
+    // the previous provider's current fields stay in its slot, and the
+    // new provider's stored credentials (or preset defaults) are loaded
+    // into the active aiBaseUrl / aiApiKey / aiModel fields.
+    const preset = presets.find(p => p.id === id);
+    settings.switchAiProvider(id, preset
+      ? { baseUrl: preset.baseUrl, apiKey: preset.apiKey, model: preset.model }
+      : undefined);
   }
 
   function handleModelChange(e: Event) {
@@ -187,6 +190,39 @@
 
   <div class="settings__row">
     <div class="settings__row-info">
+      <span class="settings__row-label">Max Output Tokens</span>
+      <span class="settings__row-desc">
+        Upper limit for AI completions. Raise this for long summaries or structured
+        output (glossaries, flashcards). <strong>0 = provider default.</strong>
+      </span>
+    </div>
+    <div class="ai-tokens">
+      <input
+        class="ai-tokens__range"
+        type="range"
+        min="0"
+        max="16000"
+        step="500"
+        value={settings.aiMaxTokens}
+        oninput={(e) => settings.update('aiMaxTokens', Number(e.currentTarget.value))}
+      />
+      <input
+        class="ai-tokens__number"
+        type="number"
+        min="0"
+        max="32000"
+        step="500"
+        value={settings.aiMaxTokens}
+        onchange={(e) => {
+          const v = Number(e.currentTarget.value);
+          settings.update('aiMaxTokens', Number.isFinite(v) && v >= 0 ? v : 0);
+        }}
+      />
+    </div>
+  </div>
+
+  <div class="settings__row">
+    <div class="settings__row-info">
       <span class="settings__row-label">Test Connection</span>
       <span class="settings__row-desc">
         {#if testStatus === 'testing'}
@@ -223,5 +259,86 @@
     flex-direction: column;
     align-items: stretch !important;
     gap: 8px;
+  }
+
+  /* ── Max-tokens slider + numeric input ── */
+  .ai-tokens {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 260px;
+  }
+
+  .ai-tokens__range {
+    flex: 1;
+    min-width: 140px;
+    appearance: none;
+    -webkit-appearance: none;
+    height: 4px;
+    border-radius: 2px;
+    background: color-mix(in srgb, var(--foreground) 14%, transparent);
+    outline: none;
+    cursor: pointer;
+  }
+
+  .ai-tokens__range::-webkit-slider-thumb {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--accent-blue, var(--color-accent, #7aa2f7));
+    border: 2px solid var(--surface-2, var(--color-popover));
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--foreground) 18%, transparent);
+    cursor: pointer;
+    transition: transform 140ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .ai-tokens__range::-webkit-slider-thumb:hover {
+    transform: scale(1.15);
+  }
+
+  .ai-tokens__range::-webkit-slider-thumb:active {
+    transform: scale(0.9);
+  }
+
+  .ai-tokens__range::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--accent-blue, var(--color-accent, #7aa2f7));
+    border: 2px solid var(--surface-2, var(--color-popover));
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--foreground) 18%, transparent);
+    cursor: pointer;
+  }
+
+  .ai-tokens__number {
+    width: 84px;
+    padding: 6px 10px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--foreground);
+    background: color-mix(in srgb, var(--foreground) 5%, transparent);
+    border: 1px solid color-mix(in srgb, var(--foreground) 12%, transparent);
+    border-radius: 6px;
+    text-align: right;
+    transition: border-color 140ms ease, background 140ms ease;
+  }
+
+  .ai-tokens__number:focus {
+    outline: none;
+    border-color: color-mix(in srgb, var(--accent-blue, #7aa2f7) 50%, var(--foreground) 10%);
+    background: color-mix(in srgb, var(--foreground) 8%, transparent);
+  }
+
+  /* Hide the spinner arrows in most browsers — cleaner look */
+  .ai-tokens__number::-webkit-outer-spin-button,
+  .ai-tokens__number::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  .ai-tokens__number {
+    -moz-appearance: textfield;
+    appearance: textfield;
   }
 </style>

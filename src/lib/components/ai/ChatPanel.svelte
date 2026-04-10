@@ -403,11 +403,18 @@
     background: transparent;
     color: var(--muted-foreground);
     cursor: pointer;
-    transition: color 120ms, background 120ms;
+    transition:
+      color 120ms,
+      background 120ms,
+      transform 140ms cubic-bezier(0.16, 1, 0.3, 1);
 
     &:hover {
       color: var(--foreground);
       background: color-mix(in srgb, var(--foreground) 6%, transparent);
+    }
+
+    &:active {
+      transform: scale(0.9);
     }
   }
 
@@ -524,6 +531,7 @@
 
   .cp__sug-row:hover {
     color: var(--accent-blue, var(--color-accent));
+    transform: translateX(3px);
   }
 
   .cp__sug-row:hover :global(svg) {

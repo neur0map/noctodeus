@@ -14,6 +14,27 @@
 
   let query = $state('');
   let selectedIndex = $state(0);
+  let closing = $state(false);
+  let closeTimer: ReturnType<typeof setTimeout> | undefined;
+  const CLOSE_MS = 220;
+
+  function dismiss() {
+    if (closing) return;
+    closing = true;
+    closeTimer = setTimeout(() => {
+      closing = false;
+      closeTimer = undefined;
+      onclose();
+    }, CLOSE_MS);
+  }
+
+  $effect(() => {
+    if (visible && closeTimer) {
+      clearTimeout(closeTimer);
+      closeTimer = undefined;
+      closing = false;
+    }
+  });
 
   let filtered = $derived(
     query.length === 0
@@ -45,24 +66,24 @@
         e.preventDefault();
         if (filtered[selectedIndex]) {
           filtered[selectedIndex].action();
-          onclose();
+          dismiss();
         }
         break;
       case 'Escape':
         e.preventDefault();
-        onclose();
+        dismiss();
         break;
     }
   }
 
   function handleSelect(cmd: Command) {
     cmd.action();
-    onclose();
+    dismiss();
   }
 
   function handleBackdropClick(e: MouseEvent) {
     if ((e.target as HTMLElement).classList.contains('command-palette__backdrop')) {
-      onclose();
+      dismiss();
     }
   }
 
@@ -81,10 +102,16 @@
   <!-- svelte-ignore a11y_no_static_element_interactions -->
   <div
     class="command-palette__backdrop"
+    class:command-palette__backdrop--closing={closing}
     onkeydown={handleKeydown}
     onclick={handleBackdropClick}
   >
-    <div class="command-palette" role="dialog" aria-label="Command palette">
+    <div
+      class="command-palette"
+      class:command-palette--closing={closing}
+      role="dialog"
+      aria-label="Command palette"
+    >
       <SearchInput bind:value={query} placeholder="Type a command..." prefix=">" />
 
       <div class="command-palette__list" role="listbox" bind:this={listEl}>
@@ -122,12 +149,22 @@
     background: color-mix(in srgb, var(--color-background) 50%, transparent);
     backdrop-filter: blur(8px);
     z-index: 100;
-    animation: cmd-backdrop-in 300ms ease both;
+    animation: cmd-backdrop-in 260ms ease both;
+  }
+
+  .command-palette__backdrop--closing {
+    animation: cmd-backdrop-out 220ms ease forwards;
+    pointer-events: none;
   }
 
   @keyframes cmd-backdrop-in {
     from { opacity: 0; }
     to { opacity: 1; }
+  }
+
+  @keyframes cmd-backdrop-out {
+    from { opacity: 1; }
+    to { opacity: 0; }
   }
 
   .command-palette {
@@ -139,17 +176,33 @@
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    animation: command-palette-enter 450ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: command-palette-enter 340ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    transform-origin: top center;
+  }
+
+  .command-palette--closing {
+    animation: command-palette-exit 220ms cubic-bezier(0.4, 0, 1, 1) forwards;
   }
 
   @keyframes command-palette-enter {
     from {
       opacity: 0;
-      transform: scale(0.95) translateY(8px);
+      transform: scale(0.96) translateY(-6px);
     }
     to {
       opacity: 1;
       transform: scale(1) translateY(0);
+    }
+  }
+
+  @keyframes command-palette-exit {
+    from {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+    to {
+      opacity: 0;
+      transform: scale(0.97) translateY(-4px);
     }
   }
 
