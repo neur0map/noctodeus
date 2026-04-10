@@ -66,10 +66,18 @@
   });
 
   const suggestions = [
-    { icon: Lightbulb, text: 'Brainstorm ideas for my project' },
-    { icon: PenLine, text: 'Help me refine this paragraph' },
-    { icon: Search, text: 'Summarize my recent notes' },
+    { icon: Lightbulb, text: 'Brainstorm ideas' },
+    { icon: PenLine, text: 'Refine this paragraph' },
+    { icon: Search, text: 'Summarize recent notes' },
   ];
+
+  // Get current note name for the context chip
+  let activeNoteName = $derived(() => {
+    const path = filesState.activeFilePath;
+    if (!path) return null;
+    const name = path.split('/').pop() ?? path;
+    return name.replace(/\.(md|markdown)$/i, '');
+  });
 
   // Auto-scroll to bottom when messages change
   $effect(() => {
@@ -144,13 +152,11 @@
 
 {#if visible}
   <div class="cp">
-    <!-- Header -->
+    <!-- Compact header: model name on left, actions on right -->
     <div class="cp__head">
-      <div class="cp__head-left">
-        <div class="cp__icon-wrap">
-          <EyeIcon size={14} />
-        </div>
-        <div class="cp__head-info">
+      <div class="cp__head-id">
+        <EyeIcon size={13} />
+        <div class="cp__head-meta">
           <span class="cp__model">{modelLabel()}</span>
           {#if providerLabel()}
             <span class="cp__provider">{providerLabel()}</span>
@@ -164,42 +170,37 @@
           </span>
         {/if}
         {#if ai.messages.length > 0}
-          <button class="cp__head-btn" onclick={() => ai.clear()} title="Clear conversation">
-            <Trash2 size={13} />
+          <button class="cp__head-btn" onclick={() => ai.clear()} title="Clear">
+            <Trash2 size={12} />
           </button>
         {/if}
         <button class="cp__head-btn" onclick={onclose} title="Close">
-          <X size={14} />
+          <X size={13} />
         </button>
       </div>
     </div>
 
-    <!-- Messages area -->
+    <!-- Body -->
     <div class="cp__messages" bind:this={scrollEl} role="list">
       {#if !isConfigured}
-        <!-- No provider configured -->
-        <div class="cp__empty">
-          <div class="cp__empty-icon">
-            <Settings size={24} />
+        <div class="cp__greet">
+          <div class="cp__greet-mark">
+            <Settings size={20} />
           </div>
-          <p class="cp__empty-title">Configure an AI provider</p>
-          <p class="cp__empty-desc">Add an API key and provider in Settings to start chatting.</p>
-          <button class="cp__empty-btn" onclick={openSettings}>
-            Open Settings
-          </button>
+          <h2 class="cp__greet-title">Configure AI</h2>
+          <p class="cp__greet-desc">Add a provider in Settings to start.</p>
+          <button class="cp__greet-btn" onclick={openSettings}>Open Settings</button>
         </div>
       {:else if ai.messages.length === 0}
-        <!-- Empty state with suggestions -->
-        <div class="cp__empty">
-          <div class="cp__empty-icon cp__empty-icon--accent">
-            <EyeIcon size={24} />
+        <div class="cp__greet">
+          <div class="cp__greet-mark">
+            <EyeIcon size={22} />
           </div>
-          <p class="cp__empty-title">What can I help with?</p>
-          <p class="cp__empty-desc">Ask about your notes, get writing help, or brainstorm ideas.</p>
-          <div class="cp__suggestions">
+          <h2 class="cp__greet-title">How may I be of service?</h2>
+          <div class="cp__sug-list">
             {#each suggestions as sug}
-              <button class="cp__suggestion" onclick={() => handleSuggestion(sug.text)}>
-                <sug.icon size={13} />
+              <button class="cp__sug-row" onclick={() => handleSuggestion(sug.text)}>
+                <sug.icon size={14} />
                 <span>{sug.text}</span>
               </button>
             {/each}
@@ -215,14 +216,25 @@
       {/if}
     </div>
 
-    <!-- Input -->
+    <!-- Input area with context chip -->
     {#if isConfigured}
-      <ChatInput
-        streaming={ai.streaming}
-        onsend={handleSend}
-        onstop={() => ai.cancel()}
-        bind:this={inputRef}
-      />
+      <div class="cp__input-wrap">
+        {#if activeNoteName()}
+          <div class="cp__ctx-chip" title="Current note context">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+              <path d="M14 2v6h6" />
+            </svg>
+            <span>{activeNoteName()}</span>
+          </div>
+        {/if}
+        <ChatInput
+          streaming={ai.streaming}
+          onsend={handleSend}
+          onstop={() => ai.cancel()}
+          bind:this={inputRef}
+        />
+      </div>
     {/if}
   </div>
 {/if}
@@ -232,49 +244,37 @@
     display: flex;
     flex-direction: column;
     height: 100%;
-    background: var(--color-background);
-    border-left: 1px solid var(--color-border);
-    animation: cp-slide 250ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    background: transparent;
+    font-family: var(--font-content);
+    animation: cp-fade 180ms ease both;
   }
 
-  @keyframes cp-slide {
-    from { opacity: 0; transform: translateX(12px); }
-    to { opacity: 1; transform: translateX(0); }
+  @keyframes cp-fade {
+    from { opacity: 0; }
+    to { opacity: 1; }
   }
 
-  /* ── Header ── */
+  /* ── Header: tight, model info + actions ── */
   .cp__head {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 12px 14px;
-    border-bottom: 1px solid var(--color-border);
+    padding: 14px 16px 10px;
     flex-shrink: 0;
   }
 
-  .cp__head-left {
+  .cp__head-id {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     min-width: 0;
+    color: var(--muted-foreground);
   }
 
-  .cp__icon-wrap {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 28px;
-    height: 28px;
-    border-radius: 7px;
-    background: rgba(122, 162, 247, 0.1);
-    color: var(--color-accent, #7AA2F7);
-    flex-shrink: 0;
-  }
-
-  .cp__head-info {
+  .cp__head-meta {
     display: flex;
     flex-direction: column;
-    gap: 1px;
+    gap: 0;
     min-width: 0;
   }
 
@@ -282,8 +282,9 @@
     font-family: var(--font-mono);
     font-size: 12px;
     font-weight: 500;
-    color: var(--color-foreground);
+    color: var(--foreground);
     letter-spacing: -0.01em;
+    line-height: 1.2;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -291,13 +292,16 @@
 
   .cp__provider {
     font-family: var(--font-mono);
-    font-size: 10px;
-    color: var(--color-placeholder);
-    letter-spacing: 0.01em;
+    font-size: 9.5px;
+    color: var(--muted-foreground);
+    letter-spacing: 0.02em;
+    line-height: 1.2;
+    text-transform: uppercase;
   }
 
   .cp__head-actions {
     display: flex;
+    align-items: center;
     gap: 2px;
     flex-shrink: 0;
   }
@@ -306,161 +310,236 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 28px;
-    height: 28px;
+    width: 26px;
+    height: 26px;
     border: none;
     border-radius: 6px;
     background: transparent;
-    color: var(--color-placeholder);
+    color: var(--muted-foreground);
     cursor: pointer;
-    transition: color 150ms, background 150ms;
+    transition: color 120ms, background 120ms;
 
     &:hover {
-      color: var(--color-foreground);
-      background: var(--color-hover);
+      color: var(--foreground);
+      background: color-mix(in srgb, var(--foreground) 6%, transparent);
     }
   }
 
-  /* ── Messages ── */
+  /* ── Body ── */
   .cp__messages {
     flex: 1;
     overflow-y: auto;
     overflow-x: hidden;
-    padding: 4px 0;
+    padding: 8px 0;
     scrollbar-width: thin;
-    scrollbar-color: var(--color-border) transparent;
+    scrollbar-color: color-mix(in srgb, var(--foreground) 12%, transparent) transparent;
   }
 
   .cp__messages::-webkit-scrollbar {
-    width: 4px;
+    width: 6px;
   }
 
   .cp__messages::-webkit-scrollbar-thumb {
-    background: var(--color-hover);
-    border-radius: 2px;
+    background: color-mix(in srgb, var(--foreground) 10%, transparent);
+    border-radius: 3px;
   }
 
-  /* ── Empty state ── */
-  .cp__empty {
+  /* ── Greeting (empty state) ── */
+  .cp__greet {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    padding: 32px 24px;
-    text-align: center;
-    gap: 12px;
+    align-items: flex-start;
+    padding: 24px 24px 0;
+    gap: 16px;
   }
 
-  .cp__empty-icon {
+  .cp__greet-mark {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 48px;
-    height: 48px;
-    border-radius: 6px;
-    background: var(--color-hover);
-    color: var(--color-placeholder);
-    margin-bottom: 4px;
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--foreground) 6%, transparent);
+    color: var(--foreground);
   }
 
-  .cp__empty-icon--accent {
-    background: rgba(122, 162, 247, 0.08);
-    color: var(--color-accent, #7AA2F7);
-  }
-
-  .cp__empty-title {
-    font-family: var(--font-sans);
-    font-size: 15px;
+  .cp__greet-title {
+    font-family: var(--font-content);
+    font-size: 22px;
     font-weight: 600;
-    color: var(--color-foreground);
-    letter-spacing: -0.01em;
+    letter-spacing: -0.02em;
+    color: var(--foreground);
     margin: 0;
+    line-height: 1.15;
   }
 
-  .cp__empty-desc {
-    font-family: var(--font-sans);
-    font-size: 12px;
-    color: var(--color-placeholder);
+  .cp__greet-desc {
+    font-size: 13px;
+    color: var(--muted-foreground);
+    margin: -4px 0 0;
     line-height: 1.5;
-    max-width: 240px;
-    margin: 0;
   }
 
-  .cp__empty-btn {
-    margin-top: 8px;
+  .cp__greet-btn {
+    margin-top: 4px;
     padding: 8px 16px;
-    font-family: var(--font-mono);
-    font-size: 12px;
+    font-family: var(--font-content);
+    font-size: 13px;
     font-weight: 500;
-    color: var(--color-accent, #7AA2F7);
-    background: rgba(122, 162, 247, 0.1);
-    border: 1px solid rgba(122, 162, 247, 0.2);
-    border-radius: 6px;
+    color: var(--foreground);
+    background: color-mix(in srgb, var(--foreground) 8%, transparent);
+    border: 1px solid color-mix(in srgb, var(--foreground) 8%, transparent);
+    border-radius: 8px;
     cursor: pointer;
-    transition: background 150ms, border-color 150ms;
+    transition: background 120ms;
 
     &:hover {
-      background: rgba(122, 162, 247, 0.18);
-      border-color: rgba(122, 162, 247, 0.35);
+      background: color-mix(in srgb, var(--foreground) 12%, transparent);
     }
   }
 
-  /* ── Suggestions ── */
-  .cp__suggestions {
+  /* ── Suggestion rows (inline, no boxy buttons) ── */
+  .cp__sug-list {
     display: flex;
     flex-direction: column;
-    gap: 6px;
     width: 100%;
-    max-width: 280px;
-    margin-top: 8px;
+    margin-top: 6px;
   }
 
-  .cp__suggestion {
+  .cp__sug-row {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 10px 14px;
-    font-family: var(--font-sans);
-    font-size: 12px;
-    color: var(--color-muted-foreground);
-    background: var(--color-hover);
-    border: 1px solid var(--color-border);
-    border-radius: 6px;
+    gap: 12px;
+    padding: 10px 0;
+    font-family: var(--font-content);
+    font-size: 14px;
+    font-weight: 450;
+    color: var(--foreground);
+    background: transparent;
+    border: none;
+    border-radius: 0;
     cursor: pointer;
     text-align: left;
-    transition: background 150ms, border-color 150ms, color 150ms;
+    transition: color 120ms, transform 120ms;
+  }
 
-    &:hover {
-      background: var(--color-hover);
-      border-color: var(--color-border);
-      color: var(--color-foreground);
-    }
+  .cp__sug-row :global(svg) {
+    color: var(--muted-foreground);
+    flex-shrink: 0;
+    transition: color 120ms;
+  }
+
+  .cp__sug-row:hover {
+    color: var(--accent-blue, var(--color-accent));
+  }
+
+  .cp__sug-row:hover :global(svg) {
+    color: var(--accent-blue, var(--color-accent));
+  }
+
+  /* ── Input wrap with context chip ── */
+  .cp__input-wrap {
+    padding: 8px 16px 16px;
+    flex-shrink: 0;
+  }
+
+  /* Override ChatInput's default border and padding when inside the wrap */
+  .cp__input-wrap :global(.ci) {
+    padding: 0 !important;
+    border-top: none !important;
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--foreground) 4%, transparent);
+    border: 1px solid color-mix(in srgb, var(--foreground) 8%, transparent);
+    padding: 6px 6px 6px 14px !important;
+    align-items: center !important;
+  }
+
+  .cp__input-wrap :global(.ci:focus-within) {
+    border-color: color-mix(in srgb, var(--foreground) 16%, transparent);
+    background: color-mix(in srgb, var(--foreground) 6%, transparent);
+  }
+
+  .cp__input-wrap :global(.ci__textarea) {
+    font-family: var(--font-content) !important;
+    font-size: 14px !important;
+    background: transparent !important;
+    border: none !important;
+    padding: 6px 0 !important;
+    box-shadow: none !important;
+  }
+
+  .cp__input-wrap :global(.ci__textarea:focus) {
+    border: none !important;
+    box-shadow: none !important;
+  }
+
+  .cp__input-wrap :global(.ci__btn--send) {
+    width: 30px !important;
+    height: 30px !important;
+    border-radius: 50% !important;
+    background: color-mix(in srgb, var(--foreground) 12%, transparent) !important;
+    color: var(--foreground) !important;
+  }
+
+  .cp__input-wrap :global(.ci__btn--send:not(.ci__btn--hidden)) {
+    background: var(--foreground) !important;
+    color: var(--background) !important;
+  }
+
+  .cp__ctx-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px 5px 8px;
+    margin-bottom: 8px;
+    border-radius: 999px;
+    background: transparent;
+    border: 1px solid color-mix(in srgb, var(--foreground) 10%, transparent);
+    color: var(--muted-foreground);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    max-width: 100%;
+    overflow: hidden;
+  }
+
+  .cp__ctx-chip :global(svg) {
+    flex-shrink: 0;
+  }
+
+  .cp__ctx-chip span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   /* ── Error ── */
   .cp__error {
     margin: 8px 16px;
-    padding: 8px 12px;
-    font-family: var(--font-mono);
-    font-size: 11px;
-    color: #f7768e;
+    padding: 10px 12px;
+    font-family: var(--font-content);
+    font-size: 12px;
+    color: var(--accent-red, #f7768e);
     line-height: 1.4;
-    background: rgba(247, 118, 142, 0.06);
-    border: 1px solid rgba(247, 118, 142, 0.15);
-    border-radius: 6px;
+    background: color-mix(in srgb, var(--accent-red, #f7768e) 8%, transparent);
+    border: 1px solid color-mix(in srgb, var(--accent-red, #f7768e) 14%, transparent);
+    border-radius: 8px;
   }
 
+  /* ── Tools badge ── */
   .cp__tools-badge {
     display: flex;
     align-items: center;
     gap: 3px;
-    padding: 2px 6px;
+    padding: 2px 7px;
     font-family: var(--font-mono);
     font-size: 10px;
-    color: #9ece6a;
-    background: rgba(158, 206, 106, 0.08);
-    border-radius: 4px;
+    color: var(--accent-green, #9ece6a);
+    background: color-mix(in srgb, var(--accent-green, #9ece6a) 10%, transparent);
+    border-radius: 999px;
   }
 
   @media (prefers-reduced-motion: reduce) {
