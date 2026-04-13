@@ -1,11 +1,11 @@
-//! Noctodeus MCP Server
+//! Nodeus MCP Server
 //!
 //! A standalone binary that exposes note operations as MCP tools over
 //! JSON-RPC on stdin/stdout.  This lets external AI agents (Claude Desktop,
-//! Cursor, etc.) read, search, create, and manage notes in a Noctodeus core.
+//! Cursor, etc.) read, search, create, and manage notes in a Nodeus core.
 //!
 //! Usage:
-//!     noctodeus-mcp /path/to/my-vault
+//!     nodeus-mcp /path/to/my-vault
 
 use std::io::{self, BufRead, Write as _};
 use std::path::{Path, PathBuf};
@@ -13,10 +13,10 @@ use std::path::{Path, PathBuf};
 use rusqlite::{params, Connection};
 use serde_json::{json, Value};
 
-use noctodeus_lib::db::migrations::run_all_migrations;
-use noctodeus_lib::db::mutations;
-use noctodeus_lib::db::queries;
-use noctodeus_lib::indexer::scanner;
+use nodeus_lib::db::migrations::run_all_migrations;
+use nodeus_lib::db::mutations;
+use nodeus_lib::db::queries;
+use nodeus_lib::indexer::scanner;
 
 // ---------------------------------------------------------------------------
 // Main
@@ -25,7 +25,7 @@ use noctodeus_lib::indexer::scanner;
 fn main() {
     let args: Vec<String> = std::env::args().collect();
     if args.len() != 2 {
-        eprintln!("Usage: noctodeus-mcp <core-path>");
+        eprintln!("Usage: nodeus-mcp <core-path>");
         std::process::exit(1);
     }
 
@@ -35,17 +35,17 @@ fn main() {
         std::process::exit(1);
     }
 
-    // Ensure .noctodeus directory exists.
-    let noctodeus_dir = core_path.join(".noctodeus");
-    if !noctodeus_dir.exists() {
-        if let Err(e) = std::fs::create_dir_all(&noctodeus_dir) {
-            eprintln!("Error: failed to create .noctodeus dir: {e}");
+    // Ensure .nodeus directory exists.
+    let nodeus_dir = core_path.join(".nodeus");
+    if !nodeus_dir.exists() {
+        if let Err(e) = std::fs::create_dir_all(&nodeus_dir) {
+            eprintln!("Error: failed to create .nodeus dir: {e}");
             std::process::exit(1);
         }
     }
 
     // Open SQLite connection directly (single-threaded binary).
-    let db_path = noctodeus_dir.join("meta.db");
+    let db_path = nodeus_dir.join("meta.db");
     let conn = match Connection::open(&db_path) {
         Ok(c) => c,
         Err(e) => {
@@ -82,7 +82,7 @@ fn main() {
         std::process::exit(1);
     }
 
-    eprintln!("noctodeus-mcp: ready (core={})", core_path.display());
+    eprintln!("nodeus-mcp: ready (core={})", core_path.display());
 
     // Enter the main loop.
     run_server(&conn, &core_path);
@@ -100,7 +100,7 @@ fn run_server(conn: &Connection, core_path: &Path) {
         let line = match line {
             Ok(l) => l,
             Err(e) => {
-                eprintln!("noctodeus-mcp: stdin read error: {e}");
+                eprintln!("nodeus-mcp: stdin read error: {e}");
                 break;
             }
         };
@@ -141,7 +141,7 @@ fn run_server(conn: &Connection, core_path: &Path) {
                             "tools": {}
                         },
                         "serverInfo": {
-                            "name": "noctodeus-mcp",
+                            "name": "nodeus-mcp",
                             "version": "0.1.0"
                         }
                     }
@@ -151,7 +151,7 @@ fn run_server(conn: &Connection, core_path: &Path) {
 
             "notifications/initialized" => {
                 // Notification: no response required.
-                eprintln!("noctodeus-mcp: client initialized");
+                eprintln!("nodeus-mcp: client initialized");
             }
 
             "tools/list" => {
@@ -219,7 +219,7 @@ fn send_response(value: &Value) {
 fn build_tool_definitions() -> Value {
     json!([
         {
-            "name": "noctodeus_search",
+            "name": "nodeus_search",
             "description": "Search across all notes in the vault using full-text search. Returns matching note paths, titles, and content snippets with relevance scores.",
             "inputSchema": {
                 "type": "object",
@@ -233,7 +233,7 @@ fn build_tool_definitions() -> Value {
             }
         },
         {
-            "name": "noctodeus_read",
+            "name": "nodeus_read",
             "description": "Read the full content of a note by its relative path within the vault. Returns the raw file content (markdown, text, etc.).",
             "inputSchema": {
                 "type": "object",
@@ -247,7 +247,7 @@ fn build_tool_definitions() -> Value {
             }
         },
         {
-            "name": "noctodeus_create",
+            "name": "nodeus_create",
             "description": "Create a new note at the given path with the provided content. Creates parent directories as needed. Fails if a note already exists at the path.",
             "inputSchema": {
                 "type": "object",
@@ -265,7 +265,7 @@ fn build_tool_definitions() -> Value {
             }
         },
         {
-            "name": "noctodeus_update",
+            "name": "nodeus_update",
             "description": "Update (overwrite) the content of an existing note. Also updates the full-text search index.",
             "inputSchema": {
                 "type": "object",
@@ -283,7 +283,7 @@ fn build_tool_definitions() -> Value {
             }
         },
         {
-            "name": "noctodeus_delete",
+            "name": "nodeus_delete",
             "description": "Delete a note by moving it to the system trash. Also removes it from the database and search index.",
             "inputSchema": {
                 "type": "object",
@@ -297,7 +297,7 @@ fn build_tool_definitions() -> Value {
             }
         },
         {
-            "name": "noctodeus_list",
+            "name": "nodeus_list",
             "description": "List notes and folders. If a folder path is provided, lists its direct children. If omitted, lists all files in the vault.",
             "inputSchema": {
                 "type": "object",
@@ -311,7 +311,7 @@ fn build_tool_definitions() -> Value {
             }
         },
         {
-            "name": "noctodeus_memory_set",
+            "name": "nodeus_memory_set",
             "description": "Store a key-value pair in the AI memory table. Useful for persisting information across conversations (preferences, context, summaries). Overwrites any existing value for the key.",
             "inputSchema": {
                 "type": "object",
@@ -329,7 +329,7 @@ fn build_tool_definitions() -> Value {
             }
         },
         {
-            "name": "noctodeus_memory_get",
+            "name": "nodeus_memory_get",
             "description": "Retrieve a value from the AI memory table by its key. Returns null if the key does not exist.",
             "inputSchema": {
                 "type": "object",
@@ -343,7 +343,7 @@ fn build_tool_definitions() -> Value {
             }
         },
         {
-            "name": "noctodeus_memory_list",
+            "name": "nodeus_memory_list",
             "description": "List all keys stored in the AI memory table. Useful for discovering what context has been persisted.",
             "inputSchema": {
                 "type": "object",
@@ -360,15 +360,15 @@ fn build_tool_definitions() -> Value {
 
 fn dispatch_tool(conn: &Connection, core_path: &Path, name: &str, args: &Value) -> Value {
     let result = match name {
-        "noctodeus_search" => tool_search(conn, args),
-        "noctodeus_read" => tool_read(core_path, args),
-        "noctodeus_create" => tool_create(conn, core_path, args),
-        "noctodeus_update" => tool_update(conn, core_path, args),
-        "noctodeus_delete" => tool_delete(conn, core_path, args),
-        "noctodeus_list" => tool_list(conn, args),
-        "noctodeus_memory_set" => tool_memory_set(conn, args),
-        "noctodeus_memory_get" => tool_memory_get(conn, args),
-        "noctodeus_memory_list" => tool_memory_list(conn),
+        "nodeus_search" => tool_search(conn, args),
+        "nodeus_read" => tool_read(core_path, args),
+        "nodeus_create" => tool_create(conn, core_path, args),
+        "nodeus_update" => tool_update(conn, core_path, args),
+        "nodeus_delete" => tool_delete(conn, core_path, args),
+        "nodeus_list" => tool_list(conn, args),
+        "nodeus_memory_set" => tool_memory_set(conn, args),
+        "nodeus_memory_get" => tool_memory_get(conn, args),
+        "nodeus_memory_list" => tool_memory_list(conn),
         _ => Err(format!("Unknown tool: {name}")),
     };
 

@@ -3452,7 +3452,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "noctodeus"
+name = "nodeus"
 version = "0.3.5"
 dependencies = [
  "aes-gcm",

@@ -16,6 +16,8 @@ pub struct FileInfo {
     pub is_directory: bool,
     #[serde(default)]
     pub aliases: Vec<String>,
+    #[serde(default)]
+    pub evicted: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -39,6 +41,7 @@ fn row_to_file_info(row: &Row<'_>) -> rusqlite::Result<FileInfo> {
         content_hash: row.get("content_hash")?,
         is_directory: is_dir != 0,
         aliases: Vec::new(),
+        evicted: false,
     })
 }
 

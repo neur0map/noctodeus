@@ -1,22 +1,30 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
   import type { GraphNode, GraphEdge } from '../../stores/graph.svelte';
-  import ZoomIn from "@lucide/svelte/icons/zoom-in";
-  import ZoomOut from "@lucide/svelte/icons/zoom-out";
-  import Maximize from "@lucide/svelte/icons/maximize";
+  import Plus from "@lucide/svelte/icons/plus";
+  import Minus from "@lucide/svelte/icons/minus";
+  import LocateFixed from "@lucide/svelte/icons/locate-fixed";
+  import Expand from "@lucide/svelte/icons/expand";
+  import Focus from "@lucide/svelte/icons/orbit";
 
   let {
     nodes = [],
     edges = [],
     activeFilePath = null,
+    highlightPath = null,
+    localMode = false,
     onselect,
     onexpand,
+    onfocustoggle,
   }: {
     nodes: GraphNode[];
     edges: GraphEdge[];
     activeFilePath?: string | null;
+    highlightPath?: string | null;
+    localMode?: boolean;
     onselect: (path: string) => void;
     onexpand?: () => void;
+    onfocustoggle?: () => void;
   } = $props();
 
   let canvas: HTMLCanvasElement | undefined = $state();
@@ -29,7 +37,7 @@
   let ch = 0;
   let time = 0;
 
-  // View
+  // View transform
   let ox = 0;
   let oy = 0;
   let sc = 1;
@@ -42,32 +50,52 @@
   let panSY = 0;
   let hovered: GraphNode | null = null;
 
-  // Ambient particles
-  type Particle = { x: number; y: number; vx: number; vy: number; r: number; a: number; phase: number };
-  let particles: Particle[] = [];
+  // ── Folder color palette ──
+  // Muted, harmonious hues — each unique folder gets assigned one
+  const PALETTE = [
+    [122, 162, 247],  // blue
+    [187, 154, 247],  // purple
+    [125, 207, 255],  // cyan
+    [158, 206, 106],  // green
+    [224, 175, 104],  // amber
+    [247, 118, 142],  // rose
+    [115, 218, 202],  // teal
+    [255, 158, 100],  // orange
+    [192, 202, 245],  // lavender
+    [219, 75, 75],    // crimson
+  ];
 
-  function initParticles() {
-    particles = [];
-    for (let i = 0; i < 40; i++) {
-      particles.push({
-        x: (Math.random() - 0.5) * 1200,
-        y: (Math.random() - 0.5) * 1200,
-        vx: (Math.random() - 0.5) * 0.15,
-        vy: (Math.random() - 0.5) * 0.15,
-        r: Math.random() * 1.2 + 0.3,
-        a: Math.random() * 0.15 + 0.03,
-        phase: Math.random() * Math.PI * 2,
-      });
+  let folderColorMap = new Map<string, number[]>();
+
+  function buildFolderColors() {
+    folderColorMap.clear();
+    const folders = new Set<string>();
+    for (const n of sim) {
+      const slash = n.path.lastIndexOf('/');
+      const folder = slash > 0 ? n.path.substring(0, slash) : '.';
+      folders.add(folder);
+    }
+    let idx = 0;
+    for (const f of folders) {
+      folderColorMap.set(f, PALETTE[idx % PALETTE.length]);
+      idx++;
     }
   }
 
+  function nodeColor(n: GraphNode): number[] {
+    const slash = n.path.lastIndexOf('/');
+    const folder = slash > 0 ? n.path.substring(0, slash) : '.';
+    return folderColorMap.get(folder) ?? PALETTE[0];
+  }
+
+  // ── Sync sim data when props change ──
   $effect(() => {
     sim = nodes.map(n => ({ ...n }));
     simEdges = [...edges];
     if (sim.length > 0 && sc === 1 && ox === 0 && oy === 0) {
-      sc = Math.max(0.4, Math.min(1.2, 400 / (sim.length * 12 + 100)));
+      sc = Math.max(0.3, Math.min(1.4, 500 / (sim.length * 10 + 100)));
     }
-    initParticles();
+    buildFolderColors();
   });
 
   function toWorld(sx: number, sy: number) {
@@ -89,64 +117,60 @@
   }
 
   function nr(n: GraphNode) {
-    return Math.max(4, Math.min(16, 4 + n.linkCount * 2));
+    return Math.max(4, Math.min(18, 4 + Math.sqrt(n.linkCount) * 3.5));
   }
 
+  // ── Physics tick ──
   function tick() {
     const map = new Map(sim.map(n => [n.id, n]));
 
+    // Repulsion
     for (let i = 0; i < sim.length; i++) {
       for (let j = i + 1; j < sim.length; j++) {
         const a = sim[i], b = sim[j];
         let dx = b.x - a.x, dy = b.y - a.y;
         let d = Math.sqrt(dx * dx + dy * dy) || 1;
-        const f = 1200 / (d * d);
+        const f = 1400 / (d * d);
         const fx = (dx / d) * f, fy = (dy / d) * f;
         a.vx -= fx; a.vy -= fy;
         b.vx += fx; b.vy += fy;
       }
     }
 
+    // Spring attraction along edges
     for (const e of simEdges) {
       const a = map.get(e.source), b = map.get(e.target);
       if (!a || !b) continue;
       let dx = b.x - a.x, dy = b.y - a.y;
       let d = Math.sqrt(dx * dx + dy * dy) || 1;
-      const f = (d - 100) * 0.008;
+      const f = (d - 90) * 0.01;
       const fx = (dx / d) * f, fy = (dy / d) * f;
       a.vx += fx; a.vy += fy;
       b.vx -= fx; b.vy -= fy;
     }
 
+    // Central gravity
     for (const n of sim) {
-      n.vx -= n.x * 0.003;
-      n.vy -= n.y * 0.003;
+      n.vx -= n.x * 0.002;
+      n.vy -= n.y * 0.002;
     }
 
+    // Integrate
     for (const n of sim) {
       if (n === drag) { n.vx = 0; n.vy = 0; continue; }
-      n.vx *= 0.82;
-      n.vy *= 0.82;
-      n.x += n.vx * 0.3;
-      n.y += n.vy * 0.3;
-    }
-
-    // Drift particles
-    for (const p of particles) {
-      p.x += p.vx;
-      p.y += p.vy;
-      if (p.x > 600) p.x = -600;
-      if (p.x < -600) p.x = 600;
-      if (p.y > 600) p.y = -600;
-      if (p.y < -600) p.y = 600;
+      n.vx *= 0.84;
+      n.vy *= 0.84;
+      n.x += n.vx * 0.35;
+      n.y += n.vy * 0.35;
     }
   }
 
+  // ── Render ──
   function draw() {
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    time += 0.008;
+    time += 0.006;
 
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, cw, ch);
@@ -155,66 +179,52 @@
     ctx.scale(sc, sc);
 
     const map = new Map(sim.map(n => [n.id, n]));
-    const hoveredId = hovered?.id ?? null;
+    // External highlight (sidebar hover) takes precedence over canvas hover
+    const hoveredId = highlightPath ?? hovered?.id ?? null;
 
-    // Build adjacency for hover highlighting
-    const connectedToHover = new Set<string>();
+    // Adjacency for hover
+    const connSet = new Set<string>();
     if (hoveredId) {
-      connectedToHover.add(hoveredId);
+      connSet.add(hoveredId);
       for (const e of simEdges) {
-        if (e.source === hoveredId) connectedToHover.add(e.target);
-        if (e.target === hoveredId) connectedToHover.add(e.source);
+        if (e.source === hoveredId) connSet.add(e.target);
+        if (e.target === hoveredId) connSet.add(e.source);
       }
     }
 
-    // ── Ambient particles ──
-    for (const p of particles) {
-      const flicker = Math.sin(time * 2 + p.phase) * 0.5 + 0.5;
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(169, 177, 214, ${p.a * flicker})`;
-      ctx.fill();
-    }
-
-    // ── Edges — curved bezier with pulse ──
+    // ── Edges ──
     for (const e of simEdges) {
       const a = map.get(e.source), b = map.get(e.target);
       if (!a || !b) continue;
 
-      const isHighlighted = hoveredId && (e.source === hoveredId || e.target === hoveredId);
-      const dimmed = hoveredId && !isHighlighted;
+      const isHL = hoveredId && (e.source === hoveredId || e.target === hoveredId);
+      const dimmed = hoveredId && !isHL;
 
-      // Curved line — offset control point perpendicular to the midpoint
       const mx = (a.x + b.x) / 2;
       const my = (a.y + b.y) / 2;
       const dx = b.x - a.x;
       const dy = b.y - a.y;
       const d = Math.sqrt(dx * dx + dy * dy) || 1;
-      const curvature = Math.min(d * 0.1, 20);
-      const cx = mx + (-dy / d) * curvature;
-      const cy = my + (dx / d) * curvature;
+      const curve = Math.min(d * 0.08, 16);
+      const cx = mx + (-dy / d) * curve;
+      const cy = my + (dx / d) * curve;
 
-      // Base edge
       ctx.beginPath();
       ctx.moveTo(a.x, a.y);
       ctx.quadraticCurveTo(cx, cy, b.x, b.y);
-      const baseAlpha = dimmed ? 0.08 : isHighlighted ? 0.35 : 0.15;
-      ctx.strokeStyle = `rgba(107, 115, 148, ${baseAlpha})`;
-      ctx.lineWidth = (isHighlighted ? 1.5 : 0.8) / sc;
-      ctx.stroke();
 
-      // Traveling pulse along edge
-      if (!dimmed) {
-        const pulseT = (time * 0.3 + d * 0.002) % 1;
-        const px = (1 - pulseT) * (1 - pulseT) * a.x + 2 * (1 - pulseT) * pulseT * cx + pulseT * pulseT * b.x;
-        const py = (1 - pulseT) * (1 - pulseT) * a.y + 2 * (1 - pulseT) * pulseT * cy + pulseT * pulseT * b.y;
-        const pulseAlpha = isHighlighted ? 0.5 : 0.2;
-        const pulseR = (isHighlighted ? 2.5 : 1.5) / sc;
-        ctx.beginPath();
-        ctx.arc(px, py, pulseR, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(122, 162, 247, ${pulseAlpha * (Math.sin(pulseT * Math.PI) * 0.5 + 0.5)})`;
-        ctx.fill();
+      if (isHL) {
+        const col = nodeColor(a);
+        ctx.strokeStyle = `rgba(${col[0]}, ${col[1]}, ${col[2]}, 0.4)`;
+        ctx.lineWidth = 1.8 / sc;
+      } else if (dimmed) {
+        ctx.strokeStyle = `rgba(80, 86, 110, 0.06)`;
+        ctx.lineWidth = 0.6 / sc;
+      } else {
+        ctx.strokeStyle = `rgba(80, 86, 110, 0.18)`;
+        ctx.lineWidth = 0.7 / sc;
       }
+      ctx.stroke();
     }
 
     // ── Nodes ──
@@ -222,32 +232,28 @@
       const r = nr(n);
       const active = n.path === activeFilePath;
       const hover = n === hovered;
-      const connected = connectedToHover.has(n.id);
+      const connected = connSet.has(n.id);
       const dimmed = hoveredId !== null && !connected && !active;
+      const col = nodeColor(n);
 
-      // Breathing animation — each node on its own phase
-      const breathe = 1 + Math.sin(time * 0.8 + n.x * 0.01 + n.y * 0.01) * 0.015;
+      const breathe = 1 + Math.sin(time * 0.9 + n.x * 0.008 + n.y * 0.008) * 0.012;
       const drawR = r * breathe;
 
-      // Active node: warm breathing ring
+      // Active node: glow ring
       if (active) {
-        const ringPulse = 1 + Math.sin(time * 1.2) * 0.08;
-        const ringR = (drawR + 10) * ringPulse;
-
-        // Outer glow
-        const glow = ctx.createRadialGradient(n.x, n.y, drawR, n.x, n.y, ringR + 4);
-        glow.addColorStop(0, 'rgba(122, 162, 247, 0.12)');
-        glow.addColorStop(0.6, 'rgba(122, 162, 247, 0.04)');
-        glow.addColorStop(1, 'rgba(122, 162, 247, 0)');
+        const pulse = 1 + Math.sin(time * 1.0) * 0.06;
+        const glowR = (drawR + 12) * pulse;
+        const glow = ctx.createRadialGradient(n.x, n.y, drawR, n.x, n.y, glowR);
+        glow.addColorStop(0, `rgba(${col[0]}, ${col[1]}, ${col[2]}, 0.15)`);
+        glow.addColorStop(1, `rgba(${col[0]}, ${col[1]}, ${col[2]}, 0)`);
         ctx.beginPath();
-        ctx.arc(n.x, n.y, ringR + 4, 0, Math.PI * 2);
+        ctx.arc(n.x, n.y, glowR, 0, Math.PI * 2);
         ctx.fillStyle = glow;
         ctx.fill();
 
-        // Ring
         ctx.beginPath();
-        ctx.arc(n.x, n.y, ringR, 0, Math.PI * 2);
-        ctx.strokeStyle = `rgba(122, 162, 247, ${0.25 + Math.sin(time * 1.2) * 0.1})`;
+        ctx.arc(n.x, n.y, drawR + 5, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(${col[0]}, ${col[1]}, ${col[2]}, 0.3)`;
         ctx.lineWidth = 1 / sc;
         ctx.stroke();
       }
@@ -255,77 +261,56 @@
       // Hover ring
       if (hover && !active) {
         ctx.beginPath();
-        ctx.arc(n.x, n.y, drawR + 6, 0, Math.PI * 2);
-        ctx.strokeStyle = 'rgba(169, 177, 214, 0.2)';
+        ctx.arc(n.x, n.y, drawR + 5, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(${col[0]}, ${col[1]}, ${col[2]}, 0.25)`;
         ctx.lineWidth = 0.8 / sc;
         ctx.stroke();
       }
 
-      // Node body — radial gradient (brighter center, softer edge)
-      const grad = ctx.createRadialGradient(
-        n.x - drawR * 0.25, n.y - drawR * 0.25, 0,
-        n.x, n.y, drawR
-      );
-
-      if (active) {
-        grad.addColorStop(0, 'rgba(122, 162, 247, 0.95)');
-        grad.addColorStop(0.7, 'rgba(122, 162, 247, 0.7)');
-        grad.addColorStop(1, 'rgba(107, 140, 220, 0.5)');
-      } else if (dimmed) {
-        grad.addColorStop(0, 'rgba(107, 115, 148, 0.2)');
-        grad.addColorStop(1, 'rgba(107, 115, 148, 0.08)');
-      } else if (n.linkCount === 0) {
-        grad.addColorStop(0, 'rgba(107, 115, 148, 0.3)');
-        grad.addColorStop(1, 'rgba(107, 115, 148, 0.12)');
-      } else {
-        const intensity = Math.min(1, n.linkCount / 8);
-        const baseA = 0.35 + intensity * 0.3;
-        const edgeA = 0.15 + intensity * 0.15;
-        grad.addColorStop(0, `rgba(169, 177, 214, ${baseA})`);
-        grad.addColorStop(1, `rgba(107, 115, 148, ${edgeA})`);
-      }
+      // Node body — flat solid circle (Obsidian-style)
+      const alpha = dimmed ? 0.15 : active ? 0.95 : hover ? 0.85 : (0.45 + Math.min(n.linkCount / 6, 0.35));
 
       ctx.beginPath();
       ctx.arc(n.x, n.y, drawR, 0, Math.PI * 2);
-      ctx.fillStyle = grad;
+      ctx.fillStyle = `rgba(${col[0]}, ${col[1]}, ${col[2]}, ${alpha})`;
       ctx.fill();
 
-      // Inner highlight — top-left specular dot
-      if (!dimmed) {
-        const specGrad = ctx.createRadialGradient(
-          n.x - drawR * 0.3, n.y - drawR * 0.3, 0,
-          n.x - drawR * 0.3, n.y - drawR * 0.3, drawR * 0.5
-        );
-        specGrad.addColorStop(0, `rgba(255, 255, 255, ${active ? 0.2 : 0.08})`);
-        specGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
-        ctx.beginPath();
-        ctx.arc(n.x, n.y, drawR, 0, Math.PI * 2);
-        ctx.fillStyle = specGrad;
-        ctx.fill();
-      }
-
-      // Labels — only for hover, active, or heavily connected at close zoom
-      const showLabel = hover || active || (connected && hoveredId) || (n.linkCount >= 3 && sc > 0.7);
+      // ── Labels with pill background ──
+      const showLabel = hover || active || (connected && hoveredId) || (n.linkCount >= 2 && sc > 0.6);
       if (showLabel) {
-        const fontSize = Math.max(9, 11 / sc);
+        const fontSize = Math.max(9, Math.min(12, 11 / sc));
         ctx.font = `500 ${fontSize}px var(--font-mono), ui-monospace, monospace`;
         ctx.textAlign = 'center';
-        ctx.textBaseline = 'top';
+        ctx.textBaseline = 'middle';
 
-        const label = n.title.length > 24 ? n.title.slice(0, 22) + '…' : n.title;
-        const labelAlpha = active ? 0.9 : hover ? 0.8 : connected ? 0.6 : 0.4;
+        const label = n.title.length > 28 ? n.title.slice(0, 26) + '\u2026' : n.title;
+        const metrics = ctx.measureText(label);
+        const lw = metrics.width + 10;
+        const lh = fontSize + 6;
+        const lx = n.x;
+        const ly = n.y + drawR + 10;
 
-        // Text shadow for readability
-        ctx.fillStyle = `rgba(10, 14, 26, ${labelAlpha * 0.8})`;
-        ctx.fillText(label, n.x + 0.5, n.y + drawR + 6.5);
+        // Pill background
+        const pillAlpha = active ? 0.85 : hover ? 0.75 : 0.55;
+        ctx.beginPath();
+        const pillR = lh / 2;
+        ctx.roundRect(lx - lw / 2, ly - lh / 2, lw, lh, pillR);
+        ctx.fillStyle = `rgba(14, 17, 28, ${pillAlpha})`;
+        ctx.fill();
+
+        // Border
+        if (active || hover) {
+          ctx.strokeStyle = `rgba(${col[0]}, ${col[1]}, ${col[2]}, 0.3)`;
+          ctx.lineWidth = 0.5 / sc;
+          ctx.stroke();
+        }
 
         // Text
-        ctx.fillStyle = active
-          ? `rgba(192, 202, 245, ${labelAlpha})`
-          : hover
-            ? `rgba(187, 154, 247, ${labelAlpha})`
-            : `rgba(169, 177, 214, ${labelAlpha})`;
-        ctx.fillText(label, n.x, n.y + drawR + 6);
+        const textAlpha = active ? 0.95 : hover ? 0.9 : 0.65;
+        ctx.fillStyle = active || hover
+          ? `rgba(${col[0]}, ${col[1]}, ${col[2]}, ${textAlpha})`
+          : `rgba(192, 202, 245, ${textAlpha})`;
+        ctx.fillText(label, lx, ly);
       }
     }
 
@@ -334,6 +319,7 @@
     animFrame = requestAnimationFrame(draw);
   }
 
+  // ── Interaction handlers ──
   function getCanvasPos(e: PointerEvent | MouseEvent) {
     const rect = canvas!.getBoundingClientRect();
     return { x: e.clientX - rect.left, y: e.clientY - rect.top };
@@ -384,7 +370,25 @@
 
   function handleWheel(e: WheelEvent) {
     e.preventDefault();
-    sc = Math.max(0.15, Math.min(4, sc * (e.deltaY > 0 ? 0.92 : 1.08)));
+    const factor = e.deltaY > 0 ? 0.92 : 1.08;
+    sc = Math.max(0.12, Math.min(5, sc * factor));
+  }
+
+  function fitView() {
+    if (sim.length === 0) return;
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    for (const n of sim) {
+      minX = Math.min(minX, n.x);
+      maxX = Math.max(maxX, n.x);
+      minY = Math.min(minY, n.y);
+      maxY = Math.max(maxY, n.y);
+    }
+    const pad = 60;
+    const w = maxX - minX + pad * 2;
+    const h = maxY - minY + pad * 2;
+    sc = Math.min(cw / w, ch / h, 2);
+    ox = -(minX + maxX) / 2 * sc;
+    oy = -(minY + maxY) / 2 * sc;
   }
 
   function resize() {
@@ -419,9 +423,24 @@
     onwheel={handleWheel}
   ></canvas>
   <div class="gv__ctrl">
-    <button class="gv__btn" onclick={() => sc = Math.min(4, sc * 1.3)} title="Zoom in"><ZoomIn size={13} /></button>
-    <button class="gv__btn" onclick={() => sc = Math.max(0.15, sc * 0.7)} title="Zoom out"><ZoomOut size={13} /></button>
-    <button class="gv__btn" onclick={() => { if (onexpand) { onexpand(); } else { sc = 1; ox = 0; oy = 0; } }} title={onexpand ? "Expand graph" : "Reset view"}><Maximize size={13} /></button>
+    <button class="gv__btn" onclick={() => sc = Math.min(5, sc * 1.3)} title="Zoom in"><Plus size={13} /></button>
+    <button class="gv__btn" onclick={() => sc = Math.max(0.12, sc * 0.7)} title="Zoom out"><Minus size={13} /></button>
+    <button class="gv__btn" onclick={fitView} title="Fit to view"><LocateFixed size={13} /></button>
+    {#if onfocustoggle}
+      <button
+        class="gv__btn"
+        class:gv__btn--active={localMode}
+        onclick={onfocustoggle}
+        title={localMode ? "Show full graph" : "Show local graph"}
+      >
+        <Focus size={13} />
+      </button>
+    {/if}
+    {#if onexpand}
+      <button class="gv__btn" onclick={onexpand} title="Expand graph">
+        <Expand size={13} />
+      </button>
+    {/if}
   </div>
 </div>
 
@@ -431,7 +450,7 @@
     width: 100%;
     height: 100%;
     overflow: hidden;
-    background: radial-gradient(ellipse at 50% 40%, rgba(19, 22, 31, 1) 0%, rgba(10, 14, 26, 1) 70%);
+    background: radial-gradient(ellipse at 50% 40%, rgba(16, 19, 30, 1) 0%, rgba(8, 11, 22, 1) 80%);
     border-radius: 8px;
   }
   canvas { display: block; width: 100%; height: 100%; cursor: grab; }
@@ -442,24 +461,31 @@
     right: 12px;
     display: flex;
     gap: 2px;
-    background: rgba(19, 22, 31, 0.8);
-    backdrop-filter: blur(8px);
+    background: rgba(14, 17, 28, 0.85);
+    backdrop-filter: blur(12px);
     border-radius: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.06);
     padding: 3px;
   }
   .gv__btn {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 26px;
-    height: 26px;
+    width: 28px;
+    height: 28px;
     border: none;
     border-radius: 6px;
     background: transparent;
-    color: var(--text-muted, #6B7394);
+    color: rgba(169, 177, 214, 0.5);
     cursor: pointer;
-    transition: color 150ms ease-out;
+    transition: color 150ms ease-out, background 150ms ease-out;
   }
-  .gv__btn:hover { color: var(--text-primary, #C0CAF5); }
+  .gv__btn:hover {
+    color: rgba(192, 202, 245, 0.9);
+    background: rgba(255, 255, 255, 0.04);
+  }
+  .gv__btn--active {
+    color: rgba(122, 162, 247, 0.9);
+    background: rgba(122, 162, 247, 0.1);
+  }
 </style>

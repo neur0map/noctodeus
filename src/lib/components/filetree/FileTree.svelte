@@ -38,8 +38,8 @@
         active?.focus();
       }
     }
-    window.addEventListener('noctodeus-zone-change', handleZoneChange);
-    return () => window.removeEventListener('noctodeus-zone-change', handleZoneChange);
+    window.addEventListener('nodeus-zone-change', handleZoneChange);
+    return () => window.removeEventListener('nodeus-zone-change', handleZoneChange);
   });
 
   // Drag state shared with all tree nodes

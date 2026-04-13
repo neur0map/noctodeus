@@ -146,6 +146,7 @@ fn file_info_from_path(abs_path: &Path, core_root: &Path) -> Result<FileInfo, No
         content_hash: None,
         is_directory,
         aliases: Vec::new(),
+        evicted: false,
     })
 }
 
@@ -558,6 +559,41 @@ pub async fn media_copy(
     let dest = media_dir.join(&filename);
 
     std::fs::copy(src, &dest)?;
+
+    Ok(format!("media/{filename}"))
+}
+
+/// Save raw bytes as a media file in the core's `media/` directory.
+/// Used by the editor's uploadFile when drag-dropping or pasting images.
+/// Returns the vault-relative path (e.g. `media/abc123.png`).
+#[tauri::command]
+pub async fn media_save(
+    data: Vec<u8>,
+    extension: String,
+    state: tauri::State<'_, AppState>,
+) -> Result<String, NoctoError> {
+    let core = state.active_core.read().await;
+    let active = core.as_ref().ok_or_else(|| NoctoError::CoreNotFound {
+        path: String::new(),
+    })?;
+    let core_root = &active.core_path;
+
+    // Ensure media/ directory exists
+    let media_dir = core_root.join("media");
+    if !media_dir.exists() {
+        std::fs::create_dir_all(&media_dir)?;
+    }
+
+    let ext = if extension.is_empty() { "bin".to_string() } else { extension };
+    let ts = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_millis();
+
+    let filename = format!("{ts:x}.{ext}");
+    let dest = media_dir.join(&filename);
+
+    std::fs::write(&dest, &data)?;
 
     Ok(format!("media/{filename}"))
 }

@@ -66,7 +66,7 @@ fn askpass_script_path() -> Result<PathBuf, NoctoError> {
     let base = dirs::data_dir().ok_or_else(|| NoctoError::Unexpected {
         detail: "Could not determine app data directory".to_string(),
     })?;
-    let dir = base.join("com.noctodeus.app").join("sync");
+    let dir = base.join("com.nodeus.app").join("sync");
     if !dir.exists() {
         fs::create_dir_all(&dir)?;
     }

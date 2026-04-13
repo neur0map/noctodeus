@@ -8,7 +8,6 @@ let settingsVisible = $state(false);
 let tasksVisible = $state(false);
 let panelModalVisible = $state(false);
 let aiChatVisible = $state(false);
-let researchVisible = $state(false);
 let shareExportVisible = $state(false);
 
 export function getUiState() {
@@ -42,9 +41,6 @@ export function getUiState() {
     },
     get aiChatVisible() {
       return aiChatVisible;
-    },
-    get researchVisible() {
-      return researchVisible;
     },
     get shareExportVisible() {
       return shareExportVisible;
@@ -111,17 +107,6 @@ export function getUiState() {
     hideAiChat() {
       aiChatVisible = false;
     },
-    showResearch() {
-      researchVisible = true;
-      quickOpenVisible = false;
-      commandPaletteVisible = false;
-    },
-    hideResearch() {
-      researchVisible = false;
-    },
-    toggleResearch() {
-      researchVisible = !researchVisible;
-    },
     showShareExport() {
       shareExportVisible = true;
       quickOpenVisible = false;
@@ -152,7 +137,6 @@ export function getUiState() {
       tasksVisible = false;
       panelModalVisible = false;
       aiChatVisible = false;
-      researchVisible = false;
       shareExportVisible = false;
     },
   };

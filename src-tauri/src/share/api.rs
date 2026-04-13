@@ -36,7 +36,7 @@ fn client() -> Result<Client, NoctoError> {
     Client::builder()
         .timeout(Duration::from_secs(15))
         .redirect(reqwest::redirect::Policy::none())
-        .user_agent(format!("noctodeus/{}", env!("CARGO_PKG_VERSION")))
+        .user_agent(format!("nodeus/{}", env!("CARGO_PKG_VERSION")))
         .build()
         .map_err(|e| NoctoError::ShareFailed {
             detail: format!("HTTP client error: {e}"),
@@ -116,7 +116,7 @@ mod tests {
 
         // Encrypt a test message
         let key = crypto::generate_key();
-        let plaintext = b"Hello from Noctodeus integration test!";
+        let plaintext = b"Hello from Nodeus integration test!";
         let encrypted = crypto::encrypt(plaintext, &key).expect("encrypt failed");
         let meta = crypto::meta_text();
 

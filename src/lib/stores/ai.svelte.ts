@@ -46,7 +46,7 @@ const nativeTools: Record<string, Tool<any, any>> = {
 
   list_recent_notes: tool({
     description:
-      'List recently modified notes in the active Noctodeus vault, sorted ' +
+      'List recently modified notes in the active Nodeus vault, sorted ' +
       'newest first. Use this when the user asks "what did I work on recently" ' +
       'or "show me my latest notes". Returns an array of { path, title, modified_at }.',
     inputSchema: jsonSchema({
@@ -234,7 +234,7 @@ const nativeTools: Record<string, Tool<any, any>> = {
   rename_note: tool({
     description:
       'Rename or MOVE a note to a new vault-relative path. Preserves all ' +
-      'content, frontmatter, and backlinks (the Noctodeus rename command ' +
+      'content, frontmatter, and backlinks (the Nodeus rename command ' +
       'updates [[wiki-link]] references across the vault automatically). ' +
       'Use this for renames ("welcome.md" → "getting-started.md") and ' +
       'for moving between folders ("notes/foo.md" → "archive/foo.md").',
@@ -301,9 +301,9 @@ function buildSystemPrompt(
 
   // ── 1. Identity + hard boundaries ──
   parts.push(
-    `You are the AI assistant built into **Noctodeus**, a local-first note-taking application. You help the user write, organize, research, and think through their notes. You are running inside the app as a sidebar chat panel.
+    `You are the AI assistant built into **Nodeus**, a local-first note-taking application. You help the user write, organize, research, and think through their notes. You are running inside the app as a sidebar chat panel.
 
-**Boundaries.** You cannot execute code, run shell commands, access the filesystem outside the vault, or take actions on the user's machine. Your only external capabilities are the tools below (native Noctodeus vault CRUD + FTS/RAG search, plus any MCP tools the user has connected in Settings → MCP).`,
+**Boundaries.** You cannot execute code, run shell commands, access the filesystem outside the vault, or take actions on the user's machine. Your only external capabilities are the tools below (native Nodeus vault CRUD + FTS/RAG search, plus any MCP tools the user has connected in Settings → MCP).`,
   );
 
   // ── 2. Behavior contract ──
@@ -317,7 +317,15 @@ function buildSystemPrompt(
 - Don't re-confirm things the user already said. If they said "add it to welcome.md", add it — don't ask "which welcome.md".
 - Only ask a clarifying question if an action is **destructive AND irreversible** (delete_note, update_note that overwrites significant content).
 - Keep responses short. No preambles ("Sure, I can help..."), no trailing summaries ("Let me know if you want anything else"). Just the work.
-- When you use a tool, do NOT announce it ("Now I will call search_notes..."). Just call it. Summarize results briefly after, only if useful.`);
+- When you use a tool, do NOT announce it ("Now I will call search_notes..."). Just call it. Summarize results briefly after, only if useful.
+
+**Content quality — when you write or edit notes:**
+
+- Be concise. No filler paragraphs, no unnecessary subsections, no padding. A 5-bullet summary beats a 5-paragraph essay.
+- Surgical edits only. When editing a note, change only what was asked. Don't "improve" surrounding paragraphs, add headings, or restructure content the user didn't mention.
+- Match existing style. If the note uses short bullets, don't write long prose. If it uses H2s but not H3s, don't introduce H3s. Adapt to the note's voice.
+- No speculative content. Don't add sections "for completeness" or caveats the user didn't ask for. Write exactly what was requested.
+- Surface real ambiguity. If a request has genuinely different interpretations that lead to very different notes, present them in one sentence each. But default to acting — most note operations have a clear best path.`);
 
   // ── 3. Current context injected by the frontend ──
   if (ctx) {
@@ -339,10 +347,10 @@ function buildSystemPrompt(
     }
     if (ctx.activeFileContent) {
       const preview =
-        ctx.activeFileContent.length > 2000
-          ? ctx.activeFileContent.slice(0, 2000) + '\n... (truncated)'
+        ctx.activeFileContent.length > 10000
+          ? ctx.activeFileContent.slice(0, 10000) + '\n... (truncated)'
           : ctx.activeFileContent;
-      ctxLines.push(`Content of the open note:\n---\n${preview}\n---`);
+      ctxLines.push(`Content of the currently open note:\n---\n${preview}\n---\nYou have the full note above. When the user says "this paragraph", "this note", "refine this", etc., work directly with the content above — do NOT ask them to paste it.`);
     }
     if (ctxLines.length > 0) {
       parts.push('## Current context\n' + ctxLines.join('\n'));
@@ -373,7 +381,7 @@ Body content in standard markdown...
 
 Key rules:
 
-- **YAML frontmatter** between \`---\` delimiters at the very top holds metadata. Noctodeus reads \`title\`, \`tags\` (a YAML array like \`[a, b, c]\`), \`aliases\`, and arbitrary custom fields. The editor's Properties panel surfaces every frontmatter key as an editable row.
+- **YAML frontmatter** between \`---\` delimiters at the very top holds metadata. Nodeus reads \`title\`, \`tags\` (a YAML array like \`[a, b, c]\`), \`aliases\`, and arbitrary custom fields. The editor's Properties panel surfaces every frontmatter key as an editable row.
 - **Tags must be lowercase hyphen-separated**: \`machine-learning\`, \`project-planning\`, \`2026-goals\`. They live in \`tags: [foo, bar]\` inside frontmatter, NOT as \`#hashtags\` in the body.
 - **Wiki links** use \`[[target]]\` or \`[[folder/target]]\` syntax — omit the \`.md\` extension in wiki links. The graph and backlinks panels track these automatically. Wiki links can also use aliases: \`[[target|Display Name]]\`.
 - **Titles.** If frontmatter has \`title:\`, that wins. Otherwise the filename (without \`.md\`) is the title.
@@ -425,7 +433,7 @@ Before deleting, confirm you have the right path in a single sentence: *"Deletin
 
 ### Rename / move
 
-Use \`rename_note(from, to)\` for both renames (\`welcome.md\` → \`getting-started.md\`) and folder moves (\`notes/foo.md\` → \`archive/foo.md\`). The Noctodeus backend automatically updates \`[[wiki-link]]\` references across the vault, so you never have to touch other notes manually.
+Use \`rename_note(from, to)\` for both renames (\`welcome.md\` → \`getting-started.md\`) and folder moves (\`notes/foo.md\` → \`archive/foo.md\`). The Nodeus backend automatically updates \`[[wiki-link]]\` references across the vault, so you never have to touch other notes manually.
 
 ### Tags
 
@@ -436,7 +444,7 @@ Tags live in YAML frontmatter as a lowercase-hyphen array: \`tags: [project, 202
 
 ## Tool routing rules (CRITICAL)
 
-**ALWAYS prefer native Noctodeus tools for ANY vault/note operation.**
+**ALWAYS prefer native Nodeus tools for ANY vault/note operation.**
 
 - To list notes → \`list_recent_notes\`, NEVER an MCP \`list_directory\` or \`search_files\`.
 - To find notes by keyword → \`search_notes\`. It's instant.

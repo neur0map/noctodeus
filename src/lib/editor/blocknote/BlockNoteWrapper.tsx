@@ -27,8 +27,8 @@ import '@mantine/core/styles.css';
 import '@blocknote/mantine/style.css';
 
 import type { BlockNoteEditorProps, EditorHandle } from './types';
-import { noctodeusSchema } from './schema';
-import { noctodeusAITransport } from './ai-transport';
+import { nodeusSchema } from './schema';
+import { nodeusAITransport } from './ai-transport';
 import {
   preprocessMarkdown,
   postprocessMarkdown,
@@ -36,7 +36,21 @@ import {
 } from './markdown';
 
 async function uploadFile(file: File): Promise<string> {
-  return URL.createObjectURL(file);
+  try {
+    // Send raw bytes to Rust which saves them directly into the core's media/ folder.
+    // Returns a vault-relative path like "media/abc123.png".
+    const { invoke } = await import('@tauri-apps/api/core');
+
+    const buf = await file.arrayBuffer();
+    const data = Array.from(new Uint8Array(buf));
+    const ext = file.name.split('.').pop() || 'bin';
+
+    const relativePath: string = await invoke('media_save', { data, extension: ext });
+    return relativePath;
+  } catch (err) {
+    console.error('[uploadFile] Failed to save to media/:', err);
+    return URL.createObjectURL(file);
+  }
 }
 
 export default function BlockNoteWrapper(props: BlockNoteEditorProps) {
@@ -54,13 +68,13 @@ export default function BlockNoteWrapper(props: BlockNoteEditorProps) {
   onNavigateRef.current = onNavigate;
 
   const editor = useCreateBlockNote({
-    schema: noctodeusSchema,
+    schema: nodeusSchema,
     uploadFile,
     dropCursor: multiColumnDropCursor,
     dictionary: { ...blockNoteEn, ai: aiEn, multi_column: multiColumnLocales.en },
     extensions: [
       AIExtension({
-        transport: noctodeusAITransport(),
+        transport: nodeusAITransport(),
       }),
     ],
   });
@@ -306,6 +320,73 @@ function collectImageWidths(
   if (Array.isArray(block.children)) {
     for (const child of block.children) {
       collectImageWidths(child as any, out);
+    }
+  }
+}
+
+/**
+ * Walk all image blocks in the editor document. If any use asset:// or blob:
+ * URLs, fetch the image data and save to media/ via media_save, then update
+ * the block's URL to the vault-relative path. This ensures images are portable
+ * and sync-friendly.
+ */
+async function migrateImageUrls(editor: any): Promise<void> {
+  try {
+    const { invoke } = await import('@tauri-apps/api/core');
+    const blocks = editor.document;
+    const updates: Array<{ id: string; url: string }> = [];
+
+    collectMigratableImages(blocks, updates);
+    if (updates.length === 0) return;
+
+    for (const { id, url } of updates) {
+      try {
+        let ext = 'png';
+
+        if (url.startsWith('asset://')) {
+          // asset://localhost/%2FUsers%2F... → /Users/...
+          let filePath = url.replace(/^asset:\/\/localhost\//, '');
+          filePath = decodeURIComponent(filePath);
+          // Ensure leading slash on macOS/Linux
+          if (!filePath.startsWith('/')) filePath = '/' + filePath;
+
+          const dotIdx = filePath.lastIndexOf('.');
+          if (dotIdx > 0) ext = filePath.substring(dotIdx + 1);
+
+          // Use media_copy (reads from absolute path on disk) instead of
+          // trying to read bytes in JS — avoids FS plugin permission issues
+          const relativePath: string = await invoke('media_copy', { sourcePath: filePath });
+          editor.updateBlock(id, { props: { url: relativePath } });
+        } else if (url.startsWith('blob:')) {
+          // Blob URL — fetch the bytes and save via media_save
+          const resp = await fetch(url);
+          const buf = await resp.arrayBuffer();
+          const data = Array.from(new Uint8Array(buf));
+          const relativePath: string = await invoke('media_save', { data, extension: ext });
+          editor.updateBlock(id, { props: { url: relativePath } });
+        }
+      } catch (err) {
+        console.warn(`[migrateImageUrls] Failed to migrate image ${url}:`, err);
+      }
+    }
+  } catch {
+    // If Tauri APIs aren't available, skip migration silently
+  }
+}
+
+function collectMigratableImages(
+  blocks: any[],
+  out: Array<{ id: string; url: string }>,
+): void {
+  for (const block of blocks) {
+    if (block.type === 'image' && block.props?.url) {
+      const url = block.props.url as string;
+      if (url.startsWith('asset://') || url.startsWith('blob:')) {
+        out.push({ id: block.id, url });
+      }
+    }
+    if (Array.isArray(block.children)) {
+      collectMigratableImages(block.children, out);
     }
   }
 }

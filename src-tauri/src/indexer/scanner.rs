@@ -12,7 +12,7 @@ use crate::normalize_path;
 const MAX_HASH_SIZE: u64 = 10 * 1024 * 1024;
 
 /// Walk the entire Core directory tree and build a flat list of `FileInfo`
-/// entries. Skips the `.noctodeus/` metadata directory.
+/// entries. Skips the `.nodeus/` metadata directory.
 pub fn scan_directory(core_path: &Path) -> Result<Vec<FileInfo>, NoctoError> {
     let mut files = Vec::new();
     let core_path_str = core_path
@@ -117,7 +117,69 @@ pub fn scan_directory(core_path: &Path) -> Result<Vec<FileInfo>, NoctoError> {
             content_hash,
             is_directory: is_dir,
             aliases,
+            evicted: false,
         });
+    }
+
+    // Second pass: find iCloud evicted stubs and add as evicted entries
+    for entry in WalkDir::new(core_path)
+        .follow_links(false)
+        .into_iter()
+        .filter_map(|e| e.ok())
+    {
+        let name = entry.file_name().to_string_lossy();
+        if !entry.file_type().is_file() {
+            continue;
+        }
+        // iCloud stubs: .filename.ext.icloud
+        if name.starts_with('.') && name.ends_with(".icloud") {
+            if let Some(real_name) = crate::sync::icloud::stub_to_real_name(&name) {
+                // Only include markdown stubs
+                if !crate::indexer::util::is_markdown(&real_name) {
+                    continue;
+                }
+                let parent = entry.path().parent().unwrap_or(core_path);
+                let rel_parent = normalize_path(
+                    &parent
+                        .strip_prefix(core_path)
+                        .unwrap_or(parent)
+                        .to_string_lossy(),
+                );
+                let parent_dir = if rel_parent.is_empty() {
+                    ".".to_string()
+                } else {
+                    rel_parent
+                };
+                let rel_path = if parent_dir == "." {
+                    real_name.clone()
+                } else {
+                    format!("{}/{}", parent_dir, real_name)
+                };
+
+                // Don't add if we already have the real file
+                if files.iter().any(|f| f.path == rel_path) {
+                    continue;
+                }
+
+                let extension = std::path::Path::new(&real_name)
+                    .extension()
+                    .map(|e| e.to_string_lossy().to_string());
+
+                files.push(FileInfo {
+                    path: rel_path,
+                    parent_dir,
+                    name: real_name,
+                    extension,
+                    title: None,
+                    size: None,
+                    modified_at: None,
+                    content_hash: None,
+                    is_directory: false,
+                    aliases: Vec::new(),
+                    evicted: true,
+                });
+            }
+        }
     }
 
     debug!(count = files.len(), "directory scan complete");
@@ -192,6 +254,7 @@ pub fn scan_single_file(core_path: &Path, abs_path: &Path) -> Result<FileInfo, N
         content_hash,
         is_directory: is_dir,
         aliases,
+        evicted: false,
     })
 }
 
@@ -333,15 +396,19 @@ use crate::indexer::util::is_markdown;
 fn should_skip(entry: &walkdir::DirEntry) -> bool {
     let name = entry.file_name().to_string_lossy();
 
-    // Skip junk files
-    if name == ".DS_Store" || name == "Thumbs.db" || name == "desktop.ini" {
+    // Skip junk files and internal database/index artifacts
+    if name == ".DS_Store" || name == "Thumbs.db" || name == "desktop.ini"
+        || name == "meta.db" || name == "meta.db-wal" || name == "meta.db-shm"
+        || name == "state.db" || name == "state.db-wal" || name == "state.db-shm"
+        || name == "memory.mv2"
+    {
         return true;
     }
 
     // Skip hidden directories (dotfiles) that belong to other apps or the OS
     if entry.file_type().is_dir() {
         match name.as_ref() {
-            ".noctodeus" | ".obsidian" | ".logseq" | ".git" | ".trash"
+            ".nodeus" | ".noctodeus" | ".obsidian" | ".logseq" | ".git" | ".trash"
             | ".svn" | ".hg" | "node_modules" | ".vscode" => return true,
             // Also skip the logseq/ data directory (not hidden but app-specific)
             "logseq" => return true,
@@ -415,17 +482,17 @@ mod tests {
     }
 
     #[test]
-    fn test_scan_directory_skips_noctodeus() {
+    fn test_scan_directory_skips_nodeus() {
         let dir = tempfile::tempdir().unwrap();
         let root = dir.path();
 
         // Create a normal file.
         fs::write(root.join("note.md"), "# Test Note\n\nContent.").unwrap();
 
-        // Create .noctodeus directory with a file inside.
-        let noctodeus = root.join(".noctodeus");
-        fs::create_dir_all(&noctodeus).unwrap();
-        fs::write(noctodeus.join("meta.db"), "fake db").unwrap();
+        // Create .nodeus directory with a file inside.
+        let nodeus = root.join(".nodeus");
+        fs::create_dir_all(&nodeus).unwrap();
+        fs::write(nodeus.join("meta.db"), "fake db").unwrap();
 
         // Create a subdirectory with a file.
         let subdir = root.join("folder");
@@ -434,12 +501,12 @@ mod tests {
 
         let files = scan_directory(root).unwrap();
 
-        // Should have: note.md, folder/, folder/nested.md -- NOT .noctodeus/
+        // Should have: note.md, folder/, folder/nested.md -- NOT .nodeus/
         let paths: Vec<&str> = files.iter().map(|f| f.path.as_str()).collect();
         assert!(paths.contains(&"note.md"));
         assert!(paths.contains(&"folder"));
         assert!(paths.contains(&"folder/nested.md"));
-        assert!(!paths.iter().any(|p| p.contains(".noctodeus")));
+        assert!(!paths.iter().any(|p| p.contains(".nodeus")));
     }
 
     #[test]

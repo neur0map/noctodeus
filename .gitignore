@@ -11,7 +11,7 @@ vite.config.ts.timestamp-*
 
 # Internal plans and specs
 docs/superpowers/
-docs/noctodeus-product-plan.md
+docs/nodeus-product-plan.md
 docs/
 .claude
 .vscode

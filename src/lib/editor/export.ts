@@ -7,7 +7,7 @@ import { writeFile } from '@tauri-apps/plugin-fs';
  *
  * These functions mirror the official BlockNote example at
  * https://github.com/TypeCellOS/BlockNote/tree/main/examples/05-interoperability/05-converting-blocks-to-pdf
- * as closely as possible. The Noctodeus-specific parts are:
+ * as closely as possible. The Nodeus-specific parts are:
  *
  *   1. We use dynamic imports so the exporters aren't pulled into the
  *      SvelteKit SSR bundle.

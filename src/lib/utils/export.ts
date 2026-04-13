@@ -79,7 +79,7 @@ export async function handleExport(
       }
       const csvContent = rows.join('\n');
       const savePath = await saveDialog({
-        defaultPath: `${ctx.coreName ?? 'noctodeus'}-export.csv`,
+        defaultPath: `${ctx.coreName ?? 'nodeus'}-export.csv`,
         filters: [{ name: 'CSV', extensions: ['csv'] }],
       });
       if (!savePath) return;

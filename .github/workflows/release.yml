@@ -73,9 +73,9 @@ jobs:
           sed -i "0,/^version = \"[^\"]*\"$/s//version = \"${VERSION}\"/" \
             src-tauri/Cargo.toml
 
-          # 4. Cargo.lock — update the noctodeus package entry
+          # 4. Cargo.lock — update the nodeus package entry
           awk -v ver="${VERSION}" '
-            /^name = "noctodeus"$/ {
+            /^name = "nodeus"$/ {
               print
               getline
               sub(/"[^"]*"/, "\"" ver "\"")
@@ -180,19 +180,19 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: ${{ needs.tag.outputs.tag }}
-          releaseName: "Noctodeus ${{ needs.tag.outputs.tag }}"
+          releaseName: "Nodeus ${{ needs.tag.outputs.tag }}"
           releaseBody: |
             ## Install
 
-            **macOS** — download the `.dmg`, open it, drag Noctodeus to Applications. On first launch macOS will refuse to run it because the app is not code-signed. Fix it with one command:
+            **macOS** — download the `.dmg`, open it, drag Nodeus to Applications. On first launch macOS will refuse to run it because the app is not code-signed. Fix it with one command:
 
             ```bash
-            xattr -cr /Applications/Noctodeus.app
+            xattr -cr /Applications/Nodeus.app
             ```
 
             Then open normally.
 
-            **Linux** — download the `.AppImage`, `chmod +x` it, and run. Or install the `.deb`: `sudo dpkg -i noctodeus_*.deb`.
+            **Linux** — download the `.AppImage`, `chmod +x` it, and run. Or install the `.deb`: `sudo dpkg -i nodeus_*.deb`.
 
             **Windows** — not available yet. See the README for status.
 

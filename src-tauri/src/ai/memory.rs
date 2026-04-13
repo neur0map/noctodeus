@@ -1,6 +1,6 @@
 //! Memvid-backed note memory for semantic/lexical RAG.
 //!
-//! Wraps `memvid_core::Memvid` to provide Noctodeus-specific operations:
+//! Wraps `memvid_core::Memvid` to provide Nodeus-specific operations:
 //! indexing markdown notes into an `.mv2` file, searching them, and
 //! managing the lifecycle of the memory store.
 
@@ -63,12 +63,12 @@ pub struct MemoryStatus {
 
 /// Return the canonical path for the `.mv2` memory file inside a core.
 pub fn memory_path(core_path: &Path) -> PathBuf {
-    core_path.join(".noctodeus").join("memory.mv2")
+    core_path.join(".nodeus").join("memory.mv2")
 }
 
-/// Ensure the `.noctodeus` directory exists.
-fn ensure_noctodeus_dir(core_path: &Path) -> Result<(), NoctoError> {
-    let dir = core_path.join(".noctodeus");
+/// Ensure the `.nodeus` directory exists.
+fn ensure_nodeus_dir(core_path: &Path) -> Result<(), NoctoError> {
+    let dir = core_path.join(".nodeus");
     if !dir.exists() {
         std::fs::create_dir_all(&dir)?;
     }
@@ -84,7 +84,7 @@ fn ensure_noctodeus_dir(core_path: &Path) -> Result<(), NoctoError> {
 /// The returned `Memvid` handle holds an exclusive file lock. Callers must
 /// drop it when done to release the lock.
 pub fn open_memory(core_path: &Path) -> Result<Memvid, NoctoError> {
-    ensure_noctodeus_dir(core_path)?;
+    ensure_nodeus_dir(core_path)?;
     let path = memory_path(core_path);
 
     let mut mv = if path.exists() {

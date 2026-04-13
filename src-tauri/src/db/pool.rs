@@ -9,14 +9,14 @@ use crate::errors::NoctoError;
 pub type DbPool = Pool<SqliteConnectionManager>;
 
 /// Create a new connection pool for the SQLite database at
-/// `.noctodeus/meta.db` inside the given core path.
+/// `meta.db` inside the given metadata base directory.
 ///
 /// Each connection is initialized with WAL mode and foreign keys enabled.
 /// The pool size is kept small (4 connections) because this is a local
 /// single-user app — we just need enough to avoid blocking the async
 /// runtime while a long scan or FTS rebuild is running.
-pub fn create_pool(core_path: &Path) -> Result<DbPool, NoctoError> {
-    let db_path = core_path.join(".noctodeus").join("meta.db");
+pub fn create_pool(meta_base: &Path) -> Result<DbPool, NoctoError> {
+    let db_path = meta_base.join("meta.db");
 
     let manager = SqliteConnectionManager::file(&db_path).with_init(|conn| {
         conn.execute_batch(

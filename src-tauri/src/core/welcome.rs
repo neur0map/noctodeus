@@ -18,11 +18,11 @@ pub fn write_welcome_content(core_path: &Path) -> Result<(), NoctoError> {
         ("getting-started/06-customization.md", CUSTOMIZATION),
         ("getting-started/07-sync.md", SYNC),
         ("getting-started/08-keyboard-shortcuts.md", SHORTCUTS),
-        ("media/noctodeus.jpg", ""), // placeholder — actual image copied separately
+        ("media/nodeus.jpg", ""), // placeholder — actual image copied separately
     ];
 
     for (rel_path, content) in files {
-        if *rel_path == "media/noctodeus.jpg" {
+        if *rel_path == "media/nodeus.jpg" {
             continue; // handled below
         }
         let abs_path = core_path.join(rel_path);
@@ -51,20 +51,20 @@ pub fn write_welcome_content(core_path: &Path) -> Result<(), NoctoError> {
 // ─────────────────────────────────────────────────────────────────────
 
 const WELCOME: &str = r#"---
-title: "Welcome to Noctodeus"
+title: "Welcome to Nodeus"
 ---
 
-# Welcome to Noctodeus
+# Welcome to Nodeus
 
-![Noctodeus](media/noctodeus.jpg)
+![Nodeus](media/nodeus.jpg)
 
-**Noctodeus** is a creative IDE for thought. A local-first writing environment designed for people who think in connections, not folders.
+**Nodeus** is a creative IDE for thought. A local-first writing environment designed for people who think in connections, not folders.
 
 Everything lives on your machine. Your notes are plain markdown files — no vendor lock-in, no cloud dependency, no subscription. You own your words.
 
 ---
 
-## What Makes Noctodeus Different
+## What Makes Nodeus Different
 
 **Think in links, not hierarchies.** Connect ideas with [[02-organizing|wiki-links]] and watch your knowledge graph grow. Every note is a node. Every link is a connection you chose to make.
 
@@ -95,10 +95,10 @@ Or just close this note and start writing. There's no wrong way to begin.
 "#;
 
 const WRITING: &str = r#"---
-title: "Writing in Noctodeus"
+title: "Writing in Nodeus"
 ---
 
-# Writing in Noctodeus
+# Writing in Nodeus
 
 The editor is built for focused writing with powerful formatting when you need it.
 
@@ -151,7 +151,7 @@ Tasks are just markdown checkboxes. They work everywhere markdown works.
 
 ```javascript
 function greet(name) {
-  return `Hello, ${name}! Welcome to Noctodeus.`;
+  return `Hello, ${name}! Welcome to Nodeus.`;
 }
 ```
 
@@ -188,13 +188,13 @@ title: "Organizing Your Workspace"
 
 # Organizing Your Workspace
 
-Noctodeus uses a simple, flexible structure: **cores** contain your files.
+Nodeus uses a simple, flexible structure: **cores** contain your files.
 
 ---
 
 ## What's a Core?
 
-A core is a folder on your computer that Noctodeus manages. Think of it as a vault, a project, or a workspace — whatever fits your mental model.
+A core is a folder on your computer that Nodeus manages. Think of it as a vault, a project, or a workspace — whatever fits your mental model.
 
 You can have multiple cores:
 - **Personal** — journal, ideas, reading notes
@@ -240,7 +240,7 @@ title: "Linking Your Ideas"
 
 # Linking Your Ideas
 
-Wiki-links are the heart of Noctodeus. They turn your notes from isolated documents into a connected network of thought.
+Wiki-links are the heart of Nodeus. They turn your notes from isolated documents into a connected network of thought.
 
 ---
 
@@ -352,7 +352,7 @@ title: "Daily Notes"
 
 # Daily Notes
 
-Noctodeus includes a built-in daily notes system for journaling, task tracking, and capturing fleeting ideas.
+Nodeus includes a built-in daily notes system for journaling, task tracking, and capturing fleeting ideas.
 
 ---
 
@@ -399,7 +399,7 @@ The best journaling system is the one you actually use. Daily notes work because
 
 ---
 
-Next: [[06-customization]] — make Noctodeus yours.
+Next: [[06-customization]] — make Nodeus yours.
 "#;
 
 const CUSTOMIZATION: &str = r#"---
@@ -408,7 +408,7 @@ title: "Customization"
 
 # Customization
 
-Noctodeus adapts to your preferences, not the other way around.
+Nodeus adapts to your preferences, not the other way around.
 
 ---
 
@@ -466,7 +466,7 @@ title: "Sync with GitHub"
 
 # Sync with GitHub
 
-Noctodeus syncs your notes to a private GitHub repository. Your data stays yours — GitHub is just the transport.
+Nodeus syncs your notes to a private GitHub repository. Your data stays yours — GitHub is just the transport.
 
 ---
 
@@ -475,7 +475,7 @@ Noctodeus syncs your notes to a private GitHub repository. Your data stays yours
 1. Go to **Settings > Sync**
 2. Create a **Personal Access Token** on GitHub (Settings > Developer settings > Fine-grained tokens)
 3. Give it **Contents: Read and write** permission
-4. Paste the token and your repo URL into Noctodeus
+4. Paste the token and your repo URL into Nodeus
 5. Click **Connect**
 
 That's it. One repo can hold multiple cores.
@@ -485,7 +485,7 @@ That's it. One repo can hold multiple cores.
 ## How It Works
 
 - Press the **Sync button** in the sidebar footer (or use the command palette)
-- Noctodeus pulls remote changes, merges them, then pushes your local changes
+- Nodeus pulls remote changes, merges them, then pushes your local changes
 - If two devices edited the same file, the merge is automatic when possible
 - If there's a true conflict, both versions are kept — nothing is ever lost
 
@@ -507,7 +507,7 @@ Your notes are plain files in a git repo. You can browse them on GitHub, clone t
 
 When two devices edit the same note:
 
-1. Noctodeus tries an **automatic three-way merge**
+1. Nodeus tries an **automatic three-way merge**
 2. If it can't merge cleanly, it **keeps both versions** — the remote version stays as the main file, your local version is saved as `note.conflict-2026-04-07.md`
 3. You resolve at your own pace — no merge markers, no data loss
 
@@ -522,7 +522,7 @@ title: "Keyboard Shortcuts"
 
 # Keyboard Shortcuts
 
-Noctodeus is designed for keyboard-first workflows. Every shortcut is customizable in Settings > Hotkeys.
+Nodeus is designed for keyboard-first workflows. Every shortcut is customizable in Settings > Hotkeys.
 
 ---
 
@@ -573,5 +573,5 @@ All shortcuts can be reset individually or all at once.
 
 That's everything you need to get started. Close this note and begin building your second brain.
 
-Welcome to Noctodeus.
+Welcome to Nodeus.
 "#;

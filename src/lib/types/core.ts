@@ -23,6 +23,8 @@ export interface FileNode {
   content_hash: string;
   is_directory: boolean;
   aliases?: string[];
+  /** True if the file is an iCloud evicted stub (not yet downloaded). */
+  evicted?: boolean;
 }
 
 /** File content paired with its metadata. */
@@ -46,7 +48,7 @@ export interface TreeNode extends FileNode {
   expanded: boolean;
 }
 
-/** Shape of .noctodeus/manifest.json inside a core. */
+/** Shape of .nodeus/manifest.json inside a core. */
 export interface CoreManifest {
   core: {
     name: string;

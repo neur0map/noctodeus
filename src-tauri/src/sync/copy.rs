@@ -16,11 +16,30 @@ pub struct FileSnapshot {
     pub hash: Option<String>,
 }
 
+/// Media file extensions that are excluded from sync by default.
+const MEDIA_EXTENSIONS: &[&str] = &[
+    "png", "jpg", "jpeg", "gif", "bmp", "svg", "webp", "ico", "tiff", "tif",
+    "mp3", "wav", "ogg", "flac", "aac", "m4a",
+    "mp4", "mov", "avi", "mkv", "webm",
+    "pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx",
+    "zip", "tar", "gz", "rar", "7z",
+];
+
+fn is_media_file(name: &str) -> bool {
+    if let Some(dot) = name.rfind('.') {
+        let ext = &name[dot + 1..];
+        MEDIA_EXTENSIONS.iter().any(|e| e.eq_ignore_ascii_case(ext))
+    } else {
+        false
+    }
+}
+
 /// Copy all files from a core's local path to its repo subdirectory.
 /// First removes stale files from repo_subdir that no longer exist in core_path,
 /// so that `git add -A` will detect deletions. Then copies all current files.
+/// When `sync_media` is false, media files (images, PDFs, etc.) are excluded.
 /// Returns the number of files copied.
-pub fn copy_core_to_repo(core_path: &Path, repo_subdir: &Path) -> Result<u32, NoctoError> {
+pub fn copy_core_to_repo(core_path: &Path, repo_subdir: &Path, sync_media: bool) -> Result<u32, NoctoError> {
     // Clean repo subdir: remove files/dirs that shouldn't be synced
     // (either deleted from core, or match the exclusion filter)
     if repo_subdir.exists() {
@@ -92,14 +111,19 @@ pub fn copy_core_to_repo(core_path: &Path, repo_subdir: &Path) -> Result<u32, No
                 }
             }
 
-            // Skip .noctodeus/meta.db, logs, cache (but keep config.toml)
+            // Skip .nodeus/meta.db, logs, cache (but keep config.toml)
             if name == "meta.db" || name == "meta.db-wal" || name == "meta.db-shm" {
+                return false;
+            }
+
+            // Skip media files unless sync_media is enabled
+            if !sync_media && e.file_type().is_file() && is_media_file(&name) {
                 return false;
             }
             if e.file_type().is_dir() {
                 let rel = e.path().strip_prefix(core_path).unwrap_or(e.path());
                 let rel_str = rel.to_string_lossy();
-                if rel_str.contains(".noctodeus/logs") || rel_str.contains(".noctodeus/cache") {
+                if rel_str.contains(".nodeus/logs") || rel_str.contains(".nodeus/cache") {
                     return false;
                 }
             }
@@ -274,15 +298,15 @@ mod tests {
         let subdir = repo.path().join("my-vault");
 
         fs::write(core.path().join("note.md"), "hello").unwrap();
-        fs::create_dir_all(core.path().join(".noctodeus")).unwrap();
-        fs::write(core.path().join(".noctodeus/config.toml"), "config").unwrap();
-        fs::write(core.path().join(".noctodeus/meta.db"), "db").unwrap();
+        fs::create_dir_all(core.path().join(".nodeus")).unwrap();
+        fs::write(core.path().join(".nodeus/config.toml"), "config").unwrap();
+        fs::write(core.path().join(".nodeus/meta.db"), "db").unwrap();
 
-        let count = copy_core_to_repo(core.path(), &subdir).unwrap();
+        let count = copy_core_to_repo(core.path(), &subdir, false).unwrap();
         assert!(count >= 2); // note.md + config.toml
         assert!(subdir.join("note.md").exists());
-        assert!(subdir.join(".noctodeus/config.toml").exists());
-        assert!(!subdir.join(".noctodeus/meta.db").exists()); // excluded
+        assert!(subdir.join(".nodeus/config.toml").exists());
+        assert!(!subdir.join(".nodeus/meta.db").exists()); // excluded
     }
 
     #[test]

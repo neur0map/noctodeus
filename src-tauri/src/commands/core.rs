@@ -5,7 +5,7 @@ use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use tauri::{Emitter, State};
 
-use crate::core::manifest::{create_manifest, ensure_noctodeus_dir, load_manifest};
+use crate::core::manifest::{create_manifest, ensure_nodeus_dir, load_manifest};
 use crate::core::state::{ActiveCore, AppState, CoreInfo};
 use crate::db::{create_pool, run_all_migrations, DbPool};
 use crate::db::links;
@@ -33,7 +33,7 @@ fn cores_json_path() -> Result<PathBuf, NoctoError> {
     let base = dirs::data_dir().ok_or_else(|| NoctoError::Unexpected {
         detail: "Could not determine app data directory".to_string(),
     })?;
-    let app_dir = base.join("com.noctodeus.app");
+    let app_dir = base.join("com.nodeus.app");
     if !app_dir.exists() {
         fs::create_dir_all(&app_dir)?;
     }
@@ -65,10 +65,22 @@ fn write_cores_registry(entries: &[CoreEntry]) -> Result<(), NoctoError> {
     Ok(())
 }
 
-/// Opens (or creates) the SQLite database at `.noctodeus/meta.db`,
-/// creates a connection pool, and runs migrations on one connection.
-fn open_db(core_path: &Path) -> Result<crate::db::DbPool, NoctoError> {
-    let pool = create_pool(core_path)?;
+/// Determine the metadata directory based on whether the vault is on iCloud.
+fn resolve_meta_dir(core_path: &Path) -> Result<PathBuf, NoctoError> {
+    // Check if the vault is on iCloud Drive
+    let icloud_status = crate::sync::icloud::validate_vault(core_path);
+    if icloud_status.on_icloud {
+        crate::sync::icloud::meta_path(core_path)
+    } else {
+        Ok(core_path.join(".nodeus"))
+    }
+}
+
+/// Opens (or creates) the SQLite database at `meta.db` inside the
+/// given metadata base directory, creates a connection pool, and runs
+/// migrations on one connection.
+fn open_db(meta_base: &Path) -> Result<crate::db::DbPool, NoctoError> {
+    let pool = create_pool(meta_base)?;
 
     // Run migrations on a connection from the pool.
     let conn = pool.get().map_err(|e| NoctoError::Unexpected {
@@ -147,7 +159,7 @@ fn start_watcher(
 /// Create a new Core in an existing folder.
 ///
 /// 1. Validates the folder exists
-/// 2. Creates `.noctodeus/` directory structure
+/// 2. Creates `.nodeus/` directory structure
 /// 3. Writes `config.toml` manifest
 /// 4. Opens SQLite DB with migrations
 /// 5. Registers in `cores.json`
@@ -160,14 +172,14 @@ pub async fn core_create(path: String, name: String, app: tauri::AppHandle, stat
     }
 
     // Refuse to re-initialize an existing Core.
-    let noctodeus_dir = core_path.join(".noctodeus");
-    if noctodeus_dir.join("config.toml").exists() {
+    let nodeus_dir = core_path.join(".nodeus");
+    if nodeus_dir.join("config.toml").exists() {
         return Err(NoctoError::PathConflict {
             path: format!("{} already contains a Core", path),
         });
     }
 
-    ensure_noctodeus_dir(&core_path)?;
+    ensure_nodeus_dir(&core_path)?;
     let manifest = create_manifest(&core_path, &name)?;
 
     // Only populate welcome content if the folder has no existing files
@@ -176,7 +188,7 @@ pub async fn core_create(path: String, name: String, app: tauri::AppHandle, stat
         .map(|entries| {
             entries.filter_map(|e| e.ok()).any(|e| {
                 let name = e.file_name().to_string_lossy().to_string();
-                !name.starts_with('.') && name != ".noctodeus"
+                !name.starts_with('.') && name != ".nodeus"
             })
         })
         .unwrap_or(false);
@@ -187,7 +199,8 @@ pub async fn core_create(path: String, name: String, app: tauri::AppHandle, stat
         }
     }
 
-    let pool = open_db(&core_path)?;
+    let meta_base = resolve_meta_dir(&core_path)?;
+    let pool = open_db(&meta_base)?;
 
     let now = Utc::now().to_rfc3339();
 
@@ -231,7 +244,7 @@ pub async fn core_create(path: String, name: String, app: tauri::AppHandle, stat
 
 /// Open a folder as a Core. Smart detection:
 ///
-/// - Has `.noctodeus/` → open as existing core
+/// - Has `.nodeus/` → open as existing core
 /// - Has `.obsidian/` or `.md` files → create core (skip .obsidian/, .logseq/, etc.)
 /// - Empty → create core with welcome content
 #[tauri::command]
@@ -242,10 +255,10 @@ pub async fn core_open(path: String, app: tauri::AppHandle, state: State<'_, App
         return Err(NoctoError::CoreNotFound { path: path.clone() });
     }
 
-    let noctodeus_dir = core_path.join(".noctodeus");
+    let nodeus_dir = core_path.join(".nodeus");
 
-    // If no .noctodeus/ exists, this isn't a core yet — create one
-    if !noctodeus_dir.exists() {
+    // If no .nodeus/ exists, this isn't a core yet — create one
+    if !nodeus_dir.exists() {
         let folder_name = core_path
             .file_name()
             .map(|n| n.to_string_lossy().to_string())
@@ -256,7 +269,8 @@ pub async fn core_open(path: String, app: tauri::AppHandle, state: State<'_, App
     }
 
     let manifest = load_manifest(&core_path)?;
-    let pool = open_db(&core_path)?;
+    let meta_base = resolve_meta_dir(&core_path)?;
+    let pool = open_db(&meta_base)?;
     let now = Utc::now().to_rfc3339();
 
     let info = CoreInfo {

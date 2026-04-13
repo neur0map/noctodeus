@@ -55,15 +55,15 @@ impl SyncBackend for GitHubSync {
 
         // Create sync manifest if this is a fresh repo
         if !repo_path
-            .join(".noctodeus-sync")
+            .join(".nodeus-sync")
             .join("sync.toml")
             .exists()
         {
             manifest::create_sync_toml(&repo_path)?;
-            manifest::write_gitignore(&repo_path)?;
+            manifest::write_gitignore(&repo_path, false)?;
             git::add_all(&repo_path).await?;
             if git::has_changes(&repo_path).await? {
-                git::commit(&repo_path, "init: noctodeus sync").await?;
+                git::commit(&repo_path, "init: nodeus sync").await?;
                 let env = self.auth_env()?;
                 git::push(&repo_path, &Self::env_refs(&env)).await?;
             }
@@ -72,12 +72,15 @@ impl SyncBackend for GitHubSync {
         Ok(())
     }
 
-    async fn push(&self, cores: &[SyncCore]) -> Result<SyncResult, NoctoError> {
+    async fn push(&self, cores: &[SyncCore], sync_media: bool) -> Result<SyncResult, NoctoError> {
         let config = manifest::read_sync_config()?.ok_or(NoctoError::SyncNotConfigured)?;
         let repo_path = PathBuf::from(&config.repo_local_path);
 
         // Recover from dirty state if needed
         recover_dirty_state(&repo_path).await?;
+
+        // Update .gitignore to reflect current sync_media setting
+        manifest::write_gitignore(&repo_path, sync_media)?;
 
         // Copy each core's files into the repo
         let mut total_files = 0u32;
@@ -86,7 +89,7 @@ impl SyncBackend for GitHubSync {
             let count = tokio::task::spawn_blocking({
                 let core_path = PathBuf::from(&core.local_path);
                 let subdir = subdir.clone();
-                move || copy::copy_core_to_repo(&core_path, &subdir)
+                move || copy::copy_core_to_repo(&core_path, &subdir, sync_media)
             })
             .await
             .map_err(|e| NoctoError::SyncFailed {
@@ -363,19 +366,20 @@ impl SyncBackend for GitHubSync {
 pub async fn smart_sync(
     backend: &GitHubSync,
     cores: &[SyncCore],
+    sync_media: bool,
 ) -> Result<SyncResult, NoctoError> {
     // Pull first
     let pull_result = backend.pull(cores).await?;
 
     // Then push
-    let push_result = match backend.push(cores).await {
+    let push_result = match backend.push(cores, sync_media).await {
         Ok(r) => r,
         Err(NoctoError::SyncFailed { detail }) if detail.contains("rejected") => {
             // Remote changed during our push — pull again and retry (max 3)
             for attempt in 1..=3 {
                 debug!(attempt, "push rejected, retrying after pull");
                 backend.pull(cores).await?;
-                match backend.push(cores).await {
+                match backend.push(cores, sync_media).await {
                     Ok(r) => {
                         return Ok(SyncResult {
                             files_pushed: r.files_pushed,

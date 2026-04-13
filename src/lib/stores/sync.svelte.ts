@@ -34,11 +34,11 @@ export function getSyncState() {
       }
     },
 
-    async sync(): Promise<SyncResult | null> {
+    async sync(syncMedia?: boolean): Promise<SyncResult | null> {
       if (status.syncing) return null;
       status = { ...status, syncing: true, error: null };
       try {
-        const result = await syncSmart();
+        const result = await syncSmart(syncMedia);
         await this.refresh();
         return result;
       } catch (err) {

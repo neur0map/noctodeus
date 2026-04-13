@@ -41,6 +41,16 @@ pub fn run_migrations(conn: &Connection) -> Result<(), NoctoError> {
 
         CREATE INDEX IF NOT EXISTS idx_files_parent ON files(parent_dir);
         CREATE INDEX IF NOT EXISTS idx_files_extension ON files(extension);
+
+        CREATE TABLE IF NOT EXISTS research_sessions (
+            id TEXT PRIMARY KEY,
+            title TEXT NOT NULL,
+            summary TEXT NOT NULL DEFAULT '',
+            sources TEXT NOT NULL DEFAULT '[]',
+            messages TEXT NOT NULL DEFAULT '[]',
+            created_at INTEGER NOT NULL,
+            updated_at INTEGER NOT NULL
+        );
     ",
     )?;
     Ok(())

@@ -46,7 +46,7 @@ impl DebouncedWatcher {
     /// Start watching `path` recursively. Returns a `DebouncedWatcher` whose
     /// `receiver()` yields `Vec<FileChange>` batches.
     ///
-    /// Changes inside any `.noctodeus/` directory are ignored.
+    /// Changes inside any `.nodeus/` directory are ignored.
     pub fn start(path: &Path) -> Result<Self, NoctoError> {
         let (raw_tx, raw_rx) = mpsc::channel::<Event>();
         let (batch_tx, batch_rx) = mpsc::channel::<Vec<FileChange>>();
@@ -72,7 +72,7 @@ impl DebouncedWatcher {
         // Background thread: collects raw events, debounces, classifies, sends batches.
         let debounce_root = path.to_path_buf();
         thread::Builder::new()
-            .name("noctodeus-debounce".into())
+            .name("nodeus-debounce".into())
             .spawn(move || {
                 debounce_loop(raw_rx, batch_tx, shutdown_rx, &debounce_root);
             })
@@ -104,7 +104,7 @@ impl DebouncedWatcher {
 /// (app metadata, other tools' config, OS junk).
 fn is_ignored_path(path: &Path) -> bool {
     const IGNORED: &[&str] = &[
-        ".noctodeus", ".obsidian", ".logseq", ".git", ".trash",
+        ".nodeus", ".obsidian", ".logseq", ".git", ".trash",
         ".svn", ".hg", "node_modules", ".vscode", "logseq",
     ];
     path.components().any(|c| {
@@ -151,7 +151,7 @@ fn debounce_loop(
 
         match raw_rx.recv_timeout(timeout) {
             Ok(event) => {
-                // Filter out .noctodeus/ paths.
+                // Filter out .nodeus/ paths.
                 let paths: Vec<PathBuf> = event
                     .paths
                     .into_iter()
@@ -390,10 +390,10 @@ mod tests {
 
     #[test]
     fn test_is_ignored_path() {
-        assert!(is_ignored_path(Path::new("/home/user/core/.noctodeus/meta.db")));
-        assert!(is_ignored_path(Path::new("/home/user/core/.noctodeus/logs/core.log")));
+        assert!(is_ignored_path(Path::new("/home/user/core/.nodeus/meta.db")));
+        assert!(is_ignored_path(Path::new("/home/user/core/.nodeus/logs/core.log")));
         assert!(!is_ignored_path(Path::new("/home/user/core/notes/hello.md")));
-        assert!(!is_ignored_path(Path::new("/home/user/core/noctodeus-notes.md")));
+        assert!(!is_ignored_path(Path::new("/home/user/core/nodeus-notes.md")));
     }
 
     #[test]

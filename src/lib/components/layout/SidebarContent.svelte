@@ -85,8 +85,8 @@
     <div class="sidebar-footer">
       <CoreSwitcher
         activeCore={core.activeCore}
-        onswitch={(c) => window.dispatchEvent(new CustomEvent('noctodeus-switch-core', { detail: c.path }))}
-        onopen={() => window.dispatchEvent(new CustomEvent('noctodeus-open-core'))}
+        onswitch={(c) => window.dispatchEvent(new CustomEvent('nodeus-switch-core', { detail: c.path }))}
+        onopen={() => window.dispatchEvent(new CustomEvent('nodeus-open-core'))}
       />
       <div class="sidebar-footer__actions">
         <SyncButton />

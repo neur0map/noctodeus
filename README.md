@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="static/noctodeous-logo.png" alt="Noctodeus" width="80" />
+  <img src="static/noctodeous-logo.png" alt="Nodeus" width="80" />
 </p>
 
-<h1 align="center">Noctodeus</h1>
+<h1 align="center">Nodeus</h1>
 
 <p align="center">
   <a href="https://github.com/neur0map/noctodeus/releases/latest">Download</a> &middot;
@@ -21,14 +21,14 @@
 <br />
 
 <p align="center">
-  <img src="static/noctodeus-1.png" alt="Noctodeus" width="800" />
+  <img src="static/noctodeus-1.png" alt="Nodeus" width="800" />
 </p>
 
 ## Why This Exists
 
 You already have Obsidian, Logseq, Notion. They work. They have teams, funding, and years of polish.
 
-Noctodeus is one person building the note app they actually want to use.
+Nodeus is one person building the note app they actually want to use.
 
 The whole thing is one binary. No Electron. No hidden browser eating 400MB of RAM. Tauri 2 with a Rust backend, Svelte 5 frontend. Starts in under a second, sits around 80MB of memory, and your notes stay on your machine unless you push them to your own GitHub repo.
 
@@ -44,7 +44,7 @@ If you care about owning your tools and not just your data, give it 5 minutes.
 
 **Full-text search** across every note. SQLite FTS5 with stemming, so "writing" matches "write" and "written." Highlighted snippets in results.
 
-**AI editing that actually edits.** BlockNote-native AI menu with inline diff review — select text and tap the sparkle for rewrite / improve / shorter / longer / translate / simplify, type `/ai` for the full command list, or press `Space` on an empty line for Notion-style invocation. Every change streams inline and you accept or reject per-edit before it's applied. Five Noctodeus-exclusive commands (Extract Wisdom, Create Tags, Create Outline, Create Flashcards, Explain Terms — adapted from [Fabric](https://github.com/danielmiessler/fabric)) sit alongside BlockNote's defaults. Works with OpenAI, Anthropic, Ollama, OpenRouter, Groq, or any OpenAI-compatible API. Your key is stored locally.
+**AI editing that actually edits.** BlockNote-native AI menu with inline diff review — select text and tap the sparkle for rewrite / improve / shorter / longer / translate / simplify, type `/ai` for the full command list, or press `Space` on an empty line for Notion-style invocation. Every change streams inline and you accept or reject per-edit before it's applied. Five Nodeus-exclusive commands (Extract Wisdom, Create Tags, Create Outline, Create Flashcards, Explain Terms — adapted from [Fabric](https://github.com/danielmiessler/fabric)) sit alongside BlockNote's defaults. Works with OpenAI, Anthropic, Ollama, OpenRouter, Groq, or any OpenAI-compatible API. Your key is stored locally.
 
 **Chat bubble** — bottom-right floating AI assistant with native SQLite + RAG tools and MCP server support. Assistant messages render with the same BlockNote typography as the main editor. Press `Cmd+J` to toggle.
 
@@ -76,18 +76,18 @@ Grab the latest build from the [releases page](https://github.com/neur0map/nocto
 
 | Platform | Arch | File |
 |----------|------|------|
-| macOS | Apple Silicon | `Noctodeus_*_aarch64.dmg` |
-| macOS | Intel | `Noctodeus_*_x64.dmg` |
-| Linux | x64 | `noctodeus_*_amd64.AppImage` / `noctodeus_*_amd64.deb` |
+| macOS | Apple Silicon | `Nodeus_*_aarch64.dmg` |
+| macOS | Intel | `Nodeus_*_x64.dmg` |
+| Linux | x64 | `nodeus_*_amd64.AppImage` / `nodeus_*_amd64.deb` |
 
 ### macOS — first-launch Gatekeeper workaround
 
-Noctodeus is **not code-signed or notarized** yet — paying Apple $99/year for a one-person project isn't happening yet. On first launch macOS will refuse to run the app with a *"Noctodeus is damaged and can't be opened"* or *"cannot verify the developer"* error.
+Nodeus is **not code-signed or notarized** yet — paying Apple $99/year for a one-person project isn't happening yet. On first launch macOS will refuse to run the app with a *"Nodeus is damaged and can't be opened"* or *"cannot verify the developer"* error.
 
 **Fix it with one command:**
 
 ```bash
-xattr -cr /Applications/Noctodeus.app
+xattr -cr /Applications/Nodeus.app
 ```
 
 That strips the quarantine attribute Gatekeeper attaches to downloaded apps. You only need to do this once per install. After that the app opens normally like any other.
@@ -99,16 +99,16 @@ That strips the quarantine attribute Gatekeeper attaches to downloaded apps. You
 **AppImage** (portable, no install):
 
 ```bash
-chmod +x Noctodeus_*.AppImage
-./Noctodeus_*.AppImage
+chmod +x Nodeus_*.AppImage
+./Nodeus_*.AppImage
 ```
 
 **Debian / Ubuntu** (`.deb`):
 
 ```bash
-sudo dpkg -i noctodeus_*_amd64.deb
+sudo dpkg -i nodeus_*_amd64.deb
 # or
-sudo apt install ./noctodeus_*_amd64.deb
+sudo apt install ./nodeus_*_amd64.deb
 ```
 
 If the AppImage fails to launch on Wayland, try running with `WEBKIT_DISABLE_COMPOSITING_MODE=1`.
@@ -163,12 +163,12 @@ npm run tauri build
 
 ## Credits
 
-Noctodeus stands on a lot of open-source shoulders:
+Nodeus stands on a lot of open-source shoulders:
 
 - Editor core — [BlockNote](https://www.blocknotejs.org/) (MPL-2.0 for `@blocknote/core`, GPL-3.0 for the XL packages — see license note below)
 - AI orchestration — [Vercel AI SDK](https://sdk.vercel.ai) (Apache-2.0)
 - Icons — [Lucide](https://lucide.dev/) (ISC), [Remix Icon](https://remixicon.com/) (Apache-2.0 via `react-icons`)
-- AI commands — five Noctodeus-exclusive patterns adapted from [Fabric](https://github.com/danielmiessler/fabric) (MIT)
+- AI commands — five Nodeus-exclusive patterns adapted from [Fabric](https://github.com/danielmiessler/fabric) (MIT)
 - Search — [SQLite FTS5](https://www.sqlite.org/fts5.html) + [tantivy](https://github.com/quickwit-oss/tantivy)
 - Encrypted sharing — [Cryptgeon](https://cryptgeon.org/)
 - Exporters — [react-pdf](https://react-pdf.org/), [docx](https://github.com/dolanmiu/docx)
@@ -176,7 +176,7 @@ Noctodeus stands on a lot of open-source shoulders:
 
 ### BlockNote XL package licensing
 
-Noctodeus uses several `@blocknote/xl-*` packages (`xl-ai`, `xl-pdf-exporter`, `xl-docx-exporter`, `xl-odt-exporter`, `xl-multi-column`) under the **GPL-3.0** branch of BlockNote's dual license (`GPL-3.0 OR PROPRIETARY`). This is permissible because Noctodeus itself is licensed under AGPL-3.0, which is compatible with GPL-3.0 per GPL-3.0 §13. If you fork Noctodeus into a non-copyleft project, you'll need either to adopt AGPL-3.0/GPL-3.0 for the fork or to acquire a [BlockNote commercial license](https://www.blocknotejs.org/pricing).
+Nodeus uses several `@blocknote/xl-*` packages (`xl-ai`, `xl-pdf-exporter`, `xl-docx-exporter`, `xl-odt-exporter`, `xl-multi-column`) under the **GPL-3.0** branch of BlockNote's dual license (`GPL-3.0 OR PROPRIETARY`). This is permissible because Nodeus itself is licensed under AGPL-3.0, which is compatible with GPL-3.0 per GPL-3.0 §13. If you fork Nodeus into a non-copyleft project, you'll need either to adopt AGPL-3.0/GPL-3.0 for the fork or to acquire a [BlockNote commercial license](https://www.blocknotejs.org/pricing).
 
 ---
 

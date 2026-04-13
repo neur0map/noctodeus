@@ -35,7 +35,7 @@
   }
 
   function dispatchZoneChange() {
-    window.dispatchEvent(new CustomEvent('noctodeus-zone-change', { detail: currentZone }));
+    window.dispatchEvent(new CustomEvent('nodeus-zone-change', { detail: currentZone }));
   }
 
   onMount(() => {

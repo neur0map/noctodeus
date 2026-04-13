@@ -4,16 +4,23 @@
 
   let {
     streaming = false,
+    placeholder = 'Ask anything...',
     onsend,
     onstop,
   }: {
     streaming?: boolean;
+    placeholder?: string;
     onsend: (text: string) => void;
     onstop: () => void;
   } = $props();
 
   let text = $state('');
   let textareaEl: HTMLTextAreaElement | undefined = $state();
+
+  /** Focus the textarea programmatically. */
+  export function focus() {
+    textareaEl?.focus();
+  }
 
   function autoResize() {
     if (!textareaEl) return;
@@ -45,7 +52,7 @@
     bind:value={text}
     oninput={autoResize}
     {onkeydown}
-    placeholder="Ask anything..."
+    {placeholder}
     rows="1"
   ></textarea>
 

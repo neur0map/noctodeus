@@ -104,7 +104,7 @@
     position: relative;
   }
 
-  /* Map BlockNote's CSS variables to Noctodeus theme tokens.
+  /* Map BlockNote's CSS variables to Nodeus theme tokens.
      Use :global on the .bn-container which BlockNote always renders. */
   .blocknote-container :global(.bn-container),
   .blocknote-container :global(.bn-container[data-color-scheme="light"]),

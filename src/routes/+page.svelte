@@ -6,7 +6,8 @@
   import CommandPalette from "../lib/components/command/CommandPalette.svelte";
   import Worksurface from "../lib/components/layout/Worksurface.svelte";
   import EditorComponent from "../lib/editor/Editor.svelte";
-  import ResearchChat from "../lib/components/ai/ResearchChat.svelte";
+  import ResearchTab from "$lib/components/research/ResearchTab.svelte";
+  import { setMediaCorePath } from "$lib/editor/blocknote/markdown";
 
   import type { Command } from "../lib/types/ui";
 
@@ -50,7 +51,7 @@
   let currentFilePath = $state<string | null>(null);
   let currentContent = $state<string | null>(null);
   let currentMetadata = $state<FileNode | null>(null);
-  const HIDDEN_NAMES = new Set(['.DS_Store', '.noctodeus', '.obsidian', '.logseq', 'logseq', '.git', '.gitignore', '.trash', '.svn', '.hg', '.vscode', 'node_modules', 'Thumbs.db', 'desktop.ini']);
+  const HIDDEN_NAMES = new Set(['.DS_Store', '.nodeus', '.obsidian', '.logseq', 'logseq', '.git', '.gitignore', '.trash', '.svn', '.hg', '.vscode', 'node_modules', 'Thumbs.db', 'desktop.ini']);
 
   let recentFiles = $derived(
     Array.from(files.fileMap.values())
@@ -190,7 +191,8 @@
       label: "Sync Now",
       action: async () => {
         ui.hideCommandPalette();
-        const result = await syncState.sync();
+        const { getSettings } = await import('$lib/stores/settings.svelte');
+        const result = await syncState.sync(getSettings().syncMedia);
         if (result) {
           const total = result.filesPushed + result.filesPulled;
           toast.success(total > 0 ? `Synced -- ${total} files updated` : 'Already up to date');
@@ -258,7 +260,7 @@
       label: "Research: Open",
       action: () => {
         ui.hideCommandPalette();
-        ui.showResearch();
+        tabsState.openResearch();
       },
     },
   ]);
@@ -353,6 +355,7 @@
     }
 
     core.setCore(info);
+    setMediaCorePath(info.path);
     closeFile();
     const fileTree = await scanCore();
     files.setFiles(fileTree);
@@ -430,7 +433,7 @@
       currentContent = detail.content;
       viewKey++;
     };
-    window.addEventListener('noctodeus-content-reloaded', handleContentReload);
+    window.addEventListener('nodeus-content-reloaded', handleContentReload);
 
     // Auto-open last Core
     (async () => {
@@ -456,20 +459,20 @@
     window.addEventListener("beforeunload", handleBeforeUnload);
 
     const handleOpenCoreEvent = () => handleOpenCore();
-    window.addEventListener("noctodeus-open-core", handleOpenCoreEvent);
+    window.addEventListener("nodeus-open-core", handleOpenCoreEvent);
 
     const handleSwitchCoreEvent = (e: Event) => {
       const path = (e as CustomEvent).detail;
       if (path) openOrCreateCore(path);
     };
-    window.addEventListener("noctodeus-switch-core", handleSwitchCoreEvent);
+    window.addEventListener("nodeus-switch-core", handleSwitchCoreEvent);
 
     return () => {
       window.removeEventListener("beforeunload", handleBeforeUnload);
-      window.removeEventListener("noctodeus-open-core", handleOpenCoreEvent);
-      window.removeEventListener("noctodeus-switch-core", handleSwitchCoreEvent);
+      window.removeEventListener("nodeus-open-core", handleOpenCoreEvent);
+      window.removeEventListener("nodeus-switch-core", handleSwitchCoreEvent);
       window.removeEventListener("wiki-link-click", handleWindowWikiLink);
-      window.removeEventListener("noctodeus-content-reloaded", handleContentReload);
+      window.removeEventListener("nodeus-content-reloaded", handleContentReload);
     };
   });
 
@@ -494,7 +497,8 @@
     const active = tabsState.activeTab;
     // untrack currentFilePath — only react to tab changes, not file state
     const current = untrack(() => currentFilePath);
-    if (active.type === 'home') {
+    if (active.type === 'home' || active.type === 'research') {
+      // Clear file state when switching to non-file tabs
       if (current) {
         currentFilePath = null;
         currentContent = null;
@@ -516,8 +520,8 @@
 
 </script>
 
-{#if ui.researchVisible}
-  <ResearchChat />
+{#if tabsState.activeTab.type === 'research'}
+  <ResearchTab />
 {:else if currentFilePath && currentContent !== null}
   {#if isMarkdown}
     <Worksurface flush={true}>
@@ -597,7 +601,7 @@
 {:else}
   <Worksurface>
     <Dashboard
-      coreName={core.activeCore?.name ?? "Noctodeus"}
+      coreName={core.activeCore?.name ?? "Nodeus"}
       {recentFiles}
       pinnedFiles={pinned.files}
       totalNotes={Array.from(files.fileMap.values()).filter(f => !f.is_directory).length}

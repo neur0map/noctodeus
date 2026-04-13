@@ -7,7 +7,7 @@ pub fn init_logging(logs_dir: &Path, level: &str) {
     std::fs::create_dir_all(logs_dir).ok();
 
     // File appender - rotates daily, keeps based on config
-    let file_appender = RollingFileAppender::new(Rotation::DAILY, logs_dir, "noctodeus.log");
+    let file_appender = RollingFileAppender::new(Rotation::DAILY, logs_dir, "nodeus.log");
     let (non_blocking, _guard) = tracing_appender::non_blocking(file_appender);
 
     // Build subscriber with both stdout and file output
@@ -41,7 +41,7 @@ static LOG_GUARD: std::sync::OnceLock<tracing_appender::non_blocking::WorkerGuar
 pub fn init_app_logging(logs_dir: &Path, level: &str) {
     std::fs::create_dir_all(logs_dir).ok();
 
-    let file_appender = RollingFileAppender::new(Rotation::DAILY, logs_dir, "noctodeus.log");
+    let file_appender = RollingFileAppender::new(Rotation::DAILY, logs_dir, "nodeus.log");
     let (non_blocking, guard) = tracing_appender::non_blocking(file_appender);
 
     let env_filter =

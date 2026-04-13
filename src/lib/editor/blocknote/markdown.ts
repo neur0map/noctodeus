@@ -40,10 +40,17 @@ export function joinFrontmatter(frontmatter: string, body: string): string {
  * `extractImageWidths()` on the raw markdown BEFORE the strip happens
  * and injects the width back into the HTML output.
  */
+/** Core path for resolving media URLs. Set by the editor host. */
+let _corePath: string | null = null;
+
+export function setMediaCorePath(path: string | null) {
+  _corePath = path;
+}
+
 export function preprocessMarkdown(markdown: string): string {
   let result = markdown;
 
-  // Convert TipTap/Noctodeus resizable image syntax:
+  // Convert TipTap/Nodeus resizable image syntax:
   //   ![alt](url =WIDTHx) → ![alt](url)
   // The width is re-injected into the HTML stage by extractImageWidths
   // below, so this strip is safe.
@@ -51,6 +58,20 @@ export function preprocessMarkdown(markdown: string): string {
     /!\[([^\]]*)\]\(([^)]*?)\s+=\d+x\d*\)/g,
     '![$1]($2)',
   );
+
+  // Resolve media/ relative paths to asset:// URLs for BlockNote display.
+  // media/abc.png → asset://localhost/<corePath>/media/abc.png
+  if (_corePath) {
+    const corePath = _corePath;
+    result = result.replace(
+      /!\[([^\]]*)\]\((media\/[^)]+)\)/g,
+      (_, alt: string, relPath: string) => {
+        const absPath = `${corePath}/${relPath}`;
+        const encoded = encodeURIComponent(absPath);
+        return `![${alt}](asset://localhost/${encoded})`;
+      },
+    );
+  }
 
   // Convert ==highlight== to <mark>highlight</mark> (BlockNote supports HTML marks)
   result = result.replace(
@@ -71,15 +92,22 @@ export function postprocessMarkdown(
   markdown: string,
   imageWidths?: Record<string, number>,
 ): string {
+  // Convert asset:// URLs back to relative media/ paths for portability.
+  // asset://localhost/<corePath>/media/abc.png → media/abc.png
+  let result = markdown.replace(
+    /!\[([^\]]*)\]\(asset:\/\/localhost\/[^)]*?\/(media\/[^)]+)\)/g,
+    '![$1]($2)',
+  );
+
   if (!imageWidths || Object.keys(imageWidths).length === 0) {
-    return markdown;
+    return result;
   }
 
   // Re-inject the =WIDTHx hint on images whose URL matches an entry in
   // the map. Match `![alt](url)` — stop at the closing paren. If the
   // url already has a width hint (shouldn't happen since lossy export
   // drops it), leave it alone.
-  return markdown.replace(
+  return result.replace(
     /!\[([^\]]*)\]\(([^)]+?)\)/g,
     (full, alt: string, url: string) => {
       if (/\s+=\d+x\d*$/.test(url)) return full;

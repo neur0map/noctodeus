@@ -295,14 +295,15 @@
 
   .cm--user .cm__content {
     max-width: 85%;
-    border-left: 2px solid rgba(122, 162, 247, 0.35);
+    border-left: 2px solid var(--color-accent, #7AA2F7);
     padding-left: 12px;
   }
 
   // ---- Assistant ----
   .cm--assistant {
-    background: var(--color-hover);
-    border-radius: 6px;
+    background: color-mix(in srgb, var(--color-foreground) 4%, var(--color-background));
+    border: 1px solid color-mix(in srgb, var(--color-foreground) 6%, transparent);
+    border-radius: 8px;
     margin: 2px 0;
   }
 

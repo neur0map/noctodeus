@@ -25,12 +25,12 @@ export async function syncStatus(): Promise<SyncStatus> {
   return invoke<SyncStatus>('sync_status');
 }
 
-export async function syncSmart(): Promise<SyncResult> {
-  return invoke<SyncResult>('sync_smart');
+export async function syncSmart(syncMedia?: boolean): Promise<SyncResult> {
+  return invoke<SyncResult>('sync_smart', { syncMedia: syncMedia ?? false });
 }
 
-export async function syncPush(): Promise<SyncResult> {
-  return invoke<SyncResult>('sync_push');
+export async function syncPush(syncMedia?: boolean): Promise<SyncResult> {
+  return invoke<SyncResult>('sync_push', { syncMedia: syncMedia ?? false });
 }
 
 export async function syncPull(): Promise<SyncResult> {
@@ -51,4 +51,31 @@ export async function syncResolve(conflictPath: string): Promise<void> {
 
 export async function syncDisconnect(): Promise<void> {
   return invoke('sync_disconnect');
+}
+
+// ---------------------------------------------------------------------------
+// iCloud sync
+// ---------------------------------------------------------------------------
+
+export interface ICloudInfo {
+  available: boolean;
+  path: string | null;
+}
+
+export interface ICloudVaultStatus {
+  onICloud: boolean;
+  evictedFiles: string[];
+  syncedCount: number;
+}
+
+export async function icloudDetect(): Promise<ICloudInfo> {
+  return invoke<ICloudInfo>('icloud_detect');
+}
+
+export async function icloudValidateVault(): Promise<ICloudVaultStatus> {
+  return invoke<ICloudVaultStatus>('icloud_validate_vault');
+}
+
+export async function icloudDownloadFile(path: string): Promise<void> {
+  return invoke('icloud_download_file', { path });
 }

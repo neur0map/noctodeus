@@ -18,7 +18,7 @@ import { getAIModel, getMaxTokens } from '$lib/ai/client';
  * The LLM emits structured tool calls (add/update/delete block) that
  * xl-ai renders as inline diffs for accept/reject review.
  */
-export function noctodeusAITransport(): ChatTransport<UIMessage> {
+export function nodeusAITransport(): ChatTransport<UIMessage> {
   return {
     async sendMessages({ messages, abortSignal, body }) {
       const model = getAIModel();

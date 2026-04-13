@@ -23,7 +23,7 @@
     <div class="settings__row-info">
       <span class="settings__row-label">Version</span>
       <span class="settings__row-desc">
-        {version ? `Noctodeus v${version}` : 'Noctodeus'}
+        {version ? `Nodeus v${version}` : 'Nodeus'}
       </span>
     </div>
   </div>

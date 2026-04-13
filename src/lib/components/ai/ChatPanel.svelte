@@ -192,6 +192,20 @@
     ai.send(text, settings.aiSystemPrompt || undefined, buildContext());
   }
 
+  let activeFileContent = $state<string | undefined>(undefined);
+
+  // Keep the active file content in sync
+  $effect(() => {
+    const path = filesState.activeFilePath;
+    if (!path) {
+      activeFileContent = undefined;
+      return;
+    }
+    import('$lib/bridge/commands').then(({ readFile }) =>
+      readFile(path).then(r => { activeFileContent = r.content; }).catch(() => { activeFileContent = undefined; })
+    );
+  });
+
   function buildContext(): AiContext {
     const noteList = Array.from(filesState.fileMap.values())
       .filter(f => !f.is_directory && (f.extension === 'md' || f.extension === 'markdown'))
@@ -201,6 +215,7 @@
       coreName: coreState.activeCore?.name,
       corePath: coreState.activeCore?.path,
       activeFilePath: filesState.activeFilePath ?? undefined,
+      activeFileContent,
       noteList,
     };
   }

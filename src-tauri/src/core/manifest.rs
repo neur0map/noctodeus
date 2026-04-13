@@ -28,16 +28,16 @@ pub struct LoggingConfig {
     pub max_rotations: u32,
 }
 
-/// Creates the `.noctodeus/` directory and required subdirectories if they
-/// don't already exist. Returns the path to the `.noctodeus/` directory.
-pub fn ensure_noctodeus_dir(core_path: &Path) -> Result<PathBuf, NoctoError> {
-    let noctodeus_dir = core_path.join(".noctodeus");
+/// Creates the `.nodeus/` directory and required subdirectories if they
+/// don't already exist. Returns the path to the `.nodeus/` directory.
+pub fn ensure_nodeus_dir(core_path: &Path) -> Result<PathBuf, NoctoError> {
+    let nodeus_dir = core_path.join(".nodeus");
 
     let subdirs = [
-        noctodeus_dir.clone(),
-        noctodeus_dir.join("logs"),
-        noctodeus_dir.join("cache"),
-        noctodeus_dir.join("cache").join("thumbnails"),
+        nodeus_dir.clone(),
+        nodeus_dir.join("logs"),
+        nodeus_dir.join("cache"),
+        nodeus_dir.join("cache").join("thumbnails"),
     ];
 
     for dir in &subdirs {
@@ -46,10 +46,10 @@ pub fn ensure_noctodeus_dir(core_path: &Path) -> Result<PathBuf, NoctoError> {
         }
     }
 
-    Ok(noctodeus_dir)
+    Ok(nodeus_dir)
 }
 
-/// Creates a new `config.toml` manifest inside `.noctodeus/`. Generates a
+/// Creates a new `config.toml` manifest inside `.nodeus/`. Generates a
 /// fresh UUID and records the current UTC timestamp.
 pub fn create_manifest(path: &Path, name: &str) -> Result<CoreManifest, NoctoError> {
     let manifest = CoreManifest {
@@ -66,18 +66,18 @@ pub fn create_manifest(path: &Path, name: &str) -> Result<CoreManifest, NoctoErr
         },
     };
 
-    let noctodeus_dir = path.join(".noctodeus");
-    let config_path = noctodeus_dir.join("config.toml");
+    let nodeus_dir = path.join(".nodeus");
+    let config_path = nodeus_dir.join("config.toml");
     let toml_str = toml::to_string_pretty(&manifest)?;
     fs::write(&config_path, toml_str)?;
 
     Ok(manifest)
 }
 
-/// Reads and parses the existing `config.toml` from the `.noctodeus/`
+/// Reads and parses the existing `config.toml` from the `.nodeus/`
 /// directory inside `path`.
 pub fn load_manifest(path: &Path) -> Result<CoreManifest, NoctoError> {
-    let config_path = path.join(".noctodeus").join("config.toml");
+    let config_path = path.join(".nodeus").join("config.toml");
 
     if !config_path.exists() {
         return Err(NoctoError::CoreCorrupted {

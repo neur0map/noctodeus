@@ -31,9 +31,9 @@ pub struct SyncManifestCore {
     pub added_at: String,
 }
 
-/// Read sync.toml from the repo's .noctodeus-sync/ directory.
+/// Read sync.toml from the repo's .nodeus-sync/ directory.
 pub fn read_sync_toml(repo_dir: &Path) -> Result<SyncManifest, NoctoError> {
-    let path = repo_dir.join(".noctodeus-sync").join("sync.toml");
+    let path = repo_dir.join(".nodeus-sync").join("sync.toml");
     if !path.exists() {
         return Err(NoctoError::SyncNotConfigured);
     }
@@ -42,9 +42,9 @@ pub fn read_sync_toml(repo_dir: &Path) -> Result<SyncManifest, NoctoError> {
     Ok(manifest)
 }
 
-/// Write sync.toml to the repo's .noctodeus-sync/ directory.
+/// Write sync.toml to the repo's .nodeus-sync/ directory.
 pub fn write_sync_toml(repo_dir: &Path, manifest: &SyncManifest) -> Result<(), NoctoError> {
-    let dir = repo_dir.join(".noctodeus-sync");
+    let dir = repo_dir.join(".nodeus-sync");
     if !dir.exists() {
         fs::create_dir_all(&dir)?;
     }
@@ -66,30 +66,37 @@ pub fn create_sync_toml(repo_dir: &Path) -> Result<SyncManifest, NoctoError> {
     Ok(manifest)
 }
 
-/// Write the .gitignore for noctodeus artifacts.
-pub fn write_gitignore(repo_dir: &Path) -> Result<(), NoctoError> {
-    let dir = repo_dir.join(".noctodeus-sync");
+/// Write the .gitignore for nodeus artifacts.
+/// When `sync_media` is true, media file patterns are omitted so git tracks them.
+pub fn write_gitignore(repo_dir: &Path, sync_media: bool) -> Result<(), NoctoError> {
+    let dir = repo_dir.join(".nodeus-sync");
     if !dir.exists() {
         fs::create_dir_all(&dir)?;
     }
-    let content = "# Noctodeus — machine-specific artifacts\n\
-                   **/.noctodeus/meta.db\n\
-                   **/.noctodeus/meta.db-wal\n\
-                   **/.noctodeus/meta.db-shm\n\
-                   **/.noctodeus/logs/\n\
-                   **/.noctodeus/cache/\n\
-                   \n\
-                   # OS junk\n\
-                   .DS_Store\n\
-                   Thumbs.db\n\
-                   desktop.ini\n\
-                   \n\
-                   # Other app metadata (not ours)\n\
-                   .obsidian/\n\
-                   .logseq/\n\
-                   logseq/\n\
-                   .trash/\n";
-    // Write to repo root, not inside .noctodeus-sync
+    let mut content = String::from(
+        "# Nodeus — machine-specific artifacts\n\
+         **/.nodeus/meta.db\n\
+         **/.nodeus/meta.db-wal\n\
+         **/.nodeus/meta.db-shm\n\
+         **/.nodeus/logs/\n\
+         **/.nodeus/cache/\n\n",
+    );
+
+    if !sync_media {
+        content.push_str(
+            "# Media files (enable \"Sync images & media\" in Settings to include)\n\
+             *.png\n*.jpg\n*.jpeg\n*.gif\n*.bmp\n*.svg\n*.webp\n\
+             *.pdf\n*.mp3\n*.mp4\n*.mov\n*.zip\n\n",
+        );
+    }
+
+    content.push_str(
+        "# OS junk\n\
+         .DS_Store\nThumbs.db\ndesktop.ini\n\n\
+         # Other app metadata (not ours)\n\
+         .obsidian/\n.logseq/\nlogseq/\n.trash/\n",
+    );
+    // Write to repo root, not inside .nodeus-sync
     fs::write(repo_dir.join(".gitignore"), content)?;
     Ok(())
 }
@@ -134,7 +141,7 @@ pub fn sync_json_path() -> Result<PathBuf, NoctoError> {
     let base = dirs::data_dir().ok_or_else(|| NoctoError::Unexpected {
         detail: "Could not determine app data directory".to_string(),
     })?;
-    let app_dir = base.join("com.noctodeus.app");
+    let app_dir = base.join("com.nodeus.app");
     if !app_dir.exists() {
         fs::create_dir_all(&app_dir)?;
     }
@@ -194,7 +201,7 @@ mod tests {
     #[test]
     fn test_gitignore_creation() {
         let dir = tempfile::tempdir().unwrap();
-        write_gitignore(dir.path()).unwrap();
+        write_gitignore(dir.path(), false).unwrap();
         let content = fs::read_to_string(dir.path().join(".gitignore")).unwrap();
         assert!(content.contains("meta.db"));
         assert!(content.contains("logs/"));

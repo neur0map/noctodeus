@@ -1,4 +1,4 @@
-// ── Theme definitions for Noctodeus ──
+// ── Theme definitions for Nodeus ──
 // Keys are kebab-case matching CSS custom properties (without the -- prefix).
 // applyTheme() sets `--${key}: value` on :root.
 

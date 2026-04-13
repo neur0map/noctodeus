@@ -22,8 +22,8 @@
   // Generate config snippets for external AI tools
   let claudeConfig = $derived(JSON.stringify({
     mcpServers: {
-      noctodeus: {
-        command: "noctodeus-mcp",
+      nodeus: {
+        command: "nodeus-mcp",
         args: [corePath]
       }
     }
@@ -31,8 +31,8 @@
 
   let cursorConfig = $derived(JSON.stringify({
     "mcpServers": {
-      "noctodeus": {
-        "command": "noctodeus-mcp",
+      "nodeus": {
+        "command": "nodeus-mcp",
         "args": [corePath]
       }
     }
@@ -188,12 +188,12 @@
 </script>
 
 <div class="settings__section">
-  <!-- Noctodeus as MCP Server -->
+  <!-- Nodeus as MCP Server -->
   <div class="settings__row settings__row--vertical">
     <div class="settings__row-info">
       <div class="mcp-section-head">
         <Server size={14} />
-        <span class="settings__row-label">Noctodeus as MCP Server</span>
+        <span class="settings__row-label">Nodeus as MCP Server</span>
       </div>
       <span class="settings__row-desc">
         Let external AI tools (Claude Desktop, Cursor, Windsurf) read, search, and write your notes.
@@ -253,7 +253,7 @@
   <!-- Explanation -->
   <div class="settings__row">
     <div class="settings__row-info">
-      <span class="settings__row-label">Connect AI Tools to Noctodeus</span>
+      <span class="settings__row-label">Connect AI Tools to Nodeus</span>
       <span class="settings__row-desc">
         MCP (Model Context Protocol) lets the AI use external tools — search the web, read files, query APIs, and more.
         Add a server below and the AI chat will automatically see its tools.

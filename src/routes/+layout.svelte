@@ -77,11 +77,11 @@
   // Apply custom CSS snippet
   $effect(() => {
     const css = appSettings.customCSS;
-    let styleEl = document.getElementById('noctodeus-custom-css') as HTMLStyleElement | null;
+    let styleEl = document.getElementById('nodeus-custom-css') as HTMLStyleElement | null;
     if (css) {
       if (!styleEl) {
         styleEl = document.createElement('style');
-        styleEl.id = 'noctodeus-custom-css';
+        styleEl.id = 'nodeus-custom-css';
         document.head.appendChild(styleEl);
       }
       styleEl.textContent = css;

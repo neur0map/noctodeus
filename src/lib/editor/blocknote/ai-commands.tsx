@@ -7,10 +7,11 @@ import {
   RiListIndefinite,
   RiGraduationCapLine,
   RiBookOpenLine,
+  RiStethoscopeLine,
 } from 'react-icons/ri';
 import { splitFrontmatter } from './markdown';
 
-// ── System prompts (5 unique Noctodeus Fabric patterns) ─────────────
+// ── System prompts (5 unique Nodeus Fabric patterns) ─────────────
 //
 // xl-ai's default menu already covers the overlapping patterns
 // (summarize, action_items, improve_writing, fix_spelling, translate,
@@ -18,14 +19,41 @@ import { splitFrontmatter } from './markdown';
 // xl-ai doesn't ship — they became AIMenuSuggestionItems merged alongside
 // the defaults.
 
-const EXTRACT_WISDOM_PROMPT = `You are an expert at extracting the most surprising,
-insightful, and useful information from content.
+const EXTRACT_WISDOM_SYSTEM = `You are an expert at extracting surprising, insightful, and useful information from content, and at identifying key concepts and entities worth their own knowledge-base entries.
 
-Extract Ideas (3-7 bullets of the most interesting ideas), Insights (3-5 bullets
-of the most non-obvious insights), Quotes (any notable exact quotes from the text
-with speaker if known), and Facts (any specific facts, statistics, or data points)
-from the document. Organize each category as a Heading 2 section with bullets
-underneath. Each bullet max 20 words. Skip sections with no content.`;
+Analyze the document and return ONLY a valid JSON object (no markdown fences, no commentary) with this structure:
+
+{
+  "ideas": ["idea 1", "idea 2"],
+  "insights": ["insight 1"],
+  "quotes": ["\\"exact quote\\" — Speaker"],
+  "facts": ["fact 1"],
+  "concepts": [
+    {
+      "slug": "concept-name",
+      "title": "Concept Name",
+      "definition": "One-sentence definition.",
+      "details": "2-3 sentences: how it works, when to use, pitfalls."
+    }
+  ],
+  "entities": [
+    {
+      "slug": "entity-name",
+      "title": "Entity Name",
+      "type": "person|tool|organization|framework|product",
+      "description": "2-3 sentences about this entity and its relevance."
+    }
+  ]
+}
+
+Rules:
+- ideas: 3-7 bullets, max 20 words each. Most interesting or surprising.
+- insights: 3-5 non-obvious insights or connections.
+- quotes: exact quotes with speaker if known. Empty array if none.
+- facts: specific facts, statistics, data points. Empty array if none.
+- concepts: 2-5 key concepts substantial enough for their own note. Lowercase-hyphen slugs.
+- entities: 0-5 people, tools, orgs, or products mentioned substantively (not in passing). Lowercase-hyphen slugs.
+- Return ONLY the JSON object. No markdown fences, no prose, no prefix.`;
 
 const CREATE_TAGS_PROMPT = `Generate 3-7 relevant tags for the following document,
 suitable for a knowledge management system. Tags must be lowercase and hyphenated
@@ -60,13 +88,31 @@ term is a paragraph formatted as:
 Only include terms a general reader would not know. Order alphabetically. Max 15
 terms.`;
 
+const LINT_NOTE_PROMPT = `Analyze this note for quality issues and suggest specific improvements.
+Check for:
+
+1. **Structure** — Heading hierarchy problems, wall-of-text paragraphs, sections that
+   should be split or merged, overly deep nesting.
+2. **Clarity** — Vague claims without evidence, filler phrases ("it should be noted
+   that…"), redundant content, unclear references.
+3. **Connections** — Key terms, concepts, or people that should be [[wiki-links]] but
+   aren't. Suggest the link target as [[lowercase-hyphen-name]].
+4. **Confidence** — Claims that need a source or caveat. Flag as low-confidence.
+5. **Completeness** — Unfinished sections, TODO markers, missing context that a reader
+   would need.
+
+Output a Heading 2 "Note Review" section. Each finding is a bullet starting with a
+bold category label: **Structure**, **Clarity**, **Connections**, **Confidence**, or
+**Completeness**. Be actionable — say what to fix, not just what's wrong. Max 10
+findings. If the note is solid, say so in one line.`;
+
 // ── Command factory ──────────────────────────────────────────────────
 
 /**
- * Build the 5 Noctodeus-unique AI commands that supplement xl-ai's
- * default menu. All 5 are insert-only (add:true, update/delete:false) so
- * they append their output to the document without modifying existing
- * content.
+ * Build the 6 Nodeus-unique AI commands that supplement xl-ai's
+ * default menu. Most append their output to the document without modifying
+ * existing content. Extract Wisdom and Create Tags bypass invokeAI to do
+ * multi-file operations (creating concept/entity notes, writing frontmatter).
  *
  * Intended to be merged with getDefaultAIMenuItems(editor, status) inside
  * AIMenuController's `items` prop.
@@ -91,9 +137,17 @@ export function getFabricAICommands(
     {
       key: 'extract_wisdom',
       title: 'Extract Wisdom',
-      aliases: ['insights', 'wisdom', 'key points', 'ideas'],
+      aliases: ['insights', 'wisdom', 'key points', 'ideas', 'ingest'],
       icon: <RiLightbulbLine size={18} />,
-      onItemClick: makeClickHandler(EXTRACT_WISDOM_PROMPT),
+      onItemClick: async () => {
+        ai.closeAIMenu();
+        await runExtractWisdom(editor).catch(async (err) => {
+          const { toast } = await import('$lib/stores/toast.svelte');
+          toast.error(
+            `Extract Wisdom failed: ${err instanceof Error ? err.message : String(err)}`,
+          );
+        });
+      },
       size: 'small',
     },
     {
@@ -139,7 +193,274 @@ export function getFabricAICommands(
       onItemClick: makeClickHandler(EXPLAIN_TERMS_PROMPT),
       size: 'small',
     },
+    {
+      key: 'lint_note',
+      title: 'Lint Note',
+      aliases: ['review', 'audit', 'check', 'quality', 'lint', 'health'],
+      icon: <RiStethoscopeLine size={18} />,
+      onItemClick: makeClickHandler(LINT_NOTE_PROMPT),
+      size: 'small',
+    },
   ];
+}
+
+// ── Extract Wisdom custom runner ─────────────────────────────────────
+//
+// Reads the active note, asks the LLM for structured wisdom (ideas,
+// insights, quotes, facts) PLUS key concepts and entities, then:
+//   1. Appends a "## Extracted Wisdom" section (with wiki-links) to
+//      the current note
+//   2. Creates concept notes in concepts/<slug>.md (or appends a
+//      source reference if the note already exists)
+//   3. Creates entity notes in entities/<slug>.md (same logic)
+//
+// This merges the "LLM wiki ingest" pattern — a single command that
+// grows the knowledge graph by extracting structured knowledge and
+// cross-linking it automatically.
+
+interface ExtractedWisdom {
+  ideas: string[];
+  insights: string[];
+  quotes: string[];
+  facts: string[];
+  concepts: { slug: string; title: string; definition: string; details: string }[];
+  entities: { slug: string; title: string; type: string; description: string }[];
+}
+
+async function runExtractWisdom(editor: BlockNoteEditor<any, any, any>): Promise<void> {
+  const [{ getFilesState }, { readFile, writeFile, createFile }, { generateText }, { getAIModel, getMaxTokens }, { toast }] =
+    await Promise.all([
+      import('$lib/stores/files.svelte'),
+      import('$lib/bridge/commands'),
+      import('ai'),
+      import('$lib/ai/client'),
+      import('$lib/stores/toast.svelte'),
+    ]);
+
+  const files = getFilesState();
+  const path = files.activeFilePath;
+  if (!path) throw new Error('No active file');
+
+  const model = getAIModel();
+  if (!model) throw new Error('AI provider not configured — open Settings → AI');
+
+  const fileContent = await readFile(path);
+  const raw = fileContent.content;
+  const [existingFm, body] = splitFrontmatter(raw);
+
+  if (!body.trim()) throw new Error('Note body is empty — nothing to extract');
+
+  toast.info('Extracting wisdom…');
+
+  const bodyForAI = body.length > 12000 ? body.slice(0, 12000) + '\n\n...(truncated)' : body;
+  const { text } = await generateText({
+    model,
+    system: EXTRACT_WISDOM_SYSTEM,
+    prompt: bodyForAI,
+    maxOutputTokens: Math.min(getMaxTokens() ?? 4096, 4096),
+  });
+
+  // Parse the structured JSON response
+  let wisdom: ExtractedWisdom;
+  try {
+    const cleaned = text
+      .replace(/^```(?:json)?\s*\n?/, '')
+      .replace(/\n?```\s*$/, '')
+      .trim();
+    wisdom = JSON.parse(cleaned);
+  } catch {
+    throw new Error(`AI returned invalid JSON — try again. Preview: "${text.slice(0, 150)}…"`);
+  }
+
+  // Normalize: ensure all arrays exist
+  wisdom.ideas ??= [];
+  wisdom.insights ??= [];
+  wisdom.quotes ??= [];
+  wisdom.facts ??= [];
+  wisdom.concepts ??= [];
+  wisdom.entities ??= [];
+
+  if (!wisdom.ideas.length && !wisdom.insights.length) {
+    throw new Error('AI found no ideas or insights in this note');
+  }
+
+  // Build the wisdom markdown section with wiki-links
+  const wisdomMd = buildWisdomMarkdown(wisdom);
+
+  // Append to the current document
+  const separator = raw.endsWith('\n') ? '\n' : '\n\n';
+  const newContent = raw + separator + wisdomMd;
+  await writeFile(path, newContent);
+
+  // Create concept and entity notes in parallel
+  const sourceTitle = extractNoteTitle(existingFm, path);
+  const sourceSlug = path.replace(/\.md$/, '');
+  const today = new Date().toISOString().split('T')[0];
+
+  let conceptsCreated = 0;
+  let entitiesCreated = 0;
+
+  const noteOps = [
+    ...wisdom.concepts.map(async (c) => {
+      const result = await upsertKnowledgeNote(
+        `concepts/${c.slug}.md`,
+        c.title,
+        'concept',
+        `${c.definition}\n\n${c.details}`,
+        sourceTitle,
+        sourceSlug,
+        today,
+        readFile, writeFile, createFile,
+      );
+      if (result === 'created') conceptsCreated++;
+    }),
+    ...wisdom.entities.map(async (e) => {
+      const result = await upsertKnowledgeNote(
+        `entities/${e.slug}.md`,
+        e.title,
+        e.type || 'entity',
+        e.description,
+        sourceTitle,
+        sourceSlug,
+        today,
+        readFile, writeFile, createFile,
+      );
+      if (result === 'created') entitiesCreated++;
+    }),
+  ];
+
+  // Don't let a single note failure abort everything
+  await Promise.allSettled(noteOps);
+
+  // Reload the editor
+  window.dispatchEvent(
+    new CustomEvent('nodeus-content-reloaded', {
+      detail: { path, content: newContent },
+    }),
+  );
+
+  // Summary toast
+  const parts: string[] = [];
+  if (wisdom.ideas.length) parts.push(`${wisdom.ideas.length} ideas`);
+  if (wisdom.insights.length) parts.push(`${wisdom.insights.length} insights`);
+  if (conceptsCreated) parts.push(`${conceptsCreated} concept note${conceptsCreated > 1 ? 's' : ''}`);
+  if (entitiesCreated) parts.push(`${entitiesCreated} entity note${entitiesCreated > 1 ? 's' : ''}`);
+  toast.success(`Extracted: ${parts.join(', ')}`);
+}
+
+/**
+ * Build the markdown section appended to the source note.
+ * Includes wiki-links to concept and entity notes.
+ */
+function buildWisdomMarkdown(w: ExtractedWisdom): string {
+  const sections: string[] = ['## Extracted Wisdom\n'];
+
+  if (w.ideas.length) {
+    sections.push('### Ideas');
+    sections.push(w.ideas.map((i) => `- ${i}`).join('\n'));
+    sections.push('');
+  }
+  if (w.insights.length) {
+    sections.push('### Insights');
+    sections.push(w.insights.map((i) => `- ${i}`).join('\n'));
+    sections.push('');
+  }
+  if (w.quotes.length) {
+    sections.push('### Quotes');
+    sections.push(w.quotes.map((q) => `- ${q}`).join('\n'));
+    sections.push('');
+  }
+  if (w.facts.length) {
+    sections.push('### Facts');
+    sections.push(w.facts.map((f) => `- ${f}`).join('\n'));
+    sections.push('');
+  }
+  if (w.concepts.length) {
+    sections.push('### Concepts');
+    sections.push(
+      w.concepts
+        .map((c) => `- [[concepts/${c.slug}|${c.title}]] — ${c.definition}`)
+        .join('\n'),
+    );
+    sections.push('');
+  }
+  if (w.entities.length) {
+    sections.push('### Entities');
+    sections.push(
+      w.entities
+        .map((e) => `- [[entities/${e.slug}|${e.title}]] — ${truncateSentence(e.description)}`)
+        .join('\n'),
+    );
+    sections.push('');
+  }
+
+  return sections.join('\n');
+}
+
+/** First sentence only, for inline summaries. */
+function truncateSentence(text: string): string {
+  const dot = text.indexOf('. ');
+  return dot > 0 ? text.slice(0, dot + 1) : text;
+}
+
+/** Extract the note title from frontmatter, falling back to filename. */
+function extractNoteTitle(frontmatter: string, filePath: string): string {
+  const match = frontmatter.match(/^\s*title\s*:\s*["']?(.+?)["']?\s*$/m);
+  if (match) return match[1].trim();
+  const name = filePath.replace(/\.md$/, '').split('/').pop() || 'Untitled';
+  return name.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+/**
+ * Create a concept/entity note at `notePath`, or append a source
+ * reference if it already exists. Returns 'created' or 'updated'.
+ */
+async function upsertKnowledgeNote(
+  notePath: string,
+  title: string,
+  type: string,
+  body: string,
+  sourceTitle: string,
+  sourceSlug: string,
+  date: string,
+  readFile: (p: string) => Promise<{ content: string }>,
+  writeFile: (p: string, c: string) => Promise<unknown>,
+  createFile: (p: string, c: string) => Promise<unknown>,
+): Promise<'created' | 'updated'> {
+  const sourceRef = `- [[${sourceSlug}|${sourceTitle}]] — ${date}`;
+
+  try {
+    // Check if the note already exists
+    const existing = await readFile(notePath);
+    // Exists — append source reference if not already listed
+    if (!existing.content.includes(`[[${sourceSlug}`)) {
+      const trimmed = existing.content.trimEnd();
+      // Append under the Sources heading if it exists, otherwise add it
+      if (/^## Sources/m.test(trimmed)) {
+        await writeFile(notePath, trimmed + '\n' + sourceRef + '\n');
+      } else {
+        await writeFile(notePath, trimmed + '\n\n## Sources\n' + sourceRef + '\n');
+      }
+    }
+    return 'updated';
+  } catch {
+    // Doesn't exist — create it
+    const content = `---
+title: "${title}"
+tags: [${type}]
+created: ${date}
+---
+
+# ${title}
+
+${body}
+
+## Sources
+${sourceRef}
+`;
+    await createFile(notePath, content);
+    return 'created';
+  }
 }
 
 // ── Create Tags custom runner ────────────────────────────────────────
@@ -209,7 +530,7 @@ async function runCreateTags(editor: BlockNoteEditor<any, any, any>): Promise<vo
   //    The page is responsible for updating currentContent AND reloading
   //    the editor blocks without triggering a save loop.
   window.dispatchEvent(
-    new CustomEvent('noctodeus-content-reloaded', {
+    new CustomEvent('nodeus-content-reloaded', {
       detail: { path, content: newContent },
     }),
   );

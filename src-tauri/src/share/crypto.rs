@@ -130,7 +130,7 @@ mod tests {
     #[test]
     fn test_encrypt_decrypt_roundtrip() {
         let key = generate_key();
-        let plaintext = b"Hello from Noctodeus!";
+        let plaintext = b"Hello from Nodeus!";
         let encrypted = encrypt(plaintext, &key).unwrap();
         let decrypted = decrypt(&encrypted, &key).unwrap();
         assert_eq!(decrypted, plaintext);

@@ -7,7 +7,7 @@
   import GraphView from '$lib/components/graph/GraphView.svelte';
 
   let {
-    coreName = 'Noctodeus',
+    coreName = 'Nodeus',
     recentFiles = [],
     pinnedFiles = [],
     totalNotes = 0,
@@ -100,8 +100,15 @@
     return { title: 'Most Linked', files: connected };
   });
 
-  // Orphan nudge
+  // Orphan data — derive display names from the file tree
   let orphanCount = $derived(graphStats.orphanCount);
+  let orphanNotes = $derived.by(() => {
+    return graphStats.orphanPaths.map(p => {
+      const file = recentFiles.find(f => f.path === p) ?? pinnedFiles.find(f => f.path === p);
+      const name = file?.title || file?.name || p.replace(/\.md$/, '').split('/').pop() || p;
+      return { path: p, name };
+    });
+  });
 
   // --- Animations ---
   let dashboardEl: HTMLDivElement | undefined = $state();
@@ -232,9 +239,18 @@
 
   <!-- 5. Orphan Nudge -->
   {#if orphanCount > 0 && !graphScanning}
-    <p class="ds__orphan">
-      {orphanCount} note{orphanCount === 1 ? ' has' : 's have'} no links — connect them?
-    </p>
+    <div class="ds__orphan">
+      <p class="ds__orphan-title">
+        {orphanCount} note{orphanCount === 1 ? ' has' : 's have'} no links
+      </p>
+      <div class="ds__orphan-list">
+        {#each orphanNotes as orphan (orphan.path)}
+          <button class="ds__orphan-item" onclick={() => onfileopen(orphan.path)}>
+            {orphan.name}
+          </button>
+        {/each}
+      </div>
+    </div>
   {/if}
 </div>
 
@@ -400,11 +416,42 @@
 
   /* 5. Orphan Nudge */
   .ds__orphan {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    opacity: 0;
+  }
+
+  .ds__orphan-title {
     font-family: var(--font-mono);
     font-size: 12px;
     color: var(--color-placeholder);
     text-align: center;
-    opacity: 0;
+  }
+
+  .ds__orphan-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: center;
+  }
+
+  .ds__orphan-item {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--color-muted-foreground);
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    padding: 3px 10px;
+    cursor: pointer;
+    transition: color 150ms ease, border-color 150ms ease;
+  }
+
+  .ds__orphan-item:hover {
+    color: var(--color-accent);
+    border-color: var(--color-accent);
   }
 
   /* Responsive stacking */

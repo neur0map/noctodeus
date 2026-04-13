@@ -5,7 +5,7 @@
   import { fileIcon, nerdIcon } from "$lib/utils/nerd-icons";
 
   let {
-    coreName = "Noctodeus",
+    coreName = "Nodeus",
     recentFiles = [],
     pinnedFiles = [],
     newNoteShortcut = "",

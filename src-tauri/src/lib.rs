@@ -27,11 +27,11 @@ pub fn run() {
     // Initialize app-level logging (before anything else)
     let app_logs = dirs::data_dir()
         .unwrap_or_else(|| std::path::PathBuf::from("."))
-        .join("com.noctodeus.app")
+        .join("com.nodeus.app")
         .join("logs");
     logging::init_app_logging(&app_logs, "info");
 
-    tracing::info!("Noctodeus starting up");
+    tracing::info!("Nodeus starting up");
 
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
@@ -96,6 +96,7 @@ pub fn run() {
             commands::log_clear,
             // Media commands
             commands::media_copy,
+            commands::media_save,
             // Graph commands
             commands::graph_links,
             commands::graph_stats,
@@ -110,6 +111,10 @@ pub fn run() {
             commands::sync_disable_core,
             commands::sync_resolve,
             commands::sync_disconnect,
+            // iCloud commands
+            commands::icloud_detect,
+            commands::icloud_validate_vault,
+            commands::icloud_download_file,
             // Share commands
             commands::share_note,
             commands::share_status,
@@ -128,6 +133,13 @@ pub fn run() {
             commands::rag_context,
             commands::rag_index,
             commands::rag_status,
+            // URL fetch
+            commands::url_fetch,
+            // Research session commands
+            commands::research_save_session,
+            commands::research_load_session,
+            commands::research_list_sessions,
+            commands::research_delete_session,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

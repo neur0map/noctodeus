@@ -3,6 +3,7 @@ pub mod conflict;
 pub mod copy;
 pub mod git;
 pub mod github;
+pub mod icloud;
 pub mod manifest;
 
 use async_trait::async_trait;
@@ -68,7 +69,7 @@ pub struct SyncResult {
 #[async_trait]
 pub trait SyncBackend: Send + Sync {
     async fn init(&self, config: &SyncConfig) -> Result<(), NoctoError>;
-    async fn push(&self, cores: &[SyncCore]) -> Result<SyncResult, NoctoError>;
+    async fn push(&self, cores: &[SyncCore], sync_media: bool) -> Result<SyncResult, NoctoError>;
     async fn pull(&self, cores: &[SyncCore]) -> Result<SyncResult, NoctoError>;
     async fn status(&self) -> Result<SyncStatus, NoctoError>;
 }

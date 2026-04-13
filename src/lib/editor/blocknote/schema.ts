@@ -13,6 +13,6 @@ const baseSchema = BlockNoteSchema.create({
   },
 });
 
-export const noctodeusSchema = withMultiColumn(baseSchema);
+export const nodeusSchema = withMultiColumn(baseSchema);
 
-export type NoctodeusSchema = typeof noctodeusSchema;
+export type NodeusSchema = typeof nodeusSchema;

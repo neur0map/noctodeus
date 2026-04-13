@@ -2,7 +2,7 @@ import type { FileNode } from '../types/core';
 
 export interface Tab {
   id: string;
-  type: 'home' | 'file';
+  type: 'home' | 'file' | 'research';
   fileNode?: FileNode;
   label: string;
 }
@@ -40,12 +40,32 @@ export function getTabsState() {
       activeTabId = tab.id;
     },
 
+    openResearch() {
+      const existing = tabs.find(t => t.type === 'research');
+      if (existing) {
+        activeTabId = existing.id;
+        return;
+      }
+      const tab: Tab = {
+        id: '__research__',
+        type: 'research',
+        label: 'Research',
+      };
+      tabs = [...tabs, tab];
+      activeTabId = tab.id;
+    },
+
     closeTab(id: string) {
       if (id === HOME_TAB.id) return;
       const idx = tabs.findIndex(t => t.id === id);
       if (idx === -1) return;
 
       const wasActive = activeTabId === id;
+      // Cleanup research session when closing research tab
+      const closingTab = tabs.find(t => t.id === id);
+      if (closingTab?.type === 'research') {
+        import('$lib/stores/research.svelte').then(m => m.getResearchState().clearAll());
+      }
       tabs = tabs.filter(t => t.id !== id);
 
       if (wasActive) {

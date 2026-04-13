@@ -3,6 +3,7 @@
   import FileTreeNode from "./FileTreeNode.svelte";
   import ChevronRight from "@lucide/svelte/icons/chevron-right";
   import StarIcon from "@lucide/svelte/icons/star";
+  import CloudIcon from "@lucide/svelte/icons/cloud";
   import { getPinnedState } from "../../stores/pinned.svelte";
   import { nerdIcon, fileIcon } from "../../utils/nerd-icons";
 
@@ -29,15 +30,24 @@
   const pinned = getPinnedState();
   let isActive = $derived(node.path === activeFilePath);
   let isPinned = $derived(!node.is_directory && pinned.isPinned(node.path));
+  let isEvicted = $derived(!node.is_directory && !!node.evicted);
   let isDragged = $derived(dragState?.dragging === node.path);
   let isDropTarget = $derived(node.is_directory && dragState?.overDir === node.path && dragState?.dragging !== node.path);
   let editing = $state(false);
   let editValue = $state('');
   let editInput: HTMLInputElement | undefined = $state();
 
-  function handleClick() {
+  async function handleClick() {
     if (node.is_directory) {
       ontoggle(node.path);
+    } else if (isEvicted) {
+      // Trigger iCloud download instead of opening
+      try {
+        const { icloudDownloadFile } = await import('$lib/bridge/sync');
+        const { toast } = await import('$lib/stores/toast.svelte');
+        await icloudDownloadFile(node.path);
+        toast.info('Downloading from iCloud\u2026');
+      } catch {}
     } else {
       onselect(node.path);
     }
@@ -104,6 +114,8 @@
         <ChevronRight size={12} />
       </span>
       <span class="tree-node__icon tree-node__icon--nerd">{node.expanded ? nerdIcon('folder-open') : nerdIcon('folder-closed')}</span>
+    {:else if isEvicted}
+      <span class="tree-node__icon tree-node__icon--evicted"><CloudIcon size={13} /></span>
     {:else}
       <span class="tree-node__icon tree-node__icon--nerd">{fileIcon(node.name)}</span>
     {/if}
@@ -122,7 +134,11 @@
         onclick={(e) => e.stopPropagation()}
       />
     {:else}
-      <span class="tree-node__name" ondblclick={handleDblClick}>{node.name}</span>
+      <span
+        class="tree-node__name"
+        class:tree-node__name--evicted={isEvicted}
+        ondblclick={handleDblClick}
+      >{node.name}</span>
     {/if}
     {#if !node.is_directory}
       <button
@@ -254,10 +270,20 @@
     line-height: 1;
   }
 
+  .tree-node__icon--evicted {
+    color: var(--color-placeholder);
+    opacity: 0.6;
+  }
+
   .tree-node__name {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  .tree-node__name--evicted {
+    opacity: 0.5;
+    font-style: italic;
   }
 
   .tree-node__rename {

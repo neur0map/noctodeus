@@ -1,4 +1,12 @@
-const STORAGE_KEY = 'noctodeus-settings';
+const STORAGE_KEY = 'nodeus-settings';
+const LEGACY_STORAGE_KEY = 'noctodeus-settings';
+
+// Migrate settings from the old key (Noctodeus → Nodeus rebrand).
+// Runs once — copies old data to new key, then removes the old key.
+if (!localStorage.getItem(STORAGE_KEY) && localStorage.getItem(LEGACY_STORAGE_KEY)) {
+  localStorage.setItem(STORAGE_KEY, localStorage.getItem(LEGACY_STORAGE_KEY)!);
+  localStorage.removeItem(LEGACY_STORAGE_KEY);
+}
 
 export interface AppSettings {
   // General
@@ -33,6 +41,9 @@ export interface AppSettings {
   aiMaxTokens: number;
   /** Per-provider credentials. Keyed by providerId. */
   aiCredentials: Record<string, { baseUrl: string; apiKey: string; model: string }>;
+  // Sync
+  syncMethod: 'none' | 'github' | 'icloud';
+  syncMedia: boolean;
   // MCP
   mcpServers: { name: string; command: string; args: string[]; env?: Record<string, string> }[];
 }
@@ -60,6 +71,8 @@ const DEFAULTS: AppSettings = {
   aiSystemPrompt: 'You are a helpful writing assistant. You help with notes, research, and creative thinking.',
   aiMaxTokens: 4000,
   aiCredentials: {},
+  syncMethod: 'none',
+  syncMedia: false,
   mcpServers: [],
 };
 
@@ -96,6 +109,21 @@ function loadFromStorage(): AppSettings {
           apiKey: merged.aiApiKey ?? '',
           model: merged.aiModel ?? '',
         };
+      }
+
+      // Migrate syncMethod: users who already had GitHub sync configured
+      // before the syncMethod field existed should default to 'github'.
+      if (!merged.syncMethod || merged.syncMethod === 'none') {
+        // Check if they look like an existing GitHub sync user by
+        // inspecting whether the sync bridge was previously configured.
+        // We can't call Tauri from here synchronously, so we rely on
+        // a best-effort heuristic: if the user has never set syncMethod
+        // explicitly (field absent from stored JSON) we leave it as
+        // 'none' and let the Sync settings page detect active GitHub
+        // config on mount.
+        if (!('syncMethod' in parsed)) {
+          merged.syncMethod = 'none';
+        }
       }
 
       return merged;
@@ -140,6 +168,8 @@ export function getSettings() {
     get aiSystemPrompt() { return settings.aiSystemPrompt; },
     get aiMaxTokens() { return settings.aiMaxTokens; },
     get aiCredentials() { return settings.aiCredentials; },
+    get syncMethod() { return settings.syncMethod; },
+    get syncMedia() { return settings.syncMedia; },
     get mcpServers() { return settings.mcpServers; },
 
     update<K extends keyof AppSettings>(key: K, value: AppSettings[K]) {

@@ -59,13 +59,13 @@ pub async fn sync_setup(remote_url: String, token: String) -> CmdResult<()> {
     let repo_name = remote_url
         .rsplit('/')
         .next()
-        .unwrap_or("noctodeus-vault")
+        .unwrap_or("nodeus-vault")
         .trim_end_matches(".git");
 
     let base = dirs::data_dir().ok_or_else(|| NoctoError::Unexpected {
         detail: "Could not determine app data directory".to_string(),
     })?;
-    let sync_dir = base.join("com.noctodeus.app").join("sync");
+    let sync_dir = base.join("com.nodeus.app").join("sync");
     std::fs::create_dir_all(&sync_dir)?;
     let repo_local_path = sync_dir.join(repo_name);
 
@@ -126,7 +126,7 @@ pub async fn sync_status() -> CmdResult<SyncStatus> {
 
 /// Smart sync: pull then push with auto-recovery.
 #[tauri::command]
-pub async fn sync_smart() -> CmdResult<SyncResult> {
+pub async fn sync_smart(sync_media: Option<bool>) -> CmdResult<SyncResult> {
     let _lock = acquire_sync_lock().await?;
 
     let config = manifest::read_sync_config()?.ok_or(NoctoError::SyncNotConfigured)?;
@@ -142,12 +142,12 @@ pub async fn sync_smart() -> CmdResult<SyncResult> {
     }
 
     let backend = GitHubSync::new(token);
-    github::smart_sync(&backend, &cores).await
+    github::smart_sync(&backend, &cores, sync_media.unwrap_or(false)).await
 }
 
 /// Push only (no pull).
 #[tauri::command]
-pub async fn sync_push() -> CmdResult<SyncResult> {
+pub async fn sync_push(sync_media: Option<bool>) -> CmdResult<SyncResult> {
     let _lock = acquire_sync_lock().await?;
 
     let config = manifest::read_sync_config()?.ok_or(NoctoError::SyncNotConfigured)?;
@@ -155,7 +155,7 @@ pub async fn sync_push() -> CmdResult<SyncResult> {
     let cores = build_sync_cores(&config)?;
 
     let backend = GitHubSync::new(token);
-    backend.push(&cores).await
+    backend.push(&cores, sync_media.unwrap_or(false)).await
 }
 
 /// Pull only (no push).
@@ -208,7 +208,7 @@ pub async fn sync_enable_core(
     // Copy core files into repo and push
     let cores = build_sync_cores(&config)?;
     let backend = GitHubSync::new(token);
-    backend.push(&cores).await?;
+    backend.push(&cores, false).await?;
 
     Ok(())
 }
@@ -262,4 +262,29 @@ pub async fn sync_disconnect() -> CmdResult<()> {
     manifest::delete_sync_config()?;
 
     Ok(())
+}
+
+// ── iCloud commands ──────────────────────────────────────────────────
+
+#[tauri::command]
+pub async fn icloud_detect() -> CmdResult<crate::sync::icloud::ICloudInfo> {
+    Ok(crate::sync::icloud::detect())
+}
+
+#[tauri::command]
+pub async fn icloud_validate_vault(state: State<'_, AppState>) -> CmdResult<crate::sync::icloud::ICloudVaultStatus> {
+    let core = state.active_core.read().await;
+    let active = core.as_ref().ok_or(NoctoError::CoreNotFound {
+        path: String::new(),
+    })?;
+    Ok(crate::sync::icloud::validate_vault(&active.core_path))
+}
+
+#[tauri::command]
+pub async fn icloud_download_file(path: String, state: State<'_, AppState>) -> CmdResult<()> {
+    let core = state.active_core.read().await;
+    let active = core.as_ref().ok_or(NoctoError::CoreNotFound {
+        path: String::new(),
+    })?;
+    crate::sync::icloud::download_file(&active.core_path, &path)
 }

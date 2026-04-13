@@ -42,11 +42,17 @@ export async function mountReadonlyBlockNote(
 
   const root = ReactDOM.createRoot(el);
 
+  // Import wiki-link HTML converter for [[target]] support
+  const { markdownToHTMLWithWikiLinks } = await import('$lib/editor/blocknote/markdown');
+
   function ReadonlyView() {
     const editor: any = react.useCreateBlockNote({});
     React.useEffect(() => {
       if (!markdown.trim()) return;
-      Promise.resolve(editor.tryParseMarkdownToBlocks(markdown)).then((blocks: any) => {
+      // Use HTML path with wiki-link injection so [[target]] renders as
+      // clickable wiki-link inline content, not raw text.
+      const html = markdownToHTMLWithWikiLinks(markdown);
+      Promise.resolve(editor.tryParseHTMLToBlocks(html)).then((blocks: any) => {
         editor.replaceBlocks(editor.document, blocks);
       });
     }, [markdown]);

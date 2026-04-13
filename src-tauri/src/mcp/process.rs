@@ -77,7 +77,7 @@ impl McpServer {
             "protocolVersion": "2024-11-05",
             "capabilities": {},
             "clientInfo": {
-                "name": "noctodeus",
+                "name": "nodeus",
                 "version": "0.1.0"
             }
         });

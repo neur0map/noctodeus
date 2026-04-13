@@ -192,3 +192,56 @@ export async function graphBacklinks(path: string): Promise<Link[]> {
   return invoke<Link[]>("graph_backlinks", { path });
 }
 
+// ---------------------------------------------------------------------------
+// URL fetch
+// ---------------------------------------------------------------------------
+
+export interface UrlContent {
+  title: string;
+  content: string;
+}
+
+export async function urlFetch(url: string): Promise<UrlContent> {
+  return invoke<UrlContent>("url_fetch", { url });
+}
+
+// ---------------------------------------------------------------------------
+// Research sessions
+// ---------------------------------------------------------------------------
+
+export interface ResearchSessionData {
+  id: string;
+  title: string;
+  summary: string;
+  sources: string;
+  messages: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface SessionMeta {
+  id: string;
+  title: string;
+  summary: string;
+  sourceCount: number;
+  messageCount: number;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export async function researchSaveSession(session: ResearchSessionData): Promise<void> {
+  return invoke('research_save_session', { session });
+}
+
+export async function researchLoadSession(id: string): Promise<ResearchSessionData> {
+  return invoke<ResearchSessionData>('research_load_session', { id });
+}
+
+export async function researchListSessions(): Promise<SessionMeta[]> {
+  return invoke<SessionMeta[]>('research_list_sessions');
+}
+
+export async function researchDeleteSession(id: string): Promise<void> {
+  return invoke('research_delete_session', { id });
+}
+

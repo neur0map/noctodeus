@@ -56,8 +56,8 @@
   {/if}
   <button
     class="research-trigger"
-    class:research-trigger--active={ui.researchVisible}
-    onclick={() => ui.toggleResearch()}
+    class:research-trigger--active={tabsState.activeTab.type === 'research'}
+    onclick={() => tabsState.openResearch()}
     title="Research"
   >
     <BookOpen size={13} />
