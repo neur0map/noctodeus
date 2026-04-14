@@ -129,9 +129,10 @@ async function ingestAll(silent = false) {
     await ensureWikiFolder();
     progress!.log.push('Wiki folder ready');
 
-    const sources = await collectChangedSources();
+    // Manual ingest (silent=false) forces all sources; scheduled (silent=true) only changed
+    const sources = await collectChangedSources(!silent);
     if (sources.length === 0) {
-      progress = { ...progress!, phase: 'done', currentAction: 'Up to date — no changes found', log: [...progress!.log, 'No changed sources found.'] };
+      progress = { ...progress!, phase: 'done', currentAction: 'Up to date — no sources found', log: [...progress!.log, 'No sources found.'] };
       return;
     }
 

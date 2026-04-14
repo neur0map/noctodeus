@@ -56,7 +56,11 @@ export function hashContent(content: string): string {
   return (h1 >>> 0).toString(36) + (h2 >>> 0).toString(36);
 }
 
-export async function collectChangedSources(): Promise<IngestSource[]> {
+/**
+ * Collect sources to ingest.
+ * @param force — if true, skip hash comparison and include all sources regardless of whether they changed.
+ */
+export async function collectChangedSources(force = false): Promise<IngestSource[]> {
   const settings = getSettings();
   const sources: IngestSource[] = [];
   const { invoke } = await import('@tauri-apps/api/core');
@@ -73,10 +77,11 @@ export async function collectChangedSources(): Promise<IngestSource[]> {
         try {
           const { content } = await invoke<{ content: string }>('file_read', { path: file.path });
           const hash = hashContent(content);
-          const lastHash = await wikiGetIngestHash(file.path);
-          if (lastHash !== hash) {
-            sources.push({ path: file.path, type: 'note', content, contentHash: hash });
+          if (!force) {
+            const lastHash = await wikiGetIngestHash(file.path);
+            if (lastHash === hash) continue;
           }
+          sources.push({ path: file.path, type: 'note', content, contentHash: hash });
         } catch { /* skip unreadable */ }
       }
     } catch { /* skip if scan fails */ }
@@ -92,8 +97,10 @@ export async function collectChangedSources(): Promise<IngestSource[]> {
           const full = await researchLoadSession(session.id);
           const messagesJson = typeof full.messages === 'string' ? full.messages : JSON.stringify(full.messages);
           const hash = hashContent(messagesJson);
-          const lastHash = await wikiGetIngestHash(srcPath);
-          if (lastHash !== hash) {
+          if (!force) {
+            const lastHash = await wikiGetIngestHash(srcPath);
+            if (lastHash === hash) continue;
+          }
             const msgs = JSON.parse(messagesJson) as Array<{ role: string; content: string }>;
             const readable = msgs
               .filter(m => m.role === 'user' || m.role === 'assistant')
