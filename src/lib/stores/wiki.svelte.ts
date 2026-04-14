@@ -93,12 +93,32 @@ async function ingestAll(silent = false) {
 
   try {
     const { toast } = await import('$lib/stores/toast.svelte');
-    if (!silent) toast.info('Wiki ingest starting...');
+    const { collectChangedSources, runIngest } = await import('$lib/wiki/ingest');
 
     await ensureWikiFolder();
 
-    // TODO: Task 8 — wire up real ingest engine
-    if (!silent) toast.success('Wiki folder initialized (ingest engine not yet wired)');
+    const sources = await collectChangedSources();
+    if (sources.length === 0) {
+      if (!silent) toast.info('Wiki is up to date — no changes to ingest.');
+      return;
+    }
+
+    if (!silent) toast.info(`Wiki ingest started (${sources.length} sources)...`);
+
+    const result = await runIngest(sources);
+    await refreshMeta();
+
+    const parts: string[] = [];
+    if (result.pagesCreated > 0) parts.push(`${result.pagesCreated} new`);
+    if (result.pagesUpdated > 0) parts.push(`${result.pagesUpdated} updated`);
+    if (result.pagesSkipped > 0) parts.push(`${result.pagesSkipped} skipped (manually edited)`);
+    const summary = parts.length > 0 ? parts.join(', ') : 'no changes';
+
+    if (result.errors.length > 0) {
+      toast.warn(`Wiki updated (${summary}) with ${result.errors.length} error(s)`);
+    } else {
+      toast.success(`Wiki updated: ${summary}`);
+    }
   } catch (err) {
     const { toast } = await import('$lib/stores/toast.svelte');
     toast.error(`Wiki ingest failed: ${err}`);
@@ -107,8 +127,35 @@ async function ingestAll(silent = false) {
   }
 }
 
-async function ingestNote(_path: string) {
-  // TODO: Task 8 — implement single-note ingest
+async function ingestNote(path: string) {
+  if (ingesting) return;
+  ingesting = true;
+
+  try {
+    const { toast } = await import('$lib/stores/toast.svelte');
+    const { runIngest, hashContent } = await import('$lib/wiki/ingest');
+    const { invoke } = await import('@tauri-apps/api/core');
+
+    await ensureWikiFolder();
+
+    const { content } = await invoke<{ content: string }>('file_read', { path });
+    const source = { path, type: 'note' as const, content, contentHash: hashContent(content) };
+
+    toast.info(`Ingesting "${path}" into wiki...`);
+    const result = await runIngest([source]);
+    await refreshMeta();
+
+    if (result.errors.length > 0) {
+      toast.warn(`Ingest completed with errors: ${result.errors[0]}`);
+    } else {
+      toast.success(`Ingested: ${result.pagesCreated} new, ${result.pagesUpdated} updated`);
+    }
+  } catch (err) {
+    const { toast } = await import('$lib/stores/toast.svelte');
+    toast.error(`Ingest failed: ${err}`);
+  } finally {
+    ingesting = false;
+  }
 }
 
 async function lint() {
