@@ -46,3 +46,14 @@ export async function wikiSetPageHash(pagePath: string, writtenHash: string): Pr
 export async function wikiReset(): Promise<void> {
   return invoke('wiki_reset');
 }
+
+export interface WikiSearchResult {
+  path: string;
+  title: string | null;
+  chunk: string;
+  score: number;
+}
+
+export async function wikiSearch(query: string, corePath: string, topK = 5): Promise<WikiSearchResult[]> {
+  return invoke<WikiSearchResult[]>('wiki_search', { query, corePath, topK });
+}

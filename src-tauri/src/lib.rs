@@ -148,6 +148,7 @@ pub fn run() {
             commands::wiki_update_meta,
             commands::wiki_set_page_hash,
             commands::wiki_reset,
+            commands::wiki_search,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
