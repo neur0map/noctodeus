@@ -101,18 +101,17 @@ export async function collectChangedSources(force = false): Promise<IngestSource
             const lastHash = await wikiGetIngestHash(srcPath);
             if (lastHash === hash) continue;
           }
-            const msgs = JSON.parse(messagesJson) as Array<{ role: string; content: string }>;
-            const readable = msgs
-              .filter(m => m.role === 'user' || m.role === 'assistant')
-              .map(m => `${m.role}: ${m.content}`)
-              .join('\n\n');
-            sources.push({
-              path: srcPath,
-              type: 'research_session',
-              content: `Research Session: ${session.title}\n\n${readable}`,
-              contentHash: hash,
-            });
-          }
+          const msgs = JSON.parse(messagesJson) as Array<{ role: string; content: string }>;
+          const readable = msgs
+            .filter(m => m.role === 'user' || m.role === 'assistant')
+            .map(m => `${m.role}: ${m.content}`)
+            .join('\n\n');
+          sources.push({
+            path: srcPath,
+            type: 'research_session',
+            content: `Research Session: ${session.title}\n\n${readable}`,
+            contentHash: hash,
+          });
         } catch { /* skip */ }
       }
     } catch { /* skip */ }
