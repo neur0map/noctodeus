@@ -36,6 +36,7 @@
   import type { FileNode } from "../lib/types/core";
   import MarkdownIt from 'markdown-it';
   import PropertiesPanel from "../lib/components/editor/PropertiesPanel.svelte";
+  import WikiBanner from "$lib/components/editor/WikiBanner.svelte";
   import Eye from "@lucide/svelte/icons/eye";
   import PencilLine from "@lucide/svelte/icons/pencil-line";
 
@@ -545,6 +546,9 @@
           </button>
         </div>
       {/snippet}
+      {#if currentFilePath?.startsWith('wiki/')}
+        <WikiBanner lastUpdated={currentMetadata?.modified_at} />
+      {/if}
       <PropertiesPanel
         content={currentContent ?? ''}
         onupdate={handlePropertiesUpdate}
