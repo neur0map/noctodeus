@@ -28,26 +28,38 @@ async function refreshMeta() {
   }
 }
 
-function scheduleIntervalMs(schedule: string): number | null {
-  switch (schedule) {
-    case '6h': return 6 * 60 * 60 * 1000;
-    case '12h': return 12 * 60 * 60 * 1000;
-    case 'daily': return 24 * 60 * 60 * 1000;
-    case 'weekly': return 7 * 24 * 60 * 60 * 1000;
-    default: return null;
-  }
-}
-
 async function checkSchedule() {
   const settings = getSettings();
   if (!settings.wikiEnabled) return;
 
-  const interval = scheduleIntervalMs(settings.wikiSchedule);
-  if (!interval) return;
+  const schedule = settings.wikiSchedule;
+  if (schedule === 'manual') return;
 
   const now = Date.now();
   const lastMs = lastIngestAt * 1000;
-  if (now - lastMs < interval) return;
+
+  if (schedule === '6h' || schedule === '12h') {
+    // Interval-based: just check elapsed time
+    const interval = schedule === '6h' ? 6 * 60 * 60 * 1000 : 12 * 60 * 60 * 1000;
+    if (now - lastMs < interval) return;
+  } else {
+    // Time-of-day based (daily/weekly)
+    const [hours, minutes] = (settings.wikiScheduleTime || '09:00').split(':').map(Number);
+    const target = new Date();
+    target.setHours(hours, minutes, 0, 0);
+
+    // If target time hasn't passed today, skip
+    if (now < target.getTime()) return;
+
+    // If we already ingested after this target time today, skip
+    if (lastMs >= target.getTime()) return;
+
+    // For weekly, also check if at least 6 days have elapsed
+    if (schedule === 'weekly') {
+      const sixDays = 6 * 24 * 60 * 60 * 1000;
+      if (now - lastMs < sixDays) return;
+    }
+  }
 
   await ingestAll(true);
 }

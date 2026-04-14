@@ -156,6 +156,12 @@
         class="tree-node__wiki-ingest"
         onclick={async (e) => {
           e.stopPropagation();
+          const { getSettings } = await import('$lib/stores/settings.svelte');
+          if (!getSettings().wikiEnabled) {
+            const { toast } = await import('$lib/stores/toast.svelte');
+            toast.warn('Wiki is not enabled. Enable it in Settings > Wiki.');
+            return;
+          }
           const { getWikiState } = await import('$lib/stores/wiki.svelte');
           const wiki = getWikiState();
           wiki.ingestAll();

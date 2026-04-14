@@ -29,13 +29,20 @@ interface WikiAIResponse {
 }
 
 export function hashContent(content: string): string {
-  let hash = 0;
+  // FNV-1a 64-bit hash (via two 32-bit halves for JS compatibility)
+  let h1 = 0x811c9dc5;
+  let h2 = 0x811c9dc5;
   for (let i = 0; i < content.length; i++) {
     const chr = content.charCodeAt(i);
-    hash = ((hash << 5) - hash) + chr;
-    hash |= 0;
+    if (i % 2 === 0) {
+      h1 ^= chr;
+      h1 = Math.imul(h1, 0x01000193);
+    } else {
+      h2 ^= chr;
+      h2 = Math.imul(h2, 0x01000193);
+    }
   }
-  return hash.toString(36);
+  return (h1 >>> 0).toString(36) + (h2 >>> 0).toString(36);
 }
 
 export async function collectChangedSources(): Promise<IngestSource[]> {
@@ -133,14 +140,30 @@ export async function runIngest(sources: IngestSource[]): Promise<IngestResult> 
 
       let response: WikiAIResponse;
       try {
-        const cleaned = text.replace(/^```json\s*\n?/i, '').replace(/\n?```\s*$/i, '').trim();
-        response = JSON.parse(cleaned);
+        // Try direct parse first
+        let jsonStr = text.trim();
+        // Strip markdown code fences if present
+        jsonStr = jsonStr.replace(/^```(?:json)?\s*\n?/i, '').replace(/\n?```\s*$/i, '');
+        // If still not valid JSON, try extracting the first {...} block
+        if (!jsonStr.startsWith('{')) {
+          const start = jsonStr.indexOf('{');
+          const end = jsonStr.lastIndexOf('}');
+          if (start !== -1 && end !== -1 && end > start) {
+            jsonStr = jsonStr.slice(start, end + 1);
+          }
+        }
+        response = JSON.parse(jsonStr);
       } catch {
         result.errors.push(`Failed to parse AI response for batch starting at ${batch[0].path}`);
         continue;
       }
 
       for (const page of response.pages) {
+        // Guard against AI-generated paths outside wiki/
+        if (!page.path.startsWith('wiki/') || page.path.includes('..')) {
+          result.errors.push(`Skipped unsafe path: ${page.path}`);
+          continue;
+        }
         try {
           if (page.action === 'update') {
             const storedHash = await wikiGetPageHash(page.path);

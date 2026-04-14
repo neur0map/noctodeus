@@ -162,6 +162,7 @@ pub fn get_all_files(conn: &Connection) -> Result<Vec<FileInfo>, NoctoError> {
 // ---------------------------------------------------------------------------
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct WikiMeta {
     pub last_ingest_at: i64,
     pub last_lint_at: i64,
@@ -170,6 +171,7 @@ pub struct WikiMeta {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct WikiIngestEntry {
     pub id: String,
     pub source_path: String,
