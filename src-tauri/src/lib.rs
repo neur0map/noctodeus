@@ -140,6 +140,14 @@ pub fn run() {
             commands::research_load_session,
             commands::research_list_sessions,
             commands::research_delete_session,
+            // Wiki commands
+            commands::wiki_get_meta,
+            commands::wiki_get_ingest_hash,
+            commands::wiki_get_page_hash,
+            commands::wiki_record_ingest,
+            commands::wiki_update_meta,
+            commands::wiki_set_page_hash,
+            commands::wiki_reset,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

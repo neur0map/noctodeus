@@ -10,6 +10,7 @@ pub mod search;
 pub mod share;
 pub mod sync;
 pub mod url;
+pub mod wiki;
 
 pub use self::ai::*;
 pub use self::core::*;
@@ -23,3 +24,4 @@ pub use self::search::*;
 pub use self::share::*;
 pub use self::sync::*;
 pub use self::url::*;
+pub use self::wiki::*;
