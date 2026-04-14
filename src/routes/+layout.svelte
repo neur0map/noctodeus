@@ -432,10 +432,22 @@
     logger.info("Layout mounted, subscribing to Tauri events");
 
     try {
-      const u1 = await onCoreReady((e) => {
+      const u1 = await onCoreReady(async (e) => {
         logger.info("Core ready, loading file tree");
         files.setFiles(e.file_tree);
         pinned.load();
+
+        // Initialize wiki if enabled
+        try {
+          const { getSettings } = await import('$lib/stores/settings.svelte');
+          if (getSettings().wikiEnabled) {
+            const { getWikiState } = await import('$lib/stores/wiki.svelte');
+            const wiki = getWikiState();
+            await wiki.init();
+          }
+        } catch {
+          // Wiki init failed — non-critical
+        }
       });
 
       const u2 = await onCoreClosed(() => {
