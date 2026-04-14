@@ -1,6 +1,6 @@
 [package]
 name = "nodeus"
-version = "0.3.6"
+version = "0.3.7"
 description = "A creative IDE for thought"
 authors = ["neur0map"]
 edition = "2021"
