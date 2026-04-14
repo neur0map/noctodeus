@@ -242,7 +242,7 @@ function makeSourceId(): string {
  * @param sourceMapping  Human-readable list of "[[citationId]] = title" lines
  * @param trimmed        True when old history was trimmed (adds a note)
  */
-function buildSystemPrompt(sourceMapping: string, trimmed: boolean, summary: string, ragContext: string): string {
+function buildSystemPrompt(sourceMapping: string, trimmed: boolean, summary: string, ragContext: string, wikiContext: string): string {
   const base = `You are a research assistant helping the user think through their sources. Answer based on the provided source content. Be precise. When referencing a source, use [[Source-Id]] wiki-link syntax naturally in your prose. If the answer isn't in the sources, say so. Surface connections between sources when relevant.`;
 
   const mappingSection = sourceMapping
@@ -256,11 +256,15 @@ function buildSystemPrompt(sourceMapping: string, trimmed: boolean, summary: str
 
   const ragSection = ragContext || '';
 
+  const wikiSection = wikiContext
+    ? `\n\nWiki knowledge base (pre-synthesized from past research and notes):\n${wikiContext}`
+    : '';
+
   const trimNote = trimmed
     ? '\n\n[Note: Earlier messages were compacted. The summary above captures the key context.]'
     : '';
 
-  return base + mappingSection + summarySection + ragSection + trimNote;
+  return base + mappingSection + summarySection + ragSection + wikiSection + trimNote;
 }
 
 // ---------------------------------------------------------------------------
@@ -559,9 +563,30 @@ export function getResearchState() {
       // --- Search RAG for relevant past context ---
       const ragContext = await searchPastContext(content);
 
+      // Search wiki for relevant context
+      let wikiContext = '';
+      try {
+        const appSettings = getSettings();
+        if (appSettings.wikiEnabled) {
+          const { getCoreState } = await import('$lib/stores/core.svelte');
+          const core = getCoreState();
+          if (core.activeCore?.path) {
+            const { wikiSearch } = await import('$lib/bridge/wiki');
+            const wikiResults = await wikiSearch(content, core.activeCore.path, 5);
+            if (wikiResults.length > 0) {
+              wikiContext = wikiResults
+                .map(r => `From wiki "${r.title || r.path}":\n${r.chunk}`)
+                .join('\n\n---\n\n');
+            }
+          }
+        }
+      } catch {
+        // Wiki search failed — continue without it
+      }
+
       // --- System prompt ---
       const systemPrompt =
-        buildSystemPrompt(sourceMapping, wasTrimmed, sessionSummary, ragContext) +
+        buildSystemPrompt(sourceMapping, wasTrimmed, sessionSummary, ragContext, wikiContext) +
         (contextBlock ? `\n\n${contextBlock}` : '');
 
       // --- Convert to model messages (trimmed history + new user turn) ---
