@@ -284,12 +284,14 @@
       top: Math.min(e.clientY, window.innerHeight - 250),
       left: Math.min(e.clientX, window.innerWidth - 200),
     };
+    const dirName = path.split('/').pop() ?? path;
     ctxItems = isDir ? [
       { id: 'new-file', label: 'New File' },
       { id: 'new-folder', label: 'New Folder' },
       { id: 'sep1', label: '', separator: true },
       { id: 'rename', label: 'Rename' },
       { id: 'sep2', label: '', separator: true },
+      ...(dirName === 'wiki' ? [{ id: 'wiki-lint', label: 'Lint Wiki' }] : []),
       { id: 'delete', label: 'Delete', danger: true },
     ] : [
       { id: 'pin', label: pinned.isPinned(path) ? 'Unpin' : 'Pin' },
@@ -297,6 +299,7 @@
       { id: 'duplicate', label: 'Duplicate' },
       { id: 'export', label: 'Export...' },
       { id: 'share', label: 'Share encrypted link' },
+      { id: 'wiki-ingest', label: 'Ingest to Wiki' },
       { id: 'sep1', label: '', separator: true },
       { id: 'delete', label: 'Delete', danger: true },
     ];
@@ -368,6 +371,24 @@
         } catch (err) {
           logger.error(`Delete failed: ${err}`);
         }
+        break;
+      }
+      case 'wiki-ingest': {
+        const { getSettings } = await import('$lib/stores/settings.svelte');
+        if (!getSettings().wikiEnabled) {
+          const { toast } = await import('../lib/stores/toast.svelte');
+          toast.warn('Wiki is not enabled. Enable it in Settings > Wiki.');
+          break;
+        }
+        const { getWikiState } = await import('$lib/stores/wiki.svelte');
+        const wiki = getWikiState();
+        wiki.ingestNote(ctxTargetPath);
+        break;
+      }
+      case 'wiki-lint': {
+        const { getWikiState: getWikiStateLint } = await import('$lib/stores/wiki.svelte');
+        const wikiLint = getWikiStateLint();
+        wikiLint.lint();
         break;
       }
       case 'new-file': {

@@ -264,6 +264,36 @@
         tabsState.openResearch();
       },
     },
+    {
+      id: "wiki-ingest",
+      label: "Wiki: Ingest All",
+      action: async () => {
+        ui.hideCommandPalette();
+        const { getSettings } = await import('$lib/stores/settings.svelte');
+        if (!getSettings().wikiEnabled) {
+          toast.warn('Wiki is not enabled. Enable it in Settings > Wiki.');
+          return;
+        }
+        const { getWikiState } = await import('$lib/stores/wiki.svelte');
+        const wiki = getWikiState();
+        wiki.ingestAll();
+      },
+    },
+    {
+      id: "wiki-lint",
+      label: "Wiki: Lint",
+      action: async () => {
+        ui.hideCommandPalette();
+        const { getSettings } = await import('$lib/stores/settings.svelte');
+        if (!getSettings().wikiEnabled) {
+          toast.warn('Wiki is not enabled. Enable it in Settings > Wiki.');
+          return;
+        }
+        const { getWikiState } = await import('$lib/stores/wiki.svelte');
+        const wiki = getWikiState();
+        wiki.lint();
+      },
+    },
   ]);
 
   // --- Helpers ---
