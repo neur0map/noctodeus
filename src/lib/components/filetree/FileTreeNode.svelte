@@ -4,6 +4,8 @@
   import ChevronRight from "@lucide/svelte/icons/chevron-right";
   import StarIcon from "@lucide/svelte/icons/star";
   import CloudIcon from "@lucide/svelte/icons/cloud";
+  import BookOpenIcon from "@lucide/svelte/icons/book-open";
+  import RefreshCwIcon from "@lucide/svelte/icons/refresh-cw";
   import { getPinnedState } from "../../stores/pinned.svelte";
   import { nerdIcon, fileIcon } from "../../utils/nerd-icons";
 
@@ -31,6 +33,9 @@
   let isActive = $derived(node.path === activeFilePath);
   let isPinned = $derived(!node.is_directory && pinned.isPinned(node.path));
   let isEvicted = $derived(!node.is_directory && !!node.evicted);
+  let isWikiRoot = $derived(node.is_directory && node.path === 'wiki');
+  let isWikiChild = $derived(node.path.startsWith('wiki/'));
+  let isWiki = $derived(isWikiRoot || isWikiChild);
   let isDragged = $derived(dragState?.dragging === node.path);
   let isDropTarget = $derived(node.is_directory && dragState?.overDir === node.path && dragState?.dragging !== node.path);
   let editing = $state(false);
@@ -96,6 +101,7 @@
     class:tree-node__row--active={isActive}
     class:tree-node__row--dragged={isDragged}
     class:tree-node__row--drop-target={isDropTarget}
+    class:tree-node__row--wiki={isWiki}
     style:padding-left="{8}px"
     onclick={handleClick}
     onkeydown={handleKeydown}
@@ -113,7 +119,11 @@
       >
         <ChevronRight size={12} />
       </span>
-      <span class="tree-node__icon tree-node__icon--nerd">{node.expanded ? nerdIcon('folder-open') : nerdIcon('folder-closed')}</span>
+      {#if isWikiRoot}
+        <span class="tree-node__icon tree-node__icon--wiki"><BookOpenIcon size={13} /></span>
+      {:else}
+        <span class="tree-node__icon tree-node__icon--nerd">{node.expanded ? nerdIcon('folder-open') : nerdIcon('folder-closed')}</span>
+      {/if}
     {:else if isEvicted}
       <span class="tree-node__icon tree-node__icon--evicted"><CloudIcon size={13} /></span>
     {:else}
@@ -139,6 +149,21 @@
         class:tree-node__name--evicted={isEvicted}
         ondblclick={handleDblClick}
       >{node.name}</span>
+    {/if}
+    {#if isWikiRoot}
+      <span class="tree-node__wiki-badge">AI</span>
+      <button
+        class="tree-node__wiki-ingest"
+        onclick={async (e) => {
+          e.stopPropagation();
+          const { getWikiState } = await import('$lib/stores/wiki.svelte');
+          const wiki = getWikiState();
+          wiki.ingestAll();
+        }}
+        title="Ingest notes into wiki"
+      >
+        <RefreshCwIcon size={11} />
+      </button>
     {/if}
     {#if !node.is_directory}
       <button
@@ -332,6 +357,64 @@
 
   .tree-node__star--pinned:hover {
     color: var(--accent-orange);
+  }
+
+  /* ── Wiki folder styling ── */
+  .tree-node__row--wiki {
+    border-left: 2px solid var(--accent-purple, #bb9af7);
+  }
+
+  .tree-node__row--wiki:hover {
+    border-left-color: var(--accent-purple, #bb9af7);
+  }
+
+  .tree-node__icon--wiki {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    color: var(--accent-purple, #bb9af7);
+  }
+
+  .tree-node__wiki-badge {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 600;
+    color: var(--accent-purple, #bb9af7);
+    background: rgba(187, 154, 247, 0.1);
+    border-radius: 3px;
+    padding: 1px 4px;
+    line-height: 1;
+    flex-shrink: 0;
+    margin-left: 4px;
+  }
+
+  .tree-node__wiki-ingest {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    margin-left: auto;
+    flex-shrink: 0;
+    border: none;
+    border-radius: 3px;
+    background: transparent;
+    color: var(--color-placeholder);
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 150ms var(--ease-expo-out), color 150ms var(--ease-expo-out);
+  }
+
+  .tree-node__row:hover .tree-node__wiki-ingest {
+    opacity: 0.6;
+  }
+
+  .tree-node__wiki-ingest:hover {
+    opacity: 1 !important;
+    color: var(--accent-purple, #bb9af7);
   }
 
   .tree-node__children {
