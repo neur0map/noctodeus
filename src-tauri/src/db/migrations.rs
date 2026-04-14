@@ -22,6 +22,7 @@ pub fn run_all_migrations(conn: &Connection) -> Result<(), NoctoError> {
     let migrations: &[fn(&Connection) -> Result<(), NoctoError>] = &[
         migrate_v1, // Initial schema: files, pinned, recents, state, files_fts
         migrate_v2, // Links table for wiki-link graph
+        migrate_v3, // Wiki tables: ingest tracking, metadata, page hashes
     ];
 
     for (i, migration) in migrations.iter().enumerate() {
@@ -123,6 +124,38 @@ fn migrate_v2(conn: &Connection) -> Result<(), NoctoError> {
     Ok(())
 }
 
+/// V3: Wiki tables — ingest tracking, metadata, page hashes.
+fn migrate_v3(conn: &Connection) -> Result<(), NoctoError> {
+    conn.execute_batch(
+        "
+        CREATE TABLE IF NOT EXISTS wiki_ingest_log (
+            id TEXT PRIMARY KEY,
+            source_path TEXT NOT NULL,
+            source_type TEXT NOT NULL,
+            content_hash TEXT NOT NULL,
+            ingested_at INTEGER NOT NULL,
+            wiki_pages_affected TEXT NOT NULL DEFAULT '[]'
+        );
+
+        CREATE TABLE IF NOT EXISTS wiki_meta (
+            id INTEGER PRIMARY KEY CHECK (id = 1),
+            last_ingest_at INTEGER NOT NULL DEFAULT 0,
+            last_lint_at INTEGER NOT NULL DEFAULT 0,
+            page_count INTEGER NOT NULL DEFAULT 0,
+            link_count INTEGER NOT NULL DEFAULT 0
+        );
+
+        CREATE TABLE IF NOT EXISTS wiki_page_hashes (
+            page_path TEXT PRIMARY KEY,
+            written_hash TEXT NOT NULL
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_wiki_ingest_source ON wiki_ingest_log(source_path);
+        ",
+    )?;
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -133,9 +166,9 @@ mod tests {
         let conn = Connection::open_in_memory().unwrap();
         run_all_migrations(&conn).unwrap();
 
-        // Should be at version 2.
+        // Should be at version 3.
         let version = get_version(&conn).unwrap();
-        assert_eq!(version, 2);
+        assert_eq!(version, 3);
 
         // V1 tables should exist.
         let count: i64 = conn
@@ -156,6 +189,16 @@ mod tests {
             )
             .unwrap();
         assert_eq!(count, 1);
+
+        // V3 tables should exist.
+        let count: i64 = conn
+            .query_row(
+                "SELECT count(*) FROM sqlite_master WHERE name = 'wiki_meta'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(count, 1);
     }
 
     #[test]
@@ -165,7 +208,7 @@ mod tests {
         // Running again should be a no-op (all versions already applied).
         run_all_migrations(&conn).unwrap();
         let version = get_version(&conn).unwrap();
-        assert_eq!(version, 2);
+        assert_eq!(version, 3);
     }
 
     #[test]
@@ -187,10 +230,10 @@ mod tests {
         )
         .unwrap();
 
-        // Now run migrations — should only apply V2.
+        // Now run migrations — should apply V2 and V3.
         run_all_migrations(&conn).unwrap();
         let version = get_version(&conn).unwrap();
-        assert_eq!(version, 2);
+        assert_eq!(version, 3);
 
         // Links table should exist.
         let count: i64 = conn

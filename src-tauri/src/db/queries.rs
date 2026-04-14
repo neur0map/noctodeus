@@ -156,3 +156,74 @@ pub fn get_all_files(conn: &Connection) -> Result<Vec<FileInfo>, NoctoError> {
     }
     Ok(results)
 }
+
+// ---------------------------------------------------------------------------
+// Wiki queries
+// ---------------------------------------------------------------------------
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct WikiMeta {
+    pub last_ingest_at: i64,
+    pub last_lint_at: i64,
+    pub page_count: i64,
+    pub link_count: i64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct WikiIngestEntry {
+    pub id: String,
+    pub source_path: String,
+    pub source_type: String,
+    pub content_hash: String,
+    pub ingested_at: i64,
+    pub wiki_pages_affected: String,
+}
+
+pub fn get_wiki_meta(conn: &Connection) -> Result<WikiMeta, NoctoError> {
+    let result = conn.query_row(
+        "SELECT last_ingest_at, last_lint_at, page_count, link_count FROM wiki_meta WHERE id = 1",
+        [],
+        |row| Ok(WikiMeta {
+            last_ingest_at: row.get(0)?,
+            last_lint_at: row.get(1)?,
+            page_count: row.get(2)?,
+            link_count: row.get(3)?,
+        }),
+    );
+    match result {
+        Ok(meta) => Ok(meta),
+        Err(rusqlite::Error::QueryReturnedNoRows) => Ok(WikiMeta {
+            last_ingest_at: 0,
+            last_lint_at: 0,
+            page_count: 0,
+            link_count: 0,
+        }),
+        Err(e) => Err(NoctoError::DbQueryFailed { detail: e.to_string() }),
+    }
+}
+
+pub fn get_wiki_ingest_hash(conn: &Connection, source_path: &str) -> Result<Option<String>, NoctoError> {
+    let result = conn.query_row(
+        "SELECT content_hash FROM wiki_ingest_log WHERE source_path = ?1 ORDER BY ingested_at DESC LIMIT 1",
+        params![source_path],
+        |row| row.get(0),
+    );
+    match result {
+        Ok(hash) => Ok(Some(hash)),
+        Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
+        Err(e) => Err(NoctoError::DbQueryFailed { detail: e.to_string() }),
+    }
+}
+
+pub fn get_wiki_page_hash(conn: &Connection, page_path: &str) -> Result<Option<String>, NoctoError> {
+    let result = conn.query_row(
+        "SELECT written_hash FROM wiki_page_hashes WHERE page_path = ?1",
+        params![page_path],
+        |row| row.get(0),
+    );
+    match result {
+        Ok(hash) => Ok(Some(hash)),
+        Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
+        Err(e) => Err(NoctoError::DbQueryFailed { detail: e.to_string() }),
+    }
+}

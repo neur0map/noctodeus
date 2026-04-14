@@ -118,3 +118,80 @@ pub fn delete_fts(conn: &Connection, path: &str) -> Result<(), NoctoError> {
     )?;
     Ok(())
 }
+
+// ---------------------------------------------------------------------------
+// Wiki mutations
+// ---------------------------------------------------------------------------
+
+pub fn upsert_wiki_meta(
+    conn: &Connection,
+    last_ingest_at: i64,
+    page_count: i64,
+    link_count: i64,
+) -> Result<(), NoctoError> {
+    conn.execute(
+        "INSERT INTO wiki_meta (id, last_ingest_at, page_count, link_count)
+         VALUES (1, ?1, ?2, ?3)
+         ON CONFLICT(id) DO UPDATE SET
+            last_ingest_at = excluded.last_ingest_at,
+            page_count = excluded.page_count,
+            link_count = excluded.link_count",
+        params![last_ingest_at, page_count, link_count],
+    )?;
+    Ok(())
+}
+
+pub fn update_wiki_lint_at(conn: &Connection, lint_at: i64) -> Result<(), NoctoError> {
+    conn.execute(
+        "UPDATE wiki_meta SET last_lint_at = ?1 WHERE id = 1",
+        params![lint_at],
+    )?;
+    Ok(())
+}
+
+pub fn insert_wiki_ingest_entry(
+    conn: &Connection,
+    id: &str,
+    source_path: &str,
+    source_type: &str,
+    content_hash: &str,
+    ingested_at: i64,
+    wiki_pages_affected: &str,
+) -> Result<(), NoctoError> {
+    conn.execute(
+        "INSERT OR REPLACE INTO wiki_ingest_log (id, source_path, source_type, content_hash, ingested_at, wiki_pages_affected)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+        params![id, source_path, source_type, content_hash, ingested_at, wiki_pages_affected],
+    )?;
+    Ok(())
+}
+
+pub fn upsert_wiki_page_hash(
+    conn: &Connection,
+    page_path: &str,
+    written_hash: &str,
+) -> Result<(), NoctoError> {
+    conn.execute(
+        "INSERT OR REPLACE INTO wiki_page_hashes (page_path, written_hash)
+         VALUES (?1, ?2)",
+        params![page_path, written_hash],
+    )?;
+    Ok(())
+}
+
+pub fn delete_wiki_page_hash(conn: &Connection, page_path: &str) -> Result<(), NoctoError> {
+    conn.execute(
+        "DELETE FROM wiki_page_hashes WHERE page_path = ?1",
+        params![page_path],
+    )?;
+    Ok(())
+}
+
+pub fn clear_wiki_data(conn: &Connection) -> Result<(), NoctoError> {
+    conn.execute_batch(
+        "DELETE FROM wiki_ingest_log;
+         DELETE FROM wiki_meta;
+         DELETE FROM wiki_page_hashes;"
+    )?;
+    Ok(())
+}
