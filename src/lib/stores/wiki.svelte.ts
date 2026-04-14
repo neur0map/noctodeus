@@ -4,11 +4,22 @@ import { getSettings } from './settings.svelte';
 // Module-level $state
 // ---------------------------------------------------------------------------
 
+export interface WikiProgress {
+  phase: string;
+  totalSources: number;
+  processedSources: number;
+  currentSource: string;
+  currentAction: string;
+  log: string[];
+}
+
 let ingesting = $state(false);
 let lastIngestAt = $state(0);
 let lastLintAt = $state(0);
 let pageCount = $state(0);
 let linkCount = $state(0);
+let progress = $state<WikiProgress | null>(null);
+let progressVisible = $state(false);
 let schedulerTimer: ReturnType<typeof setInterval> | null = null;
 
 // ---------------------------------------------------------------------------
@@ -102,22 +113,33 @@ async function ensureWikiFolder() {
 async function ingestAll(silent = false) {
   if (ingesting) return;
   ingesting = true;
+  progressVisible = true;
+  progress = {
+    phase: 'collecting',
+    totalSources: 0,
+    processedSources: 0,
+    currentSource: '',
+    currentAction: 'Scanning for changes...',
+    log: ['Starting wiki ingest...'],
+  };
 
   try {
-    const { toast } = await import('$lib/stores/toast.svelte');
     const { collectChangedSources, runIngest } = await import('$lib/wiki/ingest');
 
     await ensureWikiFolder();
+    progress!.log.push('Wiki folder ready');
 
     const sources = await collectChangedSources();
     if (sources.length === 0) {
-      if (!silent) toast.info('Wiki is up to date — no changes to ingest.');
+      progress = { ...progress!, phase: 'done', currentAction: 'Up to date — no changes found', log: [...progress!.log, 'No changed sources found.'] };
       return;
     }
 
-    if (!silent) toast.info(`Wiki ingest started (${sources.length} sources)...`);
+    progress = { ...progress!, totalSources: sources.length, currentAction: `Found ${sources.length} source(s) to process`, log: [...progress!.log, `Found ${sources.length} changed source(s)`] };
 
-    const result = await runIngest(sources);
+    const result = await runIngest(sources, (p) => {
+      progress = { ...p };
+    });
     await refreshMeta();
 
     const parts: string[] = [];
@@ -126,14 +148,25 @@ async function ingestAll(silent = false) {
     if (result.pagesSkipped > 0) parts.push(`${result.pagesSkipped} skipped (manually edited)`);
     const summary = parts.length > 0 ? parts.join(', ') : 'no changes';
 
-    if (result.errors.length > 0) {
-      toast.warn(`Wiki updated (${summary}) with ${result.errors.length} error(s)`);
-    } else {
-      toast.success(`Wiki updated: ${summary}`);
-    }
+    progress = {
+      phase: 'done',
+      totalSources: sources.length,
+      processedSources: sources.length,
+      currentSource: '',
+      currentAction: result.errors.length > 0
+        ? `Done with ${result.errors.length} error(s): ${summary}`
+        : `Complete: ${summary}`,
+      log: progress?.log ?? [],
+    };
   } catch (err) {
-    const { toast } = await import('$lib/stores/toast.svelte');
-    toast.error(`Wiki ingest failed: ${err}`);
+    progress = {
+      phase: 'error',
+      totalSources: progress?.totalSources ?? 0,
+      processedSources: progress?.processedSources ?? 0,
+      currentSource: '',
+      currentAction: `Failed: ${err}`,
+      log: [...(progress?.log ?? []), `Error: ${err}`],
+    };
   } finally {
     ingesting = false;
   }
@@ -142,9 +175,17 @@ async function ingestAll(silent = false) {
 async function ingestNote(path: string) {
   if (ingesting) return;
   ingesting = true;
+  progressVisible = true;
+  progress = {
+    phase: 'processing',
+    totalSources: 1,
+    processedSources: 0,
+    currentSource: path,
+    currentAction: `Ingesting "${path}"...`,
+    log: [`Ingesting single note: ${path}`],
+  };
 
   try {
-    const { toast } = await import('$lib/stores/toast.svelte');
     const { runIngest, hashContent } = await import('$lib/wiki/ingest');
     const { invoke } = await import('@tauri-apps/api/core');
 
@@ -153,18 +194,35 @@ async function ingestNote(path: string) {
     const { content } = await invoke<{ content: string }>('file_read', { path });
     const source = { path, type: 'note' as const, content, contentHash: hashContent(content) };
 
-    toast.info(`Ingesting "${path}" into wiki...`);
-    const result = await runIngest([source]);
+    const result = await runIngest([source], (p) => {
+      progress = { ...p };
+    });
     await refreshMeta();
 
-    if (result.errors.length > 0) {
-      toast.warn(`Ingest completed with errors: ${result.errors[0]}`);
-    } else {
-      toast.success(`Ingested: ${result.pagesCreated} new, ${result.pagesUpdated} updated`);
-    }
+    const parts: string[] = [];
+    if (result.pagesCreated > 0) parts.push(`${result.pagesCreated} new`);
+    if (result.pagesUpdated > 0) parts.push(`${result.pagesUpdated} updated`);
+    const summary = parts.length > 0 ? parts.join(', ') : 'no changes';
+
+    progress = {
+      phase: result.errors.length > 0 ? 'error' : 'done',
+      totalSources: 1,
+      processedSources: 1,
+      currentSource: '',
+      currentAction: result.errors.length > 0
+        ? `Done with errors: ${summary}`
+        : `Complete: ${summary}`,
+      log: progress?.log ?? [],
+    };
   } catch (err) {
-    const { toast } = await import('$lib/stores/toast.svelte');
-    toast.error(`Ingest failed: ${err}`);
+    progress = {
+      phase: 'error',
+      totalSources: 1,
+      processedSources: 0,
+      currentSource: '',
+      currentAction: `Failed: ${err}`,
+      log: [...(progress?.log ?? []), `Error: ${err}`],
+    };
   } finally {
     ingesting = false;
   }
@@ -187,6 +245,13 @@ export function getWikiState() {
     get pageCount() { return pageCount; },
     get linkCount() { return linkCount; },
     get enabled() { return getSettings().wikiEnabled; },
+    get progress() { return progress; },
+    get progressVisible() { return progressVisible; },
+
+    dismissProgress() {
+      progressVisible = false;
+      progress = null;
+    },
 
     async init() {
       await refreshMeta();

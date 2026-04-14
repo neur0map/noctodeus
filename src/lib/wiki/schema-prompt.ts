@@ -32,6 +32,16 @@ Use [[wiki/concepts/related-topic]] wiki-link syntax to link to other wiki pages
 - [[original-note-path]] or URL where this information came from
 \`\`\`
 
+## REQUIRED Pages Per Source
+
+For EVERY source document you process, you MUST create:
+
+1. **One summary page** at \`wiki/summaries/<source-slug>.md\` — a digest of the entire source document.
+2. **Concept pages** at \`wiki/concepts/<name>.md\` — one per key concept, idea, topic, algorithm, technique, or theory found in the source.
+3. **Entity pages** at \`wiki/entities/<name>.md\` — one per person, organization, place, tool, library, or framework mentioned in the source. If the source mentions "Dijkstra" → create \`wiki/entities/dijkstra.md\`. If it mentions "Python" → create \`wiki/entities/python.md\`.
+
+Do NOT skip entities or summaries. Every source gets a summary. Every named person, org, tool, or place gets an entity page.
+
 ## Rules
 
 1. Extract key concepts, entities, and relationships from the source.
@@ -41,6 +51,7 @@ Use [[wiki/concepts/related-topic]] wiki-link syntax to link to other wiki pages
 5. If new information contradicts existing wiki content, flag the contradiction — do not silently overwrite.
 6. Keep summaries concise but informative.
 7. Use clear, neutral, encyclopedic tone.
+8. The indexUpdates field MUST list ALL pages under their correct section (Concepts, Entities, Summaries) with wiki-links.
 
 ## Current Wiki Index
 

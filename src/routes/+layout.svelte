@@ -17,6 +17,7 @@
   import InputDialog from "../lib/components/common/InputDialog.svelte";
   import KeyboardManager from "../lib/components/common/KeyboardManager.svelte";
   import Dialogs from "../lib/components/layout/Dialogs.svelte";
+  import WikiIngestBar from "../lib/components/wiki/WikiIngestBar.svelte";
   import { getSettings } from "../lib/stores/settings.svelte";
 
   import { getUiState } from "../lib/stores/ui.svelte";
@@ -747,6 +748,8 @@
 />
 
 </FocusManager>
+
+<WikiIngestBar />
 
 <style>
   /* ── Global ── */

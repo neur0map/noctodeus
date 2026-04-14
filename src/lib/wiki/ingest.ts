@@ -17,6 +17,17 @@ export interface IngestResult {
   errors: string[];
 }
 
+export interface IngestProgress {
+  phase: 'collecting' | 'processing' | 'writing' | 'done' | 'error';
+  totalSources: number;
+  processedSources: number;
+  currentSource: string;
+  currentAction: string;
+  log: string[];
+}
+
+export type ProgressCallback = (progress: IngestProgress) => void;
+
 interface WikiAIResponse {
   pages: Array<{
     action: 'create' | 'update';
@@ -103,7 +114,21 @@ export async function collectChangedSources(): Promise<IngestSource[]> {
   return sources;
 }
 
-export async function runIngest(sources: IngestSource[]): Promise<IngestResult> {
+export async function runIngest(sources: IngestSource[], onProgress?: ProgressCallback): Promise<IngestResult> {
+  const progress: IngestProgress = {
+    phase: 'processing',
+    totalSources: sources.length,
+    processedSources: 0,
+    currentSource: '',
+    currentAction: 'Initializing...',
+    log: [],
+  };
+
+  function emit(updates: Partial<IngestProgress>) {
+    Object.assign(progress, updates);
+    onProgress?.({ ...progress, log: [...progress.log] });
+  }
+
   const model = getAIModel();
   if (!model) {
     return { pagesCreated: 0, pagesUpdated: 0, pagesSkipped: 0, errors: ['No AI model configured'] };
@@ -126,6 +151,14 @@ export async function runIngest(sources: IngestSource[]): Promise<IngestResult> 
   const batchSize = 3;
   for (let i = 0; i < sources.length; i += batchSize) {
     const batch = sources.slice(i, i + batchSize);
+    const batchNames = batch.map(s => s.path).join(', ');
+    emit({
+      processedSources: i,
+      currentSource: batchNames,
+      currentAction: `Sending to AI (batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(sources.length / batchSize)})...`,
+    });
+    progress.log.push(`Processing: ${batchNames}`);
+
     const sourceContent = batch
       .map(s => `--- Source: ${s.path} (${s.type}) ---\n${s.content}`)
       .join('\n\n');
@@ -162,8 +195,10 @@ export async function runIngest(sources: IngestSource[]): Promise<IngestResult> 
         // Guard against AI-generated paths outside wiki/
         if (!page.path.startsWith('wiki/') || page.path.includes('..')) {
           result.errors.push(`Skipped unsafe path: ${page.path}`);
+          progress.log.push(`Skipped unsafe path: ${page.path}`);
           continue;
         }
+        emit({ phase: 'writing', currentAction: `${page.action === 'create' ? 'Creating' : 'Updating'} ${page.path}` });
         try {
           if (page.action === 'update') {
             const storedHash = await wikiGetPageHash(page.path);
@@ -193,10 +228,17 @@ export async function runIngest(sources: IngestSource[]): Promise<IngestResult> 
 
           await wikiSetPageHash(page.path, hashContent(page.content));
 
-          if (page.action === 'create') result.pagesCreated++;
-          else result.pagesUpdated++;
+          if (page.action === 'create') {
+            result.pagesCreated++;
+            progress.log.push(`Created ${page.path}`);
+          } else {
+            result.pagesUpdated++;
+            progress.log.push(`Updated ${page.path}`);
+          }
+          emit({});
         } catch (err) {
           result.errors.push(`Failed to write ${page.path}: ${err}`);
+          progress.log.push(`Error: ${page.path} — ${err}`);
         }
       }
 
@@ -229,8 +271,12 @@ export async function runIngest(sources: IngestSource[]): Promise<IngestResult> 
       }
     } catch (err) {
       result.errors.push(`AI call failed for batch: ${err}`);
+      progress.log.push(`Error: AI call failed — ${err}`);
+      emit({});
     }
   }
+
+  emit({ phase: 'done', processedSources: sources.length, currentAction: 'Complete' });
 
   try {
     const { getFilesState } = await import('$lib/stores/files.svelte');
