@@ -253,9 +253,29 @@ async function runExtractWisdom(editor: BlockNoteEditor<any, any, any>): Promise
   toast.info('Extracting wisdom…');
 
   const bodyForAI = body.length > 12000 ? body.slice(0, 12000) + '\n\n...(truncated)' : body;
+
+  // Fetch wiki context if enabled
+  let wikiContext = '';
+  try {
+    const { getSettings } = await import('$lib/stores/settings.svelte');
+    const settings = getSettings();
+    if (settings.wikiEnabled) {
+      const { getCoreState } = await import('$lib/stores/core.svelte');
+      const core = getCoreState();
+      if (core.activeCore?.path) {
+        const { wikiSearch } = await import('$lib/bridge/wiki');
+        const results = await wikiSearch(bodyForAI, core.activeCore.path, 3);
+        if (results.length > 0) {
+          wikiContext = '\n\nRelevant wiki context:\n' +
+            results.map(r => `${r.title || r.path}: ${r.chunk}`).join('\n');
+        }
+      }
+    }
+  } catch { /* continue without wiki */ }
+
   const { text } = await generateText({
     model,
-    system: EXTRACT_WISDOM_SYSTEM,
+    system: EXTRACT_WISDOM_SYSTEM + wikiContext,
     prompt: bodyForAI,
     maxOutputTokens: Math.min(getMaxTokens() ?? 4096, 4096),
   });
@@ -504,9 +524,29 @@ async function runCreateTags(editor: BlockNoteEditor<any, any, any>): Promise<vo
 
   // 2. Ask the LLM for tags (plain comma-separated, no frontmatter)
   const bodyForAI = body.length > 6000 ? body.slice(0, 6000) + '\n\n...(truncated)' : body;
+
+  // Fetch wiki context if enabled
+  let wikiContext = '';
+  try {
+    const { getSettings } = await import('$lib/stores/settings.svelte');
+    const settings = getSettings();
+    if (settings.wikiEnabled) {
+      const { getCoreState } = await import('$lib/stores/core.svelte');
+      const core = getCoreState();
+      if (core.activeCore?.path) {
+        const { wikiSearch } = await import('$lib/bridge/wiki');
+        const results = await wikiSearch(bodyForAI, core.activeCore.path, 3);
+        if (results.length > 0) {
+          wikiContext = '\n\nRelevant wiki context:\n' +
+            results.map(r => `${r.title || r.path}: ${r.chunk}`).join('\n');
+        }
+      }
+    }
+  } catch { /* continue without wiki */ }
+
   const { text } = await generateText({
     model,
-    prompt: `${CREATE_TAGS_PROMPT}${bodyForAI}`,
+    prompt: `${CREATE_TAGS_PROMPT}${bodyForAI}${wikiContext}`,
     maxOutputTokens: Math.min(getMaxTokens() ?? 200, 200),
   });
 
