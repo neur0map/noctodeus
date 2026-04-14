@@ -7,6 +7,7 @@
   import Keyboard from "@lucide/svelte/icons/keyboard";
   import RefreshCw from "@lucide/svelte/icons/refresh-cw";
   import Brain from "@lucide/svelte/icons/brain";
+  import BookOpen from "@lucide/svelte/icons/book-open";
   import Terminal from "@lucide/svelte/icons/terminal";
   import X from "@lucide/svelte/icons/x";
 
@@ -18,6 +19,7 @@
   import SettingsSync from './settings/SettingsSync.svelte';
   import SettingsAI from './settings/SettingsAI.svelte';
   import SettingsMCP from './settings/SettingsMCP.svelte';
+  import SettingsWiki from './settings/SettingsWiki.svelte';
 
   let {
     visible = false,
@@ -29,7 +31,7 @@
 
   const settings = getSettings();
 
-  type Section = 'general' | 'editor' | 'appearance' | 'files' | 'hotkeys' | 'sync' | 'ai' | 'mcp';
+  type Section = 'general' | 'editor' | 'appearance' | 'files' | 'hotkeys' | 'sync' | 'ai' | 'wiki' | 'mcp';
 
   let activeSection = $state<Section>('general');
   let closing = $state(false);
@@ -62,6 +64,7 @@
     { id: 'hotkeys', label: 'Hotkeys' },
     { id: 'sync', label: 'Sync' },
     { id: 'ai', label: 'AI' },
+    { id: 'wiki', label: 'Wiki' },
     { id: 'mcp', label: 'MCP' },
   ];
 
@@ -105,6 +108,7 @@
                 {:else if section.id === 'hotkeys'}<Keyboard size={14} />
                 {:else if section.id === 'sync'}<RefreshCw size={14} />
                 {:else if section.id === 'ai'}<Brain size={14} />
+                {:else if section.id === 'wiki'}<BookOpen size={14} />
                 {:else if section.id === 'mcp'}<Terminal size={14} />
                 {/if}
               </span>
@@ -138,6 +142,8 @@
             <SettingsSync {settings} />
           {:else if activeSection === 'ai'}
             <SettingsAI {settings} />
+          {:else if activeSection === 'wiki'}
+            <SettingsWiki {settings} />
           {:else if activeSection === 'mcp'}
             <SettingsMCP {settings} />
           {/if}

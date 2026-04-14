@@ -46,6 +46,14 @@ export interface AppSettings {
   syncMedia: boolean;
   // MCP
   mcpServers: { name: string; command: string; args: string[]; env?: Record<string, string> }[];
+  // Wiki
+  wikiEnabled: boolean;
+  wikiFocus: string;
+  wikiSchedule: 'manual' | '6h' | '12h' | 'daily' | 'weekly';
+  wikiScheduleTime: string;
+  wikiIngestNotes: boolean;
+  wikiIngestResearch: boolean;
+  wikiIngestUrls: boolean;
 }
 
 const DEFAULTS: AppSettings = {
@@ -74,6 +82,13 @@ const DEFAULTS: AppSettings = {
   syncMethod: 'none',
   syncMedia: false,
   mcpServers: [],
+  wikiEnabled: false,
+  wikiFocus: '',
+  wikiSchedule: 'manual',
+  wikiScheduleTime: '09:00',
+  wikiIngestNotes: true,
+  wikiIngestResearch: true,
+  wikiIngestUrls: true,
 };
 
 function loadFromStorage(): AppSettings {
@@ -171,6 +186,13 @@ export function getSettings() {
     get syncMethod() { return settings.syncMethod; },
     get syncMedia() { return settings.syncMedia; },
     get mcpServers() { return settings.mcpServers; },
+    get wikiEnabled() { return settings.wikiEnabled; },
+    get wikiFocus() { return settings.wikiFocus; },
+    get wikiSchedule() { return settings.wikiSchedule; },
+    get wikiScheduleTime() { return settings.wikiScheduleTime; },
+    get wikiIngestNotes() { return settings.wikiIngestNotes; },
+    get wikiIngestResearch() { return settings.wikiIngestResearch; },
+    get wikiIngestUrls() { return settings.wikiIngestUrls; },
 
     update<K extends keyof AppSettings>(key: K, value: AppSettings[K]) {
       // Mutate the property directly on the $state proxy for granular reactivity
